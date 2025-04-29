@@ -1,8 +1,17 @@
 # Active Context: Math Invasion v2
 
-**Current Focus:** Milestone M2: Podstawowa Rozgrywka - *Enemy Spawning & Basic Collisions Implemented.*
+**Current Focus:** Milestone M2: Podstawowa Rozgrywka - *Placeholder Assets Replaced.*
 
 **Recent Changes:**
+*   **M2 - Replace Placeholder Assets:**
+    *   Created `src/core/constants/assets.ts` to define keys for player (`PLAYER_KEY`), bullet (`BULLET_KEY`), and small alien (`ENEMY_SMALL_ALIEN_KEY`).
+    *   Updated `GameScene.ts`:
+        *   Imported asset constants from `src/core/constants/assets.ts`.
+        *   Removed old local asset key constants.
+        *   Updated `preload()` to load actual images (`player_ship.png`, `bullet.png`, `alien_small.png`) using the imported constants.
+        *   Updated player sprite creation in `create()` to use `PLAYER_KEY`.
+        *   Updated projectile sprite creation in `handleProjectileCreated()` to use `BULLET_KEY`.
+        *   Updated enemy entity creation in `handleEnemySpawned()` to use `ENEMY_SMALL_ALIEN_KEY` (with a TODO for proper mapping based on config ID).
 *   **M2 - Load Core Values from Config:**
     *   Created `playerSchema.ts` and `config/player.yml`.
     *   Updated `ConfigLoader.ts` to load and validate `player.yml`.
@@ -104,7 +113,7 @@
     *   ~~Update `ProjectileManager` to handle hitting enemies (removal).~~ (Done)
     *   ~~Update `EnemyManager` to handle taking damage / destruction.~~ (Done - *uses damage from event*)
     *   ~~Update `EconomyManager` to grant currency on enemy defeat.~~ (Done)
-*   **Assets:** Replace placeholder graphics (Vite logo) with actual sprites for player, bullet, and enemies.
+*   **Assets:** ~~Replace placeholder graphics (Vite logo) with actual sprites for player, bullet, and enemies.~~ (Done)
 *   **Refinement:**
     *   ~~Implement actual damage calculation based on projectile/weapon config hitting enemy config.~~ (Done for projectile -> enemy)
     *   ~~Implement actual collision damage calculation for player vs enemy.~~ (Done)
@@ -137,3 +146,4 @@
 *   Using Vite with Vanilla TS template as base.
 *   Enemies are instantly destroyed on collision with the player (placeholder behavior - uses 9999 damage in `GameScene`).
 *   ~~Damage values are currently hardcoded placeholders (e.g., 10 damage in `EnemyManager`, 10 collision damage in `GameScene`).~~ (Fixed - loaded from config)
+*   ~~Using placeholder graphics (Vite logo) for player, bullets, and enemies.~~ (Fixed - actual assets loaded)

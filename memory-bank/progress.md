@@ -1,8 +1,11 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Milestone M2: Podstawowa Rozgrywka - *Enemy spawning and basic collision handling implemented.*
+**Current Status:** Milestone M2: Podstawowa Rozgrywka - *Placeholder Assets Replaced.*
 
 **What Works:**
+*   **Milestone M2 (Partial): Replace Placeholder Assets**
+    *   Created `src/core/constants/assets.ts` with keys for player, bullet, small alien.
+    *   `GameScene` now loads and uses actual images (`player_ship.png`, `bullet.png`, `alien_small.png`) via constants.
 *   **Milestone M2 (Partial): Load Core Values from Config**
     *   Player health and move speed loaded from `config/player.yml`.
     *   Weapon cooldown and projectile speed loaded from `config/weapons.yml`.
@@ -46,7 +49,7 @@
 **What's Left to Build (Current Milestone - M2):**
 *   **Enemies:** ~~Config~~, ~~Manager~~, ~~Entity (placeholder)~~, ~~Spawning in `GameScene`~~. (All Done)
 *   **Collisions:** ~~Physics checks (`overlap`)~~, ~~Collision events~~, ~~Damage handling (`PlayerManager`, `EnemyManager`)~~, ~~Projectile removal (`ProjectileManager`)~~, ~~Currency gain (`EconomyManager`)~~. (Done - uses config damage)
-*   **Assets:** Replace placeholder player/bullet/enemy graphics.
+*   **Assets:** ~~Replace placeholder player/bullet/enemy graphics.~~ (Done)
 *   **Refinement:**
     *   ~~Implement actual damage calculation (projectile vs enemy, player vs enemy).~~ (Done)
     *   Refine enemy destruction (visuals, sound).
@@ -67,11 +70,11 @@
 *   **M7: Balans, Testy, Optymalizacja i CI/CD**
 
 **Known Issues:**
-*   Using placeholder graphics (Vite logo) for player and bullets.
-*   Using placeholder graphics (Vite logo) for player, bullets, and enemies.
+*   ~~Using placeholder graphics (Vite logo) for player, bullets, and enemies.~~ (Fixed)
 *   ~~Projectile spawn position is a fixed offset from player center.~~ (Fixed - calculated by `GameScene`)
 *   ~~Movement speed, cooldowns, projectile speeds, player health, enemy health, damage values are hardcoded placeholders.~~ (Fixed - loaded from config)
 *   Player vs Enemy collision instantly destroys the enemy (placeholder - uses 9999 damage).
+*   Enemy sprites in `GameScene` currently default to `ENEMY_SMALL_ALIEN_KEY` regardless of the enemy type spawned by `EnemyManager`. Needs mapping based on config ID.
 
 **Evolution of Project Decisions:**
 *   Established singleton pattern for `EventBus` and `Logger`, requiring specific import handling for types vs. instances.

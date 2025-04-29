@@ -23,8 +23,10 @@ import { PLAYER_HIT_ENEMY } from '../../core/constants/events';
 import { PLAYER_DIED } from '../../core/constants/events'; // Import player died event
 import { REQUEST_FIRE_WEAPON } from '../../core/constants/events'; // Import new event
 import { SPAWN_PROJECTILE } from '../../core/constants/events'; // Import spawn event
-
 import { PROJECTILE_HIT_ENEMY } from '../../core/constants/events';
+
+// Asset constants
+import { PLAYER_KEY, BULLET_KEY, ENEMY_SMALL_ALIEN_KEY } from '../../core/constants/assets';
 
 /** Defines the data expected for the PLAYER_HIT_ENEMY event */
 interface PlayerHitEnemyData {
@@ -32,10 +34,7 @@ interface PlayerHitEnemyData {
   damage: number; // Damage dealt by the collision
 }
 
-// Define asset keys
-const PLAYER_KEY = 'player_ship';
-const BULLET_KEY = 'bullet';
-const ENEMY_KEY = 'enemy_placeholder'; // Add placeholder enemy key
+// Old asset keys removed - now imported from constants/assets.ts
 
 export default class GameScene extends Phaser.Scene {
   // Core Managers
@@ -62,11 +61,11 @@ export default class GameScene extends Phaser.Scene {
 
   preload(): void {
     logger.log('GameScene preload');
-    // Load placeholder assets
-    // TODO: Replace with actual assets later
-    this.load.image(PLAYER_KEY, 'public/vite.svg');
-    this.load.image(BULLET_KEY, 'public/vite.svg');
-    this.load.image(ENEMY_KEY, 'public/vite.svg'); // Load placeholder enemy asset
+    // Load actual game assets using imported keys
+    this.load.image(PLAYER_KEY, 'assets/images/player_ship.png');
+    this.load.image(BULLET_KEY, 'assets/images/bullet.png');
+    this.load.image(ENEMY_SMALL_ALIEN_KEY, 'assets/images/alien_small.png');
+    // TODO: Load other assets (medium alien, meteors, powerups) as needed
   }
 
   create(): void {
@@ -185,6 +184,7 @@ export default class GameScene extends Phaser.Scene {
   }): void {
     logger.debug(`GameScene creating projectile sprite: ID ${data.id}, Type ${data.type}`);
     // TODO: Use data.type to determine texture key if different bullet types exist
+    // Using imported BULLET_KEY constant now
     const projectileSprite = this.physics.add.sprite(data.x, data.y, BULLET_KEY);
     this.projectileGroup.add(projectileSprite);
     this.projectileSprites.set(data.id, projectileSprite);
@@ -215,11 +215,14 @@ export default class GameScene extends Phaser.Scene {
     logger.debug(
       `GameScene creating enemy entity: ID ${data.instanceId}, Config ${data.config.id}`
     );
+    // TODO: Map enemy config ID (data.config.id) to the correct asset key.
+    // For now, defaulting to ENEMY_SMALL_ALIEN_KEY.
+    const enemyAssetKey = ENEMY_SMALL_ALIEN_KEY; // Placeholder mapping
     const enemyEntity = new EnemyEntity(
       this,
       data.position.x,
       data.position.y,
-      ENEMY_KEY, // Use placeholder key for now
+      enemyAssetKey, // Use determined asset key
       data.instanceId,
       data.config
     );
