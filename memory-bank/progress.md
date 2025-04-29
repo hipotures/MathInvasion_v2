@@ -1,8 +1,18 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Milestone M2: Podstawowa Rozgrywka - **COMPLETE**. Starting M3.
+**Current Status:** Milestone M3: Wrogowie i Kolizje - **IN PROGRESS** (Basic movement & firing done).
 
 **What Works:**
+*   **Milestone M3: Wrogowie i Kolizje (Partial)**
+    *   **Enemy Movement (Basic):** Implemented basic side-to-side movement with downward drift (`invader_standard`, `invader_support`) and placeholder downward movement (`boss_weaving`) in `EnemyEntity.preUpdate` based on config.
+    *   **Enemy Firing (Basic):** Enemies with `canShoot: true` and `shootConfig` in `enemies.yml` now fire projectiles downwards periodically.
+        *   Added `ENEMY_REQUEST_FIRE` event emitted by `EnemyEntity`.
+        *   Added `owner` property to projectiles (`ProjectileManager`, `SpawnProjectileData`, `ProjectileLike`).
+        *   `GameScene` handles `ENEMY_REQUEST_FIRE`, emits `SPAWN_PROJECTILE` with `owner: 'enemy'`.
+        *   `GameScene` handles `PROJECTILE_CREATED`, tints enemy projectiles.
+        *   Added `PLAYER_HIT_PROJECTILE` event.
+        *   `GameScene` collision checks (`handleProjectileEnemyCollision`, `handlePlayerProjectileCollision`) now verify projectile `owner` to prevent friendly fire.
+        *   `PlayerManager` listens for `PLAYER_HIT_PROJECTILE` and applies damage.
 *   **Milestone M2: Podstawowa Rozgrywka (Ruch i Strzelanie) - COMPLETE**
     *   **Replace Placeholder Assets:** Created `assets.ts`, loaded actual images (`player_ship.png`, `bullet.png`, `alien_small.png`, `alien_medium.png`, `meteor_large.png`) and sound (`explosion_small.ogg`) via constants in `GameScene`. Mapped enemy config IDs to asset keys.
     *   **Load Core Values from Config:** Player health/speed (`player.yml`), weapon cooldown/projectile speed/damage (`weapons.yml`), enemy health/collision damage (`enemies.yml`) loaded via `ConfigLoader` and used by respective managers/scenes.
@@ -35,9 +45,9 @@
 *   **Fix Config Loading Order:** (Runtime Fix)
     *   Modified `src/main.ts` to use `async/await` to ensure `configLoader.loadAllConfigs()` completes before `new Phaser.Game()` is called.
 
-**What's Left to Build (Next Milestone - M3):**
-*   **Enemy Variety & Behavior:** Implement movement patterns, firing capabilities, add more types.
-*   **Difficulty Scaling:** Implement logic based on `difficulty.yml`.
+**What's Left to Build (Milestone M3):**
+*   **Enemy Variety & Behavior (Refinement):** Refine movement patterns (implement `boss_weaving`, add `homing`?), implement aiming logic, add more enemy types/assets, add distinct enemy projectiles.
+*   **Difficulty Scaling:** Implement logic based on `difficulty.yml` (spawn rates, multipliers).
 *   **Collision Refinement:** Review layers/groups, consider invulnerability periods.
 *   **Visual Polish:** Improve destruction/death effects, add UI feedback for weapon switching.
 
@@ -45,7 +55,7 @@
 *   **M0: Szkielet Projektu (Setup)** - **COMPLETE**
 *   **M1: Konfiguracja i Zdarzenia** - **COMPLETE**
 *   **M2: Podstawowa Rozgrywka (Ruch i Strzelanie)** - **COMPLETE**
-*   **M3: Wrogowie i Kolizje** - *Starting*
+*   **M3: Wrogowie i Kolizje** - **IN PROGRESS**
 *   **M4: Rozbudowa Broni i UI**
 *   **M5: Power-upy i Zaawansowani Wrogowie**
 *   **M6: Pełny Cykl Gry i PWA**

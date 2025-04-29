@@ -16,7 +16,7 @@ interface SpawnProjectileData {
   velocityX: number;
   velocityY: number;
   damage?: number; // Added optional damage from weapon
-  // ownerId?: string; // Optional: To distinguish player/enemy projectiles
+  owner: 'player' | 'enemy'; // Added owner property
 }
 
 /** Defines the data expected for the PROJECTILE_HIT_ENEMY event */
@@ -57,6 +57,7 @@ interface ProjectileLike {
   velocityX: number;
   velocityY: number;
   damage?: number; // Added optional damage property
+  owner: 'player' | 'enemy'; // Added owner property
   update: (dt: number) => void;
 }
 
@@ -131,7 +132,7 @@ export default class ProjectileManager {
       velocityX: data.velocityX,
       velocityY: data.velocityY,
       damage: data.damage, // Store damage from spawn data
-      // ownerId: data.ownerId,
+      owner: data.owner, // Store owner from spawn data
       update: (dt: number) => {
         // Basic movement logic (will be in the entity itself later)
         newProjectile.x += newProjectile.velocityX * (dt / 1000);
@@ -148,6 +149,7 @@ export default class ProjectileManager {
       type: data.type,
       x: data.x,
       y: data.y,
+      owner: newProjectile.owner, // Pass owner to the scene
       // Pass any other necessary visual info (e.g., texture key)
     });
   }
@@ -170,6 +172,15 @@ export default class ProjectileManager {
    */
   public getProjectileDamage(projectileId: string): number | undefined {
     return this.activeProjectiles.get(projectileId)?.damage;
+  }
+
+  /**
+   * Retrieves the owner ('player' or 'enemy') of a specific projectile instance.
+   * @param projectileId The unique ID of the projectile.
+   * @returns The owner, or undefined if the projectile doesn't exist.
+   */
+  public getProjectileOwner(projectileId: string): 'player' | 'enemy' | undefined {
+    return this.activeProjectiles.get(projectileId)?.owner;
   }
 
   /** Clean up event listeners when the manager is destroyed */

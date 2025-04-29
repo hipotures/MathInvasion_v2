@@ -3,6 +3,7 @@
 // Player Events
 export const PLAYER_STATE_UPDATED = 'PLAYER_STATE_UPDATED';
 export const PLAYER_HIT_ENEMY = 'PLAYER_HIT_ENEMY';
+export const PLAYER_HIT_PROJECTILE = 'PLAYER_HIT_PROJECTILE'; // Player hit by enemy projectile
 export const PLAYER_DIED = 'PLAYER_DIED'; // Player health reached zero
 
 // Input Events
@@ -24,6 +25,7 @@ export const PROJECTILE_HIT_ENEMY = 'PROJECTILE_HIT_ENEMY'; // Emitted by Scene 
 export const ENEMY_SPAWNED = 'ENEMY_SPAWNED'; // Emitted by EnemyManager for Scene
 export const ENEMY_DESTROYED = 'ENEMY_DESTROYED'; // Emitted by EnemyManager for Scene/EconomyManager
 export const ENEMY_HEALTH_UPDATED = 'ENEMY_HEALTH_UPDATED'; // Emitted by EnemyManager for Scene
+export const ENEMY_REQUEST_FIRE = 'ENEMY_REQUEST_FIRE'; // Emitted by EnemyEntity for Scene to handle spawn
 
 // Economy Events
 export const CURRENCY_UPDATED = 'CURRENCY_UPDATED'; // Emitted by EconomyManager for UI

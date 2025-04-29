@@ -21,9 +21,11 @@ import { ENEMY_DESTROYED } from '../../core/constants/events';
 import { ENEMY_HEALTH_UPDATED } from '../../core/constants/events';
 import { PLAYER_HIT_ENEMY } from '../../core/constants/events';
 import { PLAYER_DIED } from '../../core/constants/events'; // Import player died event
-import { REQUEST_FIRE_WEAPON } from '../../core/constants/events'; // Import new event
+import { REQUEST_FIRE_WEAPON } from '../../core/constants/events'; // Import player fire request event
+import { ENEMY_REQUEST_FIRE } from '../../core/constants/events'; // Import enemy fire request event
 import { SPAWN_PROJECTILE } from '../../core/constants/events'; // Import spawn event
 import { PROJECTILE_HIT_ENEMY } from '../../core/constants/events';
+import { PLAYER_HIT_PROJECTILE } from '../../core/constants/events'; // Import player hit by projectile event
 
 // Asset constants
 import {
@@ -41,7 +43,29 @@ interface PlayerHitEnemyData {
   damage: number; // Damage dealt by the collision
 }
 
-// Old asset keys removed - now imported from constants/assets.ts
+/** Defines the data expected for the ENEMY_REQUEST_FIRE event */
+interface EnemyRequestFireData {
+  instanceId: string;
+  x: number;
+  y: number;
+  shootConfig: NonNullable<EnemyConfig['shootConfig']>; // Ensure shootConfig is not null/undefined
+}
+
+/** Defines the data expected for the PROJECTILE_CREATED event (updated) */
+interface ProjectileCreatedData {
+  id: string;
+  type: string;
+  x: number;
+  y: number;
+  owner: 'player' | 'enemy'; // Added owner
+  // velocityX, velocityY are not needed by the scene for creation
+}
+
+/** Defines the data expected for the PLAYER_HIT_PROJECTILE event */
+interface PlayerHitProjectileData {
+  projectileId: string;
+  damage: number;
+}
 
 export default class GameScene extends Phaser.Scene {
   // Core Managers
@@ -122,8 +146,13 @@ export default class GameScene extends Phaser.Scene {
     this.handleEnemySpawned = this.handleEnemySpawned.bind(this); // Bind enemy handlers
     this.handleEnemyDestroyed = this.handleEnemyDestroyed.bind(this);
     this.handleEnemyHealthUpdate = this.handleEnemyHealthUpdate.bind(this);
-    this.handleRequestFireWeapon = this.handleRequestFireWeapon.bind(this); // Bind fire request handler
+    this.handleRequestFireWeapon = this.handleRequestFireWeapon.bind(this); // Bind player fire request handler
+    this.handleEnemyRequestFire = this.handleEnemyRequestFire.bind(this); // Bind enemy fire request handler
     this.handlePlayerDied = this.handlePlayerDied.bind(this); // Bind player died handler
+    // Bind collision handlers (using arrow functions for simplicity now)
+    // this.handlePlayerEnemyCollision = this.handlePlayerEnemyCollision.bind(this); // No longer needed with arrow func
+    // this.handleProjectileEnemyCollision = this.handleProjectileEnemyCollision.bind(this); // No longer needed with arrow func
+    // this.handlePlayerProjectileCollision = this.handlePlayerProjectileCollision.bind(this); // No longer needed with arrow func
 
     // --- Subscribe to Core Events ---
     eventBus.on(PLAYER_STATE_UPDATED, this.handlePlayerStateUpdate);
@@ -132,7 +161,8 @@ export default class GameScene extends Phaser.Scene {
     eventBus.on(ENEMY_SPAWNED, this.handleEnemySpawned); // Subscribe to enemy events
     eventBus.on(ENEMY_DESTROYED, this.handleEnemyDestroyed);
     eventBus.on(ENEMY_HEALTH_UPDATED, this.handleEnemyHealthUpdate);
-    eventBus.on(REQUEST_FIRE_WEAPON, this.handleRequestFireWeapon); // Subscribe to fire request
+    eventBus.on(REQUEST_FIRE_WEAPON, this.handleRequestFireWeapon); // Subscribe to player fire request
+    eventBus.on(ENEMY_REQUEST_FIRE, this.handleEnemyRequestFire); // Subscribe to enemy fire request
     eventBus.on(PLAYER_DIED, this.handlePlayerDied); // Subscribe to player died event
 
     // --- Scene Shutdown Cleanup ---
@@ -153,7 +183,8 @@ export default class GameScene extends Phaser.Scene {
       eventBus.off(ENEMY_SPAWNED, this.handleEnemySpawned); // Unsubscribe enemy events
       eventBus.off(ENEMY_DESTROYED, this.handleEnemyDestroyed);
       eventBus.off(ENEMY_HEALTH_UPDATED, this.handleEnemyHealthUpdate);
-      eventBus.off(REQUEST_FIRE_WEAPON, this.handleRequestFireWeapon); // Unsubscribe fire request
+      eventBus.off(REQUEST_FIRE_WEAPON, this.handleRequestFireWeapon); // Unsubscribe player fire request
+      eventBus.off(ENEMY_REQUEST_FIRE, this.handleEnemyRequestFire); // Unsubscribe enemy fire request
       eventBus.off(PLAYER_DIED, this.handlePlayerDied); // Unsubscribe player died event
       this.projectileSprites.clear();
       this.enemySprites.clear(); // Clear enemy map
@@ -185,24 +216,32 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  private handleProjectileCreated(data: {
-    id: string;
-    type: string;
-    x: number;
-    y: number;
-    velocityX: number;
-    velocityY: number;
-  }): void {
-    logger.debug(`GameScene creating projectile sprite: ID ${data.id}, Type ${data.type}`);
-    // TODO: Use data.type to determine texture key if different bullet types exist
-    // Using imported BULLET_KEY constant now
-    const projectileSprite = this.physics.add.sprite(data.x, data.y, BULLET_KEY);
+  // Updated handler to accept owner and use the correct interface
+  private handleProjectileCreated(data: ProjectileCreatedData): void {
+    logger.debug(
+      `GameScene creating projectile sprite: ID ${data.id}, Type ${data.type}, Owner ${data.owner}`
+    );
+
+    // Determine texture based on type (and potentially owner)
+    let textureKey = BULLET_KEY; // Default
+    if (data.type === 'enemy_bullet') {
+      textureKey = BULLET_KEY; // Use same graphic for now, maybe tint later
+    } else if (data.type === 'enemy_laser') {
+      textureKey = BULLET_KEY; // Placeholder, needs laser graphic
+    }
+    // Add more types as needed
+
+    const projectileSprite = this.physics.add.sprite(data.x, data.y, textureKey);
+
+    // Optional: Tint enemy projectiles differently
+    if (data.owner === 'enemy') {
+      projectileSprite.setTint(0xff8888); // Light red tint for enemy bullets
+    }
+
     this.projectileGroup.add(projectileSprite);
     this.projectileSprites.set(data.id, projectileSprite);
 
-    // Apply velocity provided by the ProjectileManager event
-    projectileSprite.setVelocity(data.velocityX, data.velocityY);
-
+    // Velocity is managed by the ProjectileManager, no need to set it here
     // Collision detection setup happens in the update loop via physics.overlap
   }
 
@@ -316,6 +355,35 @@ export default class GameScene extends Phaser.Scene {
       velocityX: velocityX,
       velocityY: velocityY,
       damage: weaponConfig.baseDamage ?? 0,
+      owner: 'player', // Explicitly set owner
+    });
+  }
+
+  // Handle request from EnemyEntity to fire
+  private handleEnemyRequestFire(data: EnemyRequestFireData): void {
+    logger.debug(`GameScene received enemy fire request from ${data.instanceId}`);
+    const enemySprite = this.enemySprites.get(data.instanceId);
+    if (!enemySprite || !enemySprite.active) {
+      logger.warn(`Enemy sprite ${data.instanceId} not found or inactive, cannot fire.`);
+      return;
+    }
+
+    const shootConfig = data.shootConfig;
+
+    // Determine velocity (simple downward for now)
+    // TODO: Aim at player?
+    const velocityX = 0;
+    const velocityY = shootConfig.speed ?? 150; // Use config speed or default
+
+    // Emit SPAWN_PROJECTILE for ProjectileManager
+    eventBus.emit(SPAWN_PROJECTILE, {
+      type: shootConfig.projectileType,
+      x: data.x, // Use position from event
+      y: data.y,
+      velocityX: velocityX,
+      velocityY: velocityY,
+      damage: shootConfig.damage ?? 0, // Use config damage or default
+      owner: 'enemy', // Explicitly set owner
     });
   }
 
@@ -409,6 +477,15 @@ export default class GameScene extends Phaser.Scene {
       undefined,
       this
     );
+
+    // Add overlap check for player vs projectiles
+    this.physics.overlap(
+      this.playerSprite,
+      this.projectileGroup,
+      this.handlePlayerProjectileCollision, // Use the new handler
+      undefined,
+      this
+    );
   }
 
   // --- Collision Handlers ---
@@ -443,14 +520,13 @@ export default class GameScene extends Phaser.Scene {
     // Optional: Destroy the enemy immediately upon collision with the player?
     // Or let the PlayerManager decide if the player takes damage and the enemy survives?
     // For now, let's destroy the enemy as well for simplicity.
+    // PlayerManager handles player health reduction via PLAYER_HIT_ENEMY event
     this.enemyManager.handleDamage(enemyEntity.instanceId, 9999); // Instant kill on player collision
   };
 
-  private handleProjectileEnemyCollision = function (
-    this: GameScene,
-    object1: unknown,
-    object2: unknown
-  ) {
+  // Using arrow function for collision handler to maintain 'this' context
+  private handleProjectileEnemyCollision = (object1: unknown, object2: unknown): void => {
+    // Type guards
     if (!(object1 instanceof Phaser.Physics.Arcade.Sprite)) return;
     if (!(object2 instanceof EnemyEntity)) return;
     const projectileObject = object1;
@@ -473,6 +549,19 @@ export default class GameScene extends Phaser.Scene {
     const projectileId = [...this.projectileSprites.entries()].find(
       ([, sprite]) => sprite === projectileSprite
     )?.[0];
+
+    // --- Check Projectile Owner ---
+    const projectileOwner = projectileId
+      ? this.projectileManager.getProjectileOwner(projectileId)
+      : undefined;
+
+    // Only player projectiles should hit enemies
+    if (projectileOwner !== 'player') {
+      // logger.debug(`Ignoring collision: Projectile ${projectileId} (owner: ${projectileOwner}) hit enemy ${enemyEntity.instanceId}`);
+      return;
+    }
+    // --- End Owner Check ---
+
     const enemyInstanceId = enemyEntity?.instanceId;
 
     if (!projectileId || !enemyInstanceId) {
@@ -504,6 +593,54 @@ export default class GameScene extends Phaser.Scene {
     this.projectileSprites.delete(projectileId);
 
     // Don't destroy the enemy sprite here; wait for the ENEMY_DESTROYED event from EnemyManager
+  };
+
+  // New handler for player vs projectile collisions
+  private handlePlayerProjectileCollision = (object1: unknown, object2: unknown): void => {
+    // Type guards
+    if (!(object1 instanceof Phaser.Physics.Arcade.Sprite)) return; // Player
+    if (!(object2 instanceof Phaser.Physics.Arcade.Sprite)) return; // Projectile
+    const playerObject = object1;
+    const projectileObject = object2;
+
+    // Find the projectile ID
+    const projectileId = [...this.projectileSprites.entries()].find(
+      ([, sprite]) => sprite === projectileObject
+    )?.[0];
+
+    if (!projectileId) {
+      // logger.warn('Player collision with unknown projectile sprite.');
+      if (projectileObject?.active) projectileObject.destroy(); // Clean up unknown projectile
+      return;
+    }
+
+    // --- Check Projectile Owner ---
+    const projectileOwner = this.projectileManager.getProjectileOwner(projectileId);
+
+    // Only enemy projectiles should hit the player
+    if (projectileOwner !== 'enemy') {
+      // logger.debug(`Ignoring collision: Player hit projectile ${projectileId} (owner: ${projectileOwner})`);
+      return;
+    }
+    // --- End Owner Check ---
+
+    logger.debug(`Player hit by enemy projectile: ${projectileId}`);
+
+    // Get damage from the projectile manager
+    const damage = this.projectileManager.getProjectileDamage(projectileId) ?? 0;
+
+    // Emit event for PlayerManager to handle taking damage
+    const eventData: PlayerHitProjectileData = {
+      projectileId: projectileId,
+      damage: damage,
+    };
+    eventBus.emit(PLAYER_HIT_PROJECTILE, eventData);
+
+    // Remove the projectile sprite immediately
+    projectileObject.destroy();
+    this.projectileSprites.delete(projectileId);
+    // ProjectileManager state will be cleaned up via PLAYER_HIT_PROJECTILE event if needed,
+    // but destroying sprite here is fine as it hit the player.
   };
 
   // --- Helper Methods ---

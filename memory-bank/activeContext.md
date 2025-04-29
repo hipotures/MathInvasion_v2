@@ -1,8 +1,29 @@
 # Active Context: Math Invasion v2
 
-**Current Focus:** Milestone M3: Wrogowie i Kolizje - *Starting implementation.*
+**Current Focus:** Milestone M3: Wrogowie i Kolizje - *Enemy movement and firing implemented.*
 
 **Recent Changes:**
+*   **M3 - Enemy Movement & Firing (Basic):**
+    *   Implemented basic movement patterns (`invader_standard`, `invader_support`, `boss_weaving` placeholders) in `EnemyEntity.preUpdate` based on `enemyConfig.movementPattern`. Standard invaders move side-to-side with downward drift.
+    *   Added `ENEMY_REQUEST_FIRE` event constant.
+    *   Added shooting cooldown logic (`shootCooldownTimer`) to `EnemyEntity`.
+    *   Updated `EnemyEntity.preUpdate` to check `canShoot`, manage cooldown, and emit `ENEMY_REQUEST_FIRE` with position and `shootConfig`.
+    *   Added `owner: 'player' | 'enemy'` property to `SpawnProjectileData` and `ProjectileLike` interfaces in `ProjectileManager`.
+    *   Updated `ProjectileManager.spawnProjectile` to store `owner` and include it in the `PROJECTILE_CREATED` event payload. Added `getProjectileOwner` method.
+    *   Added `PLAYER_HIT_PROJECTILE` event constant.
+    *   Updated `GameScene`:
+        *   Defined `EnemyRequestFireData`, `ProjectileCreatedData` (updated), `PlayerHitProjectileData` interfaces.
+        *   Subscribed to `ENEMY_REQUEST_FIRE` event.
+        *   Implemented `handleEnemyRequestFire` to listen for enemy fire requests and emit `SPAWN_PROJECTILE` with `owner: 'enemy'`.
+        *   Updated `handleProjectileCreated` to use `ProjectileCreatedData` interface and optionally tint enemy projectiles.
+        *   Updated `handleRequestFireWeapon` (player firing) to emit `SPAWN_PROJECTILE` with `owner: 'player'`.
+        *   Added `physics.overlap` check for `playerSprite` vs `projectileGroup`.
+        *   Implemented `handlePlayerProjectileCollision` to handle player being hit by enemy projectiles (checks owner, gets damage, emits `PLAYER_HIT_PROJECTILE`).
+        *   Updated `handleProjectileEnemyCollision` to check projectile owner, ensuring only player projectiles damage enemies.
+    *   Updated `PlayerManager`:
+        *   Defined `PlayerHitProjectileData` interface.
+        *   Subscribed to `PLAYER_HIT_PROJECTILE` event.
+        *   Implemented `handlePlayerHitProjectile` to apply damage to player health when hit by an enemy projectile.
 *   **M2 - Refine Destruction & Death:**
     *   Updated `EnemyEntity.destroySelf()` to add a tween effect (flash red, shrink, rotate) before destroying the sprite.
     *   Updated `GameScene.handlePlayerDied()` to add a tween effect (fade out, shrink, rotate, tint red) to the player sprite before displaying the "GAME OVER" text (with a slight delay).
@@ -111,10 +132,11 @@
     *   Added basic error handling in `main.ts` if config loading fails.
 
 **Next Steps (Milestone M3 - Wrogowie i Kolizje):**
-*   **Enemy Variety & Behavior:**
-    *   Implement distinct movement patterns for different enemy types based on `config/enemies.yml` (e.g., `movementPattern: 'straight'`, `'sine_wave'`, `'homing'`). Update `EnemyEntity.preUpdate` or `EnemyManager`.
-    *   Implement enemy firing capabilities based on config (`canFire`, `fireRate`, `weaponType`). Requires updates to `EnemyManager`, `EnemyEntity`, and potentially a new `EnemyWeaponManager`.
-    *   Add more enemy types to `config/enemies.yml` and corresponding assets to `assets/images` and `constants/assets.ts`.
+*   **Enemy Variety & Behavior (Refinement):**
+    *   Refine movement patterns: Implement actual `boss_weaving` (e.g., sine wave), potentially add `'homing'` or other patterns from config. Update `EnemyEntity.preUpdate`.
+    *   Implement enemy aiming logic (e.g., fire towards player) in `GameScene.handleEnemyRequestFire` or `EnemyEntity.handleShooting`.
+    *   Add more enemy types to `config/enemies.yml` and corresponding assets (`assets/images`, `constants/assets.ts`). Update `GameScene.handleEnemySpawned` mapping.
+    *   Add distinct projectile graphics/types for enemies (e.g., `enemy_laser`). Update `GameScene.handleProjectileCreated`.
 *   **Difficulty Scaling:**
     *   Implement logic based on `config/difficulty.yml` to control enemy spawn rates, health multipliers, speed multipliers, etc., possibly based on score or time. Update `EnemyManager` and potentially `GameScene` spawner.
 *   **Collision Refinement:**

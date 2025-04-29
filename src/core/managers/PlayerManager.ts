@@ -13,6 +13,13 @@ interface PlayerHitEnemyData {
   damage: number;
 }
 
+/** Defines the data expected for the PLAYER_HIT_PROJECTILE event */
+// Note: This interface might be better placed in a shared types file or events.ts
+interface PlayerHitProjectileData {
+  projectileId: string;
+  damage: number;
+}
+
 /**
  * Manages the state and behavior of the player character.
  * This includes position, health, movement logic, and interactions.
@@ -45,14 +52,16 @@ export default class PlayerManager {
     this.handleMoveLeftStop = this.handleMoveLeftStop.bind(this);
     this.handleMoveRightStart = this.handleMoveRightStart.bind(this);
     this.handleMoveRightStop = this.handleMoveRightStop.bind(this);
-    this.handlePlayerHitEnemy = this.handlePlayerHitEnemy.bind(this); // Bind hit handler
+    this.handlePlayerHitEnemy = this.handlePlayerHitEnemy.bind(this); // Bind enemy hit handler
+    this.handlePlayerHitProjectile = this.handlePlayerHitProjectile.bind(this); // Bind projectile hit handler
 
     // Subscribe to input events
     this.eventBus.on(Events.MOVE_LEFT_START, this.handleMoveLeftStart);
     this.eventBus.on(Events.MOVE_LEFT_STOP, this.handleMoveLeftStop);
     this.eventBus.on(Events.MOVE_RIGHT_START, this.handleMoveRightStart);
     this.eventBus.on(Events.MOVE_RIGHT_STOP, this.handleMoveRightStop);
-    this.eventBus.on(Events.PLAYER_HIT_ENEMY, this.handlePlayerHitEnemy); // Subscribe to hit event
+    this.eventBus.on(Events.PLAYER_HIT_ENEMY, this.handlePlayerHitEnemy); // Subscribe to enemy hit event
+    this.eventBus.on(Events.PLAYER_HIT_PROJECTILE, this.handlePlayerHitProjectile); // Subscribe to projectile hit event
 
     // Initial state is set from config above
     this.emitStateUpdate(); // Emit initial state including health
@@ -86,6 +95,27 @@ export default class PlayerManager {
     this.health -= data.damage;
     logger.log(
       `Player took ${data.damage} damage from enemy ${data.enemyInstanceId}. Health: ${this.health}`
+    );
+
+    if (this.health <= 0) {
+      this.health = 0;
+      logger.log('Player has died!');
+      this.eventBus.emit(Events.PLAYER_DIED); // Emit player died event
+      // Stop movement
+      this.velocityX = 0;
+      this.isMovingLeft = false;
+      this.isMovingRight = false;
+    }
+    this.emitStateUpdate(); // Emit state update with new health
+  }
+
+  // Handler for when player is hit by a projectile
+  private handlePlayerHitProjectile(data: PlayerHitProjectileData): void {
+    if (this.health <= 0) return; // Already dead
+
+    this.health -= data.damage;
+    logger.log(
+      `Player took ${data.damage} damage from projectile ${data.projectileId}. Health: ${this.health}`
     );
 
     if (this.health <= 0) {
@@ -160,7 +190,8 @@ export default class PlayerManager {
     this.eventBus.off(Events.MOVE_LEFT_STOP, this.handleMoveLeftStop);
     this.eventBus.off(Events.MOVE_RIGHT_START, this.handleMoveRightStart);
     this.eventBus.off(Events.MOVE_RIGHT_STOP, this.handleMoveRightStop);
-    this.eventBus.off(Events.PLAYER_HIT_ENEMY, this.handlePlayerHitEnemy); // Unsubscribe from hit event
+    this.eventBus.off(Events.PLAYER_HIT_ENEMY, this.handlePlayerHitEnemy); // Unsubscribe from enemy hit event
+    this.eventBus.off(Events.PLAYER_HIT_PROJECTILE, this.handlePlayerHitProjectile); // Unsubscribe from projectile hit event
     logger.log('PlayerManager destroyed and listeners removed');
   }
 }
