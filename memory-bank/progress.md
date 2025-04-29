@@ -1,34 +1,21 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Milestone M2: Podstawowa Rozgrywka - *Placeholder Assets Replaced.*
+**Current Status:** Milestone M2: Podstawowa Rozgrywka - **COMPLETE**. Starting M3.
 
 **What Works:**
-*   **Milestone M2 (Partial): Replace Placeholder Assets**
-    *   Created `src/core/constants/assets.ts` with keys for player, bullet, small alien.
-    *   `GameScene` now loads and uses actual images (`player_ship.png`, `bullet.png`, `alien_small.png`) via constants.
-*   **Milestone M2 (Partial): Load Core Values from Config**
-    *   Player health and move speed loaded from `config/player.yml`.
+*   **Milestone M2: Podstawowa Rozgrywka (Ruch i Strzelanie) - COMPLETE**
+    *   **Replace Placeholder Assets:** Created `assets.ts`, loaded actual images (`player_ship.png`, `bullet.png`, `alien_small.png`, `alien_medium.png`, `meteor_large.png`) and sound (`explosion_small.ogg`) via constants in `GameScene`. Mapped enemy config IDs to asset keys.
+    *   **Load Core Values from Config:** Player health/speed (`player.yml`), weapon cooldown/projectile speed/damage (`weapons.yml`), enemy health/collision damage (`enemies.yml`) loaded via `ConfigLoader` and used by respective managers/scenes.
     *   Weapon cooldown and projectile speed loaded from `config/weapons.yml`.
     *   Projectile damage loaded from weapon config and used in `EnemyManager`.
     *   Player collision damage loaded from enemy config and used in `GameScene`.
     *   Enemy health loaded from `config/enemies.yml`.
-*   **Milestone M2 (Partial): Enemy Spawning & Collisions** (Basic implementation done)
-    *   `EnemyManager` created, loads config, manages state (health from config), spawns/destroys enemies via events. Applies damage based on event payload.
-    *   Placeholder `EnemyEntity` created, stores config (made public).
-    *   `GameScene` spawns enemies (via timer), handles `ENEMY_SPAWNED`/`ENEMY_DESTROYED` events.
-    *   `GameScene` implements `physics.overlap` for Player/Enemy and Projectile/Enemy.
-    *   Collision events (`PROJECTILE_HIT_ENEMY`, `PLAYER_HIT_ENEMY`) emitted from `GameScene` with damage from config.
-    *   `ProjectileManager` removes projectile state on `PROJECTILE_HIT_ENEMY`. Stores damage from `SPAWN_PROJECTILE` event and provides `getProjectileDamage` method.
-    *   `EconomyManager` grants currency (from config) on `ENEMY_DESTROYED`.
-    *   `PlayerManager` applies damage based on `PLAYER_HIT_ENEMY` event payload.
-*   **Milestone M2 (Partial): Basic Movement & Firing**
-    *   Core managers created (`Player`, `Input`, `Weapon`, `Projectile`, `Economy`).
-    *   Event-driven horizontal player movement implemented.
-    *   Event-driven basic weapon firing (Spacebar) with cooldown implemented.
-    *   Projectile spawning and removal (off-screen) handled.
-    *   `GameScene` integrates managers for player/projectile visuals and updates.
-    *   `UIScene` displays currency updated by `EconomyManager`.
-    *   `main.ts` loads `GameScene` and `UIScene`.
+    *   **Enemy Spawning & Collisions:** `EnemyManager` handles state/spawning/destruction. `EnemyEntity` created. `GameScene` spawns enemies (timer), handles events, implements `physics.overlap` (Player/Enemy, Projectile/Enemy). Collision events emitted with config damage. `ProjectileManager` removes projectiles. `EconomyManager` grants currency. `PlayerManager` applies damage.
+    *   **Basic Movement & Firing:** Core managers created. Event-driven horizontal movement and basic firing (Spacebar) with cooldown implemented. Projectile spawning/removal handled. `GameScene` integrates managers. `UIScene` displays currency.
+    *   **Refactor Projectile Spawning:** `WeaponManager` emits `REQUEST_FIRE_WEAPON` -> `GameScene` calculates spawn point & emits `SPAWN_PROJECTILE`.
+    *   **Implement Weapon Switching:** Keys '1', '2', '3' trigger `WEAPON_SWITCH` event handled by `WeaponManager`.
+    *   **Add Non-functional UI Buttons:** Placeholder text buttons added to `UIScene`.
+    *   **Refine Destruction & Death:** Added tween effects for enemy destruction (`EnemyEntity.destroySelf`) and player death (`GameScene.handlePlayerDied`).
 *   **Milestone M1: Konfiguracja i Zdarzenia - COMPLETE**
     *   Implemented `EventBus` (singleton).
     *   Installed `js-yaml`, `zod`, `@types/js-yaml`.
@@ -48,24 +35,17 @@
 *   **Fix Config Loading Order:** (Runtime Fix)
     *   Modified `src/main.ts` to use `async/await` to ensure `configLoader.loadAllConfigs()` completes before `new Phaser.Game()` is called.
 
-**What's Left to Build (Current Milestone - M2):**
-*   **Enemies:** ~~Config~~, ~~Manager~~, ~~Entity (placeholder)~~, ~~Spawning in `GameScene`~~. (All Done)
-*   **Collisions:** ~~Physics checks (`overlap`)~~, ~~Collision events~~, ~~Damage handling (`PlayerManager`, `EnemyManager`)~~, ~~Projectile removal (`ProjectileManager`)~~, ~~Currency gain (`EconomyManager`)~~. (Done - uses config damage)
-*   **Assets:** ~~Replace placeholder player/bullet/enemy graphics.~~ (Done)
-*   **Refinement:**
-    *   ~~Implement actual damage calculation (projectile vs enemy, player vs enemy).~~ (Done)
-    *   Refine enemy destruction (visuals, sound). -> *Basic sound effect added.*
-    *   Refine player death logic (game over). -> *Basic GAME OVER text added.*
-    *   ~~Load values (speeds, health, damage, cooldowns) from config files.~~ (Done)
-    *   ~~Refine projectile spawn points.~~ (Done - Handled by `GameScene`)
-    *   ~~Implement weapon switching (optional for M2).~~ (Done - Keys 1, 2, 3)
-    *   ~~Implement UI buttons for weapons (non-functional).~~ (Done)
+**What's Left to Build (Next Milestone - M3):**
+*   **Enemy Variety & Behavior:** Implement movement patterns, firing capabilities, add more types.
+*   **Difficulty Scaling:** Implement logic based on `difficulty.yml`.
+*   **Collision Refinement:** Review layers/groups, consider invulnerability periods.
+*   **Visual Polish:** Improve destruction/death effects, add UI feedback for weapon switching.
 
 **Overall Project Roadmap:**
 *   **M0: Szkielet Projektu (Setup)** - **COMPLETE**
 *   **M1: Konfiguracja i Zdarzenia** - **COMPLETE**
-*   **M2: Podstawowa Rozgrywka (Ruch i Strzelanie)** - *In Progress*
-*   **M3: Wrogowie i Kolizje**
+*   **M2: Podstawowa Rozgrywka (Ruch i Strzelanie)** - **COMPLETE**
+*   **M3: Wrogowie i Kolizje** - *Starting*
 *   **M4: Rozbudowa Broni i UI**
 *   **M5: Power-upy i Zaawansowani Wrogowie**
 *   **M6: Pełny Cykl Gry i PWA**
@@ -75,8 +55,7 @@
 *   ~~Using placeholder graphics (Vite logo) for player, bullets, and enemies.~~ (Fixed)
 *   ~~Projectile spawn position is a fixed offset from player center.~~ (Fixed - calculated by `GameScene`)
 *   ~~Movement speed, cooldowns, projectile speeds, player health, enemy health, damage values are hardcoded placeholders.~~ (Fixed - loaded from config)
-*   Player vs Enemy collision instantly destroys the enemy (placeholder - uses 9999 damage).
-*   ~~Enemy sprites in `GameScene` currently default to `ENEMY_SMALL_ALIEN_KEY` regardless of the enemy type spawned by `EnemyManager`. Needs mapping based on config ID.~~ (Fixed - Mapped in `GameScene.handleEnemySpawned`)
+*   Player vs Enemy collision instantly destroys the enemy (placeholder - uses 9999 damage in `GameScene`).
 
 **Evolution of Project Decisions:**
 *   Established singleton pattern for `EventBus` and `Logger`, requiring specific import handling for types vs. instances.

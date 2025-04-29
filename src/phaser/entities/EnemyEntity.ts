@@ -51,8 +51,24 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
   // This is called by GameScene when ENEMY_DESTROYED event is received
   public destroySelf(): void {
     Logger.debug(`Destroying EnemyEntity: ${this.instanceId}`);
-    // TODO: Add explosion animation/particles
-    this.destroy(); // Phaser's destroy method
+    // Disable physics body immediately
+    this.disableBody(true, false); // destroyGameObject = false, hideGameObject = false
+
+    // Add a simple tween effect: flash red and shrink
+    this.scene.tweens.add({
+      targets: this,
+      duration: 150, // ms
+      scaleX: 0.1,
+      scaleY: 0.1,
+      angle: 180,
+      alpha: 0.5,
+      tint: 0xff0000, // Flash red
+      ease: 'Power2',
+      onComplete: () => {
+        // Use destroy() which removes from scene and cleans up listeners
+        this.destroy();
+      },
+    });
   }
 
   // Pre-update loop (optional, for movement patterns etc.)

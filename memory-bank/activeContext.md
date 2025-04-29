@@ -1,8 +1,11 @@
 # Active Context: Math Invasion v2
 
-**Current Focus:** Milestone M2: Podstawowa Rozgrywka - *Placeholder Assets Replaced.*
+**Current Focus:** Milestone M3: Wrogowie i Kolizje - *Starting implementation.*
 
 **Recent Changes:**
+*   **M2 - Refine Destruction & Death:**
+    *   Updated `EnemyEntity.destroySelf()` to add a tween effect (flash red, shrink, rotate) before destroying the sprite.
+    *   Updated `GameScene.handlePlayerDied()` to add a tween effect (fade out, shrink, rotate, tint red) to the player sprite before displaying the "GAME OVER" text (with a slight delay).
 *   **M2 - Replace Placeholder Assets:**
     *   Created `src/core/constants/assets.ts` to define keys for player (`PLAYER_KEY`), bullet (`BULLET_KEY`), and small alien (`ENEMY_SMALL_ALIEN_KEY`).
     *   Updated `GameScene.ts`:
@@ -107,31 +110,20 @@
     *   Added `await configLoader.loadAllConfigs()` before `new Phaser.Game(config)` to ensure configurations are loaded before scenes and managers are created.
     *   Added basic error handling in `main.ts` if config loading fails.
 
-**Next Steps (M2 - Continued):**
-*   **Enemies:**
-    *   ~~Define basic enemy configuration (`config/enemies.yml`, `EnemySchema`).~~ (Done)
-    *   ~~Create `EnemyManager` to handle spawning and state.~~ (Done)
-    *   ~~Create basic `EnemyEntity` (placeholder).~~ (Done)
-    *   ~~Update `GameScene` to spawn enemies (e.g., on a timer).~~ (Done - temporary spawner added)
-*   **Collisions:** (Basic implementation done, damage now uses config)
-    *   ~~Implement physics collision checks in `GameScene` (`this.physics.overlap`).~~ (Done)
-        *   ~~Player vs Enemy~~ (Done)
-        *   ~~Projectile vs Enemy~~ (Done)
-    *   ~~Define and handle collision events (e.g., `PLAYER_HIT_ENEMY`, `PROJECTILE_HIT_ENEMY`).~~ (Done - *payloads updated with config damage*)
-    *   ~~Update `PlayerManager` to handle taking damage.~~ (Done - *uses damage from event*)
-    *   ~~Update `ProjectileManager` to handle hitting enemies (removal).~~ (Done)
-    *   ~~Update `EnemyManager` to handle taking damage / destruction.~~ (Done - *uses damage from event*)
-    *   ~~Update `EconomyManager` to grant currency on enemy defeat.~~ (Done)
-*   **Assets:** ~~Replace placeholder graphics (Vite logo) with actual sprites for player, bullet, and enemies.~~ (Done)
-*   **Refinement:**
-    *   ~~Implement actual damage calculation based on projectile/weapon config hitting enemy config.~~ (Done for projectile -> enemy)
-    *   ~~Implement actual collision damage calculation for player vs enemy.~~ (Done)
-    *   Refine enemy destruction logic (e.g., explosion animation, sound). -> *Sound effect added.*
-    *   Refine player death logic (e.g., game over screen, restart). -> *Basic GAME OVER text implemented.*
-    *   ~~Load player speed, weapon cooldown, projectile speed from config.~~ (Done)
-    *   ~~Refine projectile spawn position relative to player sprite.~~ (Done - Handled by `GameScene` now)
-    *   ~~Implement weapon switching input and logic (if time permits in M2).~~ (Done)
-    *   ~~Implement UI buttons for weapons (non-functional initially).~~ (Done)
+**Next Steps (Milestone M3 - Wrogowie i Kolizje):**
+*   **Enemy Variety & Behavior:**
+    *   Implement distinct movement patterns for different enemy types based on `config/enemies.yml` (e.g., `movementPattern: 'straight'`, `'sine_wave'`, `'homing'`). Update `EnemyEntity.preUpdate` or `EnemyManager`.
+    *   Implement enemy firing capabilities based on config (`canFire`, `fireRate`, `weaponType`). Requires updates to `EnemyManager`, `EnemyEntity`, and potentially a new `EnemyWeaponManager`.
+    *   Add more enemy types to `config/enemies.yml` and corresponding assets to `assets/images` and `constants/assets.ts`.
+*   **Difficulty Scaling:**
+    *   Implement logic based on `config/difficulty.yml` to control enemy spawn rates, health multipliers, speed multipliers, etc., possibly based on score or time. Update `EnemyManager` and potentially `GameScene` spawner.
+*   **Collision Refinement:**
+    *   Review and refine collision layers/groups if needed for more complex interactions (e.g., different projectile types vs. enemy types).
+    *   Consider adding brief invulnerability periods after hits (player and/or enemies). Update `PlayerManager` / `EnemyManager`.
+*   **Visual Polish:**
+    *   Add more distinct visual effects for different enemy destructions.
+    *   Improve player death sequence (e.g., explosion animation).
+    *   Add visual feedback for weapon switching in the UI.
 
 **Important Patterns & Preferences:**
 *   **Clean Code:** Adhere strictly to guidelines (SRP, DRY, meaningful names, etc.).

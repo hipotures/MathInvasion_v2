@@ -322,26 +322,48 @@ export default class GameScene extends Phaser.Scene {
   // Handle player death
   private handlePlayerDied(): void {
     logger.log('Game Over - Player Died');
+
     // Stop enemy spawning
     if (this.enemySpawnerTimer) {
       this.enemySpawnerTimer.destroy();
     }
+
+    // Disable player sprite physics and hide it with an effect
+    if (this.playerSprite && this.playerSprite.active) {
+      this.playerSprite.disableBody(true, false); // destroyGameObject = false, hideGameObject = false
+
+      this.tweens.add({
+        targets: this.playerSprite,
+        duration: 300,
+        alpha: 0,
+        scale: 0.5,
+        angle: 90,
+        tint: 0xff0000,
+        ease: 'Power2',
+        onComplete: () => {
+          this.playerSprite.setVisible(false); // Ensure it's hidden after tween
+        },
+      });
+    }
+
     // TODO: Disable player input (need method in InputManager or flag here)
     // TODO: Potentially stop enemy movement/actions
 
-    // Display Game Over text
-    const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2;
-    const screenCenterY = this.cameras.main.worldView.y + this.cameras.main.height / 2;
-    this.gameOverText = this.add
-      .text(screenCenterX, screenCenterY, 'GAME OVER', {
-        fontSize: '64px',
-        color: '#ff0000',
-        align: 'center',
-      })
-      .setOrigin(0.5);
+    // Display Game Over text slightly delayed after the player effect starts
+    this.time.delayedCall(500, () => {
+      const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2;
+      const screenCenterY = this.cameras.main.worldView.y + this.cameras.main.height / 2;
+      this.gameOverText = this.add
+        .text(screenCenterX, screenCenterY, 'GAME OVER', {
+          fontSize: '64px',
+          color: '#ff0000',
+          align: 'center',
+        })
+        .setOrigin(0.5);
+    });
 
     // Optional: Add a delay and restart the scene or go to a menu
-    // this.time.delayedCall(3000, () => {
+    // this.time.delayedCall(3500, () => { // Increased delay
     //   this.scene.restart();
     // });
   }
