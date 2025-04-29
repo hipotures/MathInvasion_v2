@@ -10,11 +10,11 @@ export const PLAYER_KEY = 'playerShip';
 export const BULLET_KEY = 'bullet';
 
 // Enemy Assets
-export const ENEMY_SMALL_ALIEN_KEY = 'enemySmallAlien';
-export const ENEMY_MEDIUM_ALIEN_KEY = 'enemyMediumAlien';
-export const ENEMY_LARGE_METEOR_KEY = 'enemyLargeMeteor';
-// Add keys for other enemy types as needed
-// ...
+export const ENEMY_SMALL_ALIEN_KEY = 'enemySmallAlien'; // triangle_scout
+export const ENEMY_MEDIUM_ALIEN_KEY = 'enemyMediumAlien'; // square_tank
+export const ENEMY_LARGE_METEOR_KEY = 'enemyLargeMeteor'; // pentagon_healer (placeholder?)
+export const ENEMY_HEXAGON_BOMBER_KEY = 'enemyHexagonBomber'; // hexagon_bomber
+// Add keys for other enemy types as needed (e.g., boss)
 
 // Placeholder/Debug Assets (Consider removing later)
 export const VITE_LOGO_KEY = 'viteLogo'; // Assuming this was the previous placeholder

@@ -34,6 +34,20 @@
     - type: heal_aura
       range: 100
       healPerSec: 5
+- id: hexagon_bomber # New Enemy
+  shape: hexagon
+  baseHealth: 80
+  baseSpeed: 60 # Faster dive
+  baseReward: 25
+  collisionDamage: 15
+  movementPattern: bomber_dive # New pattern
+  collisionRadius: 22
+  canShoot: false # Doesn't shoot normally
+  abilities:
+    - type: death_bomb
+      projectileType: enemy_bomb # Placeholder projectile type
+      damage: 30
+      radius: 50 # Placeholder for explosion radius if needed
 - id: circle_boss
   shape: circle
   baseHealth: 2000

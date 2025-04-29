@@ -1,4 +1,4 @@
-import Phaser, { Types } from 'phaser';
+import Phaser from 'phaser'; // Removed unused 'Types'
 import eventBus from '../../core/events/EventBus';
 import logger from '../../core/utils/Logger';
 import PlayerManager from '../../core/managers/PlayerManager';
@@ -8,10 +8,10 @@ import ProjectileManager from '../../core/managers/ProjectileManager';
 import EconomyManager from '../../core/managers/EconomyManager';
 import EnemyManager from '../../core/managers/EnemyManager';
 import configLoader from '../../core/config/ConfigLoader';
-import { type WeaponConfig } from '../../core/config/schemas/weaponSchema';
-import { PlayerState } from '../../core/types/PlayerState';
+// import { type WeaponConfig } from '../../core/config/schemas/weaponSchema'; // Unused import
+// import { PlayerState } from '../../core/types/PlayerState'; // Unused import
 import { EnemyEntity } from '../entities/EnemyEntity';
-import { EnemyConfig } from '../../core/config/schemas/enemySchema';
+// import { EnemyConfig } from '../../core/config/schemas/enemySchema'; // Unused import
 import { GameSceneCollisionHandler } from '../handlers/GameSceneCollisionHandler';
 import { GameSceneEventHandler } from '../handlers/GameSceneEventHandler'; // Import the event handler
 // Event constants
@@ -19,28 +19,11 @@ import * as Events from '../../core/constants/events';
 // Asset constants
 import * as Assets from '../../core/constants/assets';
 
-// --- Event Data Interfaces ---
-interface PlayerHitEnemyData {
-  enemyInstanceId: string;
-  damage: number;
-}
-interface EnemyRequestFireData {
-  instanceId: string;
-  x: number;
-  y: number;
-  shootConfig: NonNullable<EnemyConfig['shootConfig']>;
-}
-interface ProjectileCreatedData {
-  id: string;
-  type: string;
-  x: number;
-  y: number;
-  owner: 'player' | 'enemy';
-}
-interface PlayerHitProjectileData {
-  projectileId: string;
-  damage: number;
-}
+// --- Event Data Interfaces --- (Removed unused interfaces)
+// interface PlayerHitEnemyData { ... }
+// interface EnemyRequestFireData { ... }
+// interface ProjectileCreatedData { ... }
+// interface PlayerHitProjectileData { ... }
 
 export default class GameScene extends Phaser.Scene {
   // Core Managers
@@ -73,6 +56,7 @@ export default class GameScene extends Phaser.Scene {
     this.load.image(Assets.ENEMY_SMALL_ALIEN_KEY, 'assets/images/alien_small.png');
     this.load.image(Assets.ENEMY_MEDIUM_ALIEN_KEY, 'assets/images/alien_medium.png');
     this.load.image(Assets.ENEMY_LARGE_METEOR_KEY, 'assets/images/meteor_large.png');
+    this.load.image(Assets.ENEMY_HEXAGON_BOMBER_KEY, 'assets/images/hexagon_enemy.png'); // Load new enemy asset
     this.load.audio(Assets.AUDIO_EXPLOSION_SMALL_KEY, 'assets/audio/explosion_small.ogg');
   }
 
@@ -229,7 +213,7 @@ export default class GameScene extends Phaser.Scene {
 
   private spawnRandomEnemy(): void {
     // TODO: Use difficulty config
-    const enemyTypes = ['triangle_scout', 'square_tank'];
+    const enemyTypes = ['triangle_scout', 'square_tank', 'hexagon_bomber']; // Add new enemy to random pool
     const randomType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
     const spawnPadding = 50;
     const spawnX = Phaser.Math.Between(spawnPadding, this.cameras.main.width - spawnPadding);

@@ -82,7 +82,8 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
 
   // Pre-update loop for movement patterns etc.
   protected preUpdate(time: number, delta: number): void {
-    super.preUpdate(time, delta);
+    // Keep delta here for super.preUpdate
+    super.preUpdate(time, delta); // Pass original delta to super
 
     // Ensure body exists and sprite is active before processing
     if (!this.body || !this.active) {
@@ -96,7 +97,8 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
     this.handleShooting(time, delta);
   }
 
-  private handleMovement(time: number, delta: number): void {
+  private handleMovement(time: number, _delta: number): void {
+    // Prefix unused delta
     // Ensure body exists before accessing velocity/blocked properties
     // (Redundant check due to preUpdate check, but safe)
     if (!this.body) {
@@ -143,6 +145,12 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
         this.setVelocityY(speed * 0.5); // Maintain slower downward movement
         break;
       }
+      case 'bomber_dive': {
+        // Fast downward movement, no horizontal movement for now
+        if (this.body.velocity.x !== 0) this.setVelocityX(0);
+        this.setVelocityY(speed * 1.5); // Faster dive speed
+        break;
+      }
       default:
         // Default to simple downward movement if pattern is unknown
         Logger.warn(`Unknown movement pattern: ${this.enemyConfig.movementPattern}`);
@@ -152,12 +160,13 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  private handleShooting(time: number, delta: number): void {
+  private handleShooting(time: number, _delta: number): void {
+    // Prefix unused delta
     if (!this.enemyConfig.canShoot || !this.enemyConfig.shootConfig || !this.active) {
       return; // Cannot shoot or is inactive
     }
 
-    this.shootCooldownTimer -= delta;
+    this.shootCooldownTimer -= _delta; // Use the renamed parameter
 
     if (this.shootCooldownTimer <= 0) {
       // Ready to fire

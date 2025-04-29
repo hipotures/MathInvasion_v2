@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import eventBus from '../../core/events/EventBus';
 import logger from '../../core/utils/Logger';
-import ProjectileManager from '../../core/managers/ProjectileManager';
+// import ProjectileManager from '../../core/managers/ProjectileManager'; // Unused import
 import { EnemyEntity } from '../entities/EnemyEntity';
 import { EnemyConfig } from '../../core/config/schemas/enemySchema';
 import { WeaponConfig } from '../../core/config/schemas/weaponSchema';
@@ -117,14 +117,17 @@ export class GameSceneEventHandler {
         enemyAssetKey = Assets.ENEMY_SMALL_ALIEN_KEY;
         break;
       case 'square_tank':
-      case 'pentagon_healer':
+      case 'pentagon_healer': // TODO: Needs own asset?
         enemyAssetKey = Assets.ENEMY_MEDIUM_ALIEN_KEY;
         break;
-      case 'circle_boss':
+      case 'hexagon_bomber': // Added new enemy mapping
+        enemyAssetKey = Assets.ENEMY_HEXAGON_BOMBER_KEY;
+        break;
+      case 'circle_boss': // TODO: Needs own asset?
         enemyAssetKey = Assets.ENEMY_LARGE_METEOR_KEY;
         break;
       default:
-        enemyAssetKey = Assets.ENEMY_SMALL_ALIEN_KEY;
+        enemyAssetKey = Assets.ENEMY_SMALL_ALIEN_KEY; // Fallback
         logger.warn(`Unknown enemy config ID: ${data.config.id}`);
     }
     // Need access to the scene context to create the entity
@@ -148,9 +151,31 @@ export class GameSceneEventHandler {
   public handleEnemyDestroyed(data: { instanceId: string }): void {
     const enemyEntity = this.enemySprites.get(data.instanceId);
     if (enemyEntity) {
+      const enemyConfig = enemyEntity.enemyConfig; // Get config before destroying
+      const enemyPosition = { x: enemyEntity.x, y: enemyEntity.y }; // Get position
+
+      // Play sound and trigger visual destruction
       this.sound.play(Assets.AUDIO_EXPLOSION_SMALL_KEY);
-      enemyEntity.destroySelf(); // Trigger visual destruction
+      enemyEntity.destroySelf();
       this.enemySprites.delete(data.instanceId);
+
+      // Check for death bomb ability
+      const deathBombAbility = enemyConfig.abilities?.find(
+        (ability) => ability.type === 'death_bomb'
+      );
+      if (deathBombAbility && deathBombAbility.type === 'death_bomb') {
+        logger.debug(`Enemy ${data.instanceId} triggering death bomb.`);
+        eventBus.emit(Events.SPAWN_PROJECTILE, {
+          type: deathBombAbility.projectileType,
+          x: enemyPosition.x,
+          y: enemyPosition.y,
+          velocityX: 0, // Bomb explodes in place
+          velocityY: 0,
+          damage: deathBombAbility.damage,
+          owner: 'enemy',
+          // Optional: Add radius or other bomb-specific data if ProjectileManager handles it
+        });
+      }
     } else {
       logger.warn(`Could not find enemy entity to destroy: ID ${data.instanceId}`);
     }

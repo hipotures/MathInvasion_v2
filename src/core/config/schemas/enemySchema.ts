@@ -12,17 +12,34 @@ const enemyShootConfigSchema = z
   })
   .optional();
 
-// Optional schema for enemy abilities
-const enemyAbilitySchema = z
-  .object({
-    type: z.string().min(1), // e.g., 'heal_aura', 'spawn_minions'
-    range: z.number().positive().optional(),
-    healPerSec: z.number().positive().optional(),
-    minionId: z.string().min(1).optional(),
-    cooldownMs: z.number().positive().optional(),
-    count: z.number().int().positive().optional(),
-  })
-  .optional(); // Making the whole ability object optional might be too broad, consider refining
+// Define specific schemas for each ability type
+const healAuraAbilitySchema = z.object({
+  type: z.literal('heal_aura'),
+  range: z.number().positive(),
+  healPerSec: z.number().positive(),
+});
+
+const spawnMinionsAbilitySchema = z.object({
+  type: z.literal('spawn_minions'),
+  minionId: z.string().min(1),
+  cooldownMs: z.number().positive(),
+  count: z.number().int().positive(),
+});
+
+const deathBombAbilitySchema = z.object({
+  type: z.literal('death_bomb'),
+  projectileType: z.string().min(1), // Type of projectile to spawn on death
+  damage: z.number().nonnegative(),
+  radius: z.number().positive().optional(), // Optional: Area of effect
+});
+
+// Use discriminated union for enemy abilities
+const enemyAbilitySchema = z.discriminatedUnion('type', [
+  healAuraAbilitySchema,
+  spawnMinionsAbilitySchema,
+  deathBombAbilitySchema,
+  // Add other ability schemas here as needed
+]);
 
 // Schema for a single enemy entry
 const enemySchema = z.object({
@@ -32,11 +49,11 @@ const enemySchema = z.object({
   baseSpeed: z.number().positive(),
   baseReward: z.number().nonnegative(),
   collisionDamage: z.number().nonnegative().describe('Damage dealt to the player on collision.'), // Added collision damage
-  movementPattern: z.string().min(1), // Could be an enum later
+  movementPattern: z.enum(['invader_standard', 'invader_support', 'boss_weaving', 'bomber_dive']), // Use enum for patterns
   collisionRadius: z.number().positive(),
   canShoot: z.boolean(),
   shootConfig: enemyShootConfigSchema, // Use the optional schema
-  abilities: z.array(enemyAbilitySchema).optional(), // Array of optional abilities
+  abilities: z.array(enemyAbilitySchema).optional(), // Array of specific abilities
 });
 
 // Schema for the entire enemies.yml file (an array of enemies)

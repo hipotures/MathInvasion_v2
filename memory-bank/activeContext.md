@@ -1,8 +1,27 @@
 # Active Context: Math Invasion v2
 
-**Current Focus:** Milestone M3: Wrogowie i Kolizje - *Refining enemy behavior.*
+**Current Focus:** Milestone M3: Wrogowie i Kolizje - *Refining enemy behavior & adding variety.*
 
 **Recent Changes:**
+*   **M3 - Add Hexagon Bomber Enemy:**
+    *   Added `hexagon_bomber` configuration to `config/enemies.yml` with `bomber_dive` movement pattern and `death_bomb` ability.
+    *   Updated `src/core/config/schemas/enemySchema.ts`:
+        *   Added `bomber_dive` to `movementPattern` enum.
+        *   Used `z.discriminatedUnion` to define specific ability schemas (`healAuraAbilitySchema`, `spawnMinionsAbilitySchema`, `deathBombAbilitySchema`).
+    *   Added `ENEMY_HEXAGON_BOMBER_KEY` to `src/core/constants/assets.ts`.
+    *   Updated `src/phaser/scenes/GameScene.ts`:
+        *   Added loading for `hexagon_enemy.png` in `preload()`.
+        *   Included `hexagon_bomber` in the temporary `spawnRandomEnemy()` pool.
+    *   Updated `src/phaser/handlers/GameSceneEventHandler.ts`:
+        *   Mapped `hexagon_bomber` ID to `ENEMY_HEXAGON_BOMBER_KEY` in `handleEnemySpawned()`.
+        *   Modified `handleEnemyDestroyed()` to check for `death_bomb` ability in the destroyed enemy's config and emit `SPAWN_PROJECTILE` if found.
+    *   Updated `src/phaser/entities/EnemyEntity.ts`:
+        *   Implemented `bomber_dive` movement logic in `handleMovement()`.
+*   **ESLint Fixes:**
+    *   Fixed unused `delta` parameter warnings in `EnemyEntity.ts` (`handleShooting`, `handleMovement`) by prefixing with `_`.
+    *   Removed unused `ProjectileManager` import from `GameSceneEventHandler.ts`.
+    *   Removed unused `Types`, `WeaponConfig`, `PlayerState`, and event data interfaces from `GameScene.ts`.
+    *   Ran `eslint --fix` to correct formatting issues.
 *   **Refactor GameScene (Line Limit):**
     *   Identified `src/phaser/scenes/GameScene.ts` exceeded the 300-line limit.
     *   Created `src/phaser/handlers/GameSceneCollisionHandler.ts` and moved collision logic (`handlePlayerEnemyCollision`, `handleProjectileEnemyCollision`, `handlePlayerProjectileCollision`) into it.
@@ -148,10 +167,11 @@
 
 **Next Steps (Milestone M3 - Wrogowie i Kolizje):**
 *   **Enemy Variety & Behavior (Refinement):**
-    *   ~~Refine movement patterns: Implement actual `boss_weaving` (e.g., sine wave)~~ *(Done)*, potentially add `'homing'` or other patterns from config. Update `EnemyEntity.preUpdate`.
+    *   ~~Refine movement patterns: Implement actual `boss_weaving` (e.g., sine wave)~~ *(Done)*, ~~implement `bomber_dive`~~ *(Done)*, potentially add `'homing'` or other patterns from config. Update `EnemyEntity.preUpdate`.
     *   ~~Implement enemy aiming logic (e.g., fire towards player) in `GameScene.handleEnemyRequestFire`~~ *(Done)*.
-    *   Add more enemy types to `config/enemies.yml` and corresponding assets (`assets/images`, `constants/assets.ts`). Update `GameScene.handleEnemySpawned` mapping.
-    *   Add distinct projectile graphics/types for enemies (e.g., `enemy_laser`). Update `GameScene.handleProjectileCreated`.
+    *   ~~Add `hexagon_bomber` enemy type~~ *(Done)*. Add *more* enemy types to `config/enemies.yml` and corresponding assets (`assets/images`, `constants/assets.ts`). Update `GameSceneEventHandler.handleEnemySpawned` mapping.
+    *   Implement `death_bomb` projectile logic (visuals, collision). Update `ProjectileManager` and `GameSceneEventHandler.handleProjectileCreated`.
+    *   Add distinct projectile graphics/types for enemies (e.g., `enemy_laser`, `enemy_bomb`). Update `GameSceneEventHandler.handleProjectileCreated`.
 *   **Difficulty Scaling:**
     *   Implement logic based on `config/difficulty.yml` to control enemy spawn rates, health multipliers, speed multipliers, etc., possibly based on score or time. Update `EnemyManager` and potentially `GameScene` spawner.
 *   **Collision Refinement:**
