@@ -17,6 +17,8 @@ interface SpawnProjectileData {
   velocityY: number;
   damage?: number; // Added optional damage from weapon
   owner: 'player' | 'enemy'; // Added owner property
+  radius?: number; // Optional: For area effects like bombs
+  timeToExplodeMs?: number; // Optional: For timed explosives
 }
 
 /** Defines the data expected for the PROJECTILE_HIT_ENEMY event */
@@ -25,6 +27,16 @@ interface ProjectileHitEnemyData {
   projectileId: string;
   enemyInstanceId: string;
   // damage?: number; // Optional: Damage might be handled by EnemyManager based on projectile type
+}
+
+/** Defines the data expected for the PROJECTILE_EXPLODE event */
+interface ProjectileExplodeData {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  damage: number;
+  owner: 'player' | 'enemy';
 }
 
 /**
@@ -58,6 +70,8 @@ interface ProjectileLike {
   velocityY: number;
   damage?: number; // Added optional damage property
   owner: 'player' | 'enemy'; // Added owner property
+  radius?: number; // Optional: For area effects
+  timeToExplodeMs?: number; // Optional: Countdown timer for explosion
   update: (dt: number) => void;
 }
 
@@ -106,6 +120,15 @@ export default class ProjectileManager {
       // Update projectile position (using placeholder logic)
       projectile.update(deltaTime);
 
+      // Handle explosion timer if present
+      if (projectile.timeToExplodeMs !== undefined) {
+        projectile.timeToExplodeMs -= deltaTime;
+        if (projectile.timeToExplodeMs <= 0) {
+          this.triggerExplosion(id);
+          continue; // Skip boundary check if it exploded
+        }
+      }
+
       // Check for out of bounds (top of screen)
       // TODO: Get bounds from config or scene dimensions event
       const worldTopBound = 0;
@@ -133,6 +156,8 @@ export default class ProjectileManager {
       velocityY: data.velocityY,
       damage: data.damage, // Store damage from spawn data
       owner: data.owner, // Store owner from spawn data
+      radius: data.radius, // Store radius if provided
+      timeToExplodeMs: data.timeToExplodeMs, // Store explosion timer if provided
       update: (dt: number) => {
         // Basic movement logic (will be in the entity itself later)
         newProjectile.x += newProjectile.velocityX * (dt / 1000);
@@ -152,6 +177,30 @@ export default class ProjectileManager {
       owner: newProjectile.owner, // Pass owner to the scene
       // Pass any other necessary visual info (e.g., texture key)
     });
+  }
+
+  private triggerExplosion(projectileId: string): void {
+    const projectile = this.activeProjectiles.get(projectileId);
+    if (!projectile || projectile.radius === undefined || projectile.damage === undefined) {
+      logger.warn(`Attempted to explode non-bomb or invalid projectile: ${projectileId}`);
+      this.removeProjectile(projectileId); // Clean up anyway
+      return;
+    }
+
+    logger.debug(`Projectile ${projectileId} exploding at (${projectile.x}, ${projectile.y})`);
+
+    // Emit explosion event for collision handler/scene to process area damage
+    this.eventBus.emit(Events.PROJECTILE_EXPLODE, {
+      id: projectile.id,
+      x: projectile.x,
+      y: projectile.y,
+      radius: projectile.radius,
+      damage: projectile.damage,
+      owner: projectile.owner,
+    } as ProjectileExplodeData);
+
+    // Remove the projectile after explosion
+    this.removeProjectile(projectileId);
   }
 
   private removeProjectile(projectileId: string): void {

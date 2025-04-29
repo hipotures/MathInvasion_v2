@@ -20,6 +20,15 @@ interface ProjectileHitEnemyData {
   enemyInstanceId: string;
   damage: number;
 }
+// Define the structure for the PROJECTILE_EXPLODE event data
+interface ProjectileExplodeData {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  damage: number;
+  owner: 'player' | 'enemy';
+}
 
 export class GameSceneCollisionHandler {
   private scene: Phaser.Scene; // Reference to the GameScene if needed (e.g., for physics)
@@ -45,6 +54,10 @@ export class GameSceneCollisionHandler {
     this.handlePlayerEnemyCollision = this.handlePlayerEnemyCollision.bind(this);
     this.handleProjectileEnemyCollision = this.handleProjectileEnemyCollision.bind(this);
     this.handlePlayerProjectileCollision = this.handlePlayerProjectileCollision.bind(this);
+    this.handleProjectileExplode = this.handleProjectileExplode.bind(this); // Bind new handler
+
+    // Listen for explosion events
+    eventBus.on(Events.PROJECTILE_EXPLODE, this.handleProjectileExplode);
   }
 
   // --- Collision Handlers ---
@@ -173,5 +186,70 @@ export class GameSceneCollisionHandler {
     // Destroy the projectile sprite immediately
     projectileSprite.destroy();
     this.projectileSprites.delete(projectileId);
+  }
+
+  // --- Explosion Handler ---
+
+  private handleProjectileExplode(data: ProjectileExplodeData): void {
+    logger.debug(
+      `Handling explosion for projectile ${data.id} at (${data.x}, ${data.y}) with radius ${data.radius}`
+    );
+
+    // Optional: Add visual effect for explosion (e.g., circle graphic, particle effect)
+    // const explosionCircle = this.scene.add.circle(data.x, data.y, data.radius, 0xff8800, 0.5);
+    // this.scene.time.delayedCall(100, () => explosionCircle.destroy());
+
+    // Damage enemies within radius
+    this.scene.physics
+      .overlapCirc(
+        data.x,
+        data.y,
+        data.radius,
+        true, // Check overlap with bodies
+        false // Don't include touching bodies (optional)
+      )
+      .forEach((body) => {
+        const gameObject = body.gameObject;
+        // Check if it's an enemy and not already destroyed
+        if (gameObject instanceof EnemyEntity && gameObject.active && gameObject.instanceId) {
+          // Ensure we don't hit enemies with friendly fire (if needed)
+          // if (data.owner === 'enemy') { // Only enemy bombs hit enemies? Or player bombs too? Assume enemy bombs hit enemies for now.
+          logger.debug(
+            `Explosion ${data.id} hit enemy ${gameObject.instanceId} within radius ${data.radius}`
+          );
+          // Emit event or call manager directly
+          const hitData: ProjectileHitEnemyData = {
+            projectileId: data.id, // Use explosion ID as source
+            enemyInstanceId: gameObject.instanceId,
+            damage: data.damage,
+          };
+          eventBus.emit(Events.PROJECTILE_HIT_ENEMY, hitData);
+          // }
+        }
+      });
+
+    // Damage player if within radius and bomb owner is 'enemy'
+    if (data.owner === 'enemy' && this.playerSprite.active) {
+      const distanceToPlayer = Phaser.Math.Distance.Between(
+        data.x,
+        data.y,
+        this.playerSprite.x,
+        this.playerSprite.y
+      );
+      if (distanceToPlayer <= data.radius) {
+        logger.debug(`Explosion ${data.id} hit player within radius ${data.radius}`);
+        const hitData: PlayerHitProjectileData = {
+          projectileId: data.id, // Use explosion ID as source
+          damage: data.damage,
+        };
+        eventBus.emit(Events.PLAYER_HIT_PROJECTILE, hitData);
+      }
+    }
+  }
+
+  /** Clean up event listeners */
+  public destroy(): void {
+    eventBus.off(Events.PROJECTILE_EXPLODE, this.handleProjectileExplode);
+    logger.log('GameSceneCollisionHandler destroyed and listeners removed');
   }
 }

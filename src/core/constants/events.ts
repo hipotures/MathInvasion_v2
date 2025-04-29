@@ -20,6 +20,7 @@ export const SPAWN_PROJECTILE = 'SPAWN_PROJECTILE'; // Request from WeaponManage
 export const PROJECTILE_CREATED = 'PROJECTILE_CREATED'; // Emitted by ProjectileManager for Scene
 export const PROJECTILE_DESTROYED = 'PROJECTILE_DESTROYED'; // Emitted by ProjectileManager for Scene
 export const PROJECTILE_HIT_ENEMY = 'PROJECTILE_HIT_ENEMY'; // Emitted by Scene collision handler
+export const PROJECTILE_EXPLODE = 'PROJECTILE_EXPLODE'; // Emitted by ProjectileManager for area damage (e.g., bombs)
 
 // Enemy Events
 export const ENEMY_SPAWNED = 'ENEMY_SPAWNED'; // Emitted by EnemyManager for Scene

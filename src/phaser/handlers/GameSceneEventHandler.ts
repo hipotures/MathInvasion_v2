@@ -23,6 +23,13 @@ interface EnemyRequestFireData {
   y: number;
   shootConfig: NonNullable<EnemyConfig['shootConfig']>;
 }
+// Define the structure for the ENEMY_DESTROYED event data
+interface EnemyDestroyedData {
+  instanceId: string;
+  configId: string;
+  reward: number;
+  config: EnemyConfig; // The full config is now included
+}
 
 export class GameSceneEventHandler {
   private scene: Phaser.Scene;
@@ -67,6 +74,9 @@ export class GameSceneEventHandler {
     this.handleRequestFireWeapon = this.handleRequestFireWeapon.bind(this);
     this.handleEnemyRequestFire = this.handleEnemyRequestFire.bind(this);
     this.handlePlayerDied = this.handlePlayerDied.bind(this);
+
+    // Register the listener for ENEMY_DESTROYED
+    eventBus.on(Events.ENEMY_DESTROYED, this.handleEnemyDestroyed);
   }
 
   // Pass references during construction or via a setter if needed later
@@ -86,11 +96,28 @@ export class GameSceneEventHandler {
   }
 
   public handleProjectileCreated(data: ProjectileCreatedData): void {
-    const textureKey = Assets.BULLET_KEY; // Default
-    // TODO: Map data.type to different textures if needed
-    const projectileSprite = this.physics.add.sprite(data.x, data.y, textureKey);
+    let textureKey = Assets.BULLET_KEY; // Default to player bullet
+
+    // Map projectile type to texture key
     if (data.owner === 'enemy') {
-      projectileSprite.setTint(0xff8888);
+      switch (data.type) {
+        case 'enemy_bomb':
+          textureKey = Assets.PROJECTILE_DEATH_BOMB_KEY;
+          break;
+        // Add cases for other enemy projectile types (e.g., 'enemy_laser', 'enemy_bullet_fast')
+        case 'enemy_bullet':
+        case 'enemy_bullet_fast': // Use same graphic for now
+        default:
+          textureKey = Assets.BULLET_KEY; // Fallback to standard bullet graphic for enemies too
+          break;
+      }
+    }
+
+    const projectileSprite = this.physics.add.sprite(data.x, data.y, textureKey);
+
+    // Apply tint only if it's a standard enemy bullet, not the bomb
+    if (data.owner === 'enemy' && textureKey === Assets.BULLET_KEY) {
+      projectileSprite.setTint(0xff8888); // Tint standard enemy bullets red
     }
     this.projectileGroup.add(projectileSprite);
     this.projectileSprites.set(data.id, projectileSprite);
@@ -151,32 +178,36 @@ export class GameSceneEventHandler {
     this.enemySprites.set(data.instanceId, enemyEntity);
   }
 
-  public handleEnemyDestroyed(data: { instanceId: string }): void {
+  // Updated to use EnemyDestroyedData
+  public handleEnemyDestroyed(data: EnemyDestroyedData): void {
     const enemyEntity = this.enemySprites.get(data.instanceId);
     if (enemyEntity) {
-      const enemyConfig = enemyEntity.enemyConfig; // Get config before destroying
-      const enemyPosition = { x: enemyEntity.x, y: enemyEntity.y }; // Get position
+      // Use config from the event data
+      const enemyConfig = data.config;
+      const enemyPosition = { x: enemyEntity.x, y: enemyEntity.y }; // Get position before destroying sprite
 
       // Play sound and trigger visual destruction
       this.sound.play(Assets.AUDIO_EXPLOSION_SMALL_KEY);
       enemyEntity.destroySelf();
       this.enemySprites.delete(data.instanceId);
 
-      // Check for death bomb ability
-      const deathBombAbility = enemyConfig.abilities?.find(
+      // Check for death bomb ability using the config from the event data
+      const deathBombAbility = enemyConfig?.abilities?.find(
         (ability) => ability.type === 'death_bomb'
       );
       if (deathBombAbility && deathBombAbility.type === 'death_bomb') {
         logger.debug(`Enemy ${data.instanceId} triggering death bomb.`);
+        // Emit spawn event for the bomb projectile
         eventBus.emit(Events.SPAWN_PROJECTILE, {
-          type: deathBombAbility.projectileType,
+          type: deathBombAbility.projectileType, // Use the type defined in the ability config
           x: enemyPosition.x,
           y: enemyPosition.y,
-          velocityX: 0, // Bomb explodes in place
+          velocityX: 0, // Bomb explodes in place (or maybe slight downward drift?)
           velocityY: 0,
           damage: deathBombAbility.damage,
           owner: 'enemy',
-          // Optional: Add radius or other bomb-specific data if ProjectileManager handles it
+          radius: deathBombAbility.radius ?? 50, // Use radius from config, default 50
+          timeToExplodeMs: deathBombAbility.timeToExplodeMs ?? 500, // Use time from config, default 500ms
         });
       }
     } else {

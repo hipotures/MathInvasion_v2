@@ -9,7 +9,13 @@
         *   Added `hexagon_bomber` config, schema update (discriminated union for abilities), asset key, asset loading, enemy-to-asset mapping (`GameSceneEventHandler`), and included in random spawner.
         *   Added `diamond_strafer` config, schema update (`strafe_horizontal` pattern), asset key, asset loading, enemy-to-asset mapping (`GameSceneEventHandler`), and included in random spawner.
     *   **Enemy Movement (Refined):** Implemented sine-wave `boss_weaving`, `bomber_dive`, and `strafe_horizontal` patterns in `EnemyEntity.handleMovement`. Basic side-to-side movement (`invader_standard`, `invader_support`) remains functional.
-    *   **Enemy Abilities (Death Bomb):** Implemented `death_bomb` ability check in `GameSceneEventHandler.handleEnemyDestroyed` to emit `SPAWN_PROJECTILE` on enemy death (visual/collision logic for bomb projectile TBD).
+    *   **Enemy Abilities (Death Bomb):** Implemented full `death_bomb` logic:
+        *   `EnemyManager` includes full config in `ENEMY_DESTROYED` event.
+        *   `GameSceneEventHandler` spawns bomb projectile on `ENEMY_DESTROYED` using config data (type, damage, radius, time).
+        *   `GameSceneEventHandler` uses correct texture for bomb projectile on `PROJECTILE_CREATED`.
+        *   `GameScene` preloads bomb asset.
+        *   `ProjectileManager` handles timed explosion (`timeToExplodeMs`) and emits `PROJECTILE_EXPLODE` event.
+        *   `GameSceneCollisionHandler` listens for `PROJECTILE_EXPLODE` and applies area damage to enemies and player within radius.
     *   **Enemy Aiming:** Enemies now fire projectiles towards the player's current position (`GameSceneEventHandler.handleEnemyRequestFire` updated).
     *   **Enemy Firing (Basic):** Enemies with `canShoot: true` and `shootConfig` in `enemies.yml` fire projectiles periodically (now aimed).
         *   Added `ENEMY_REQUEST_FIRE` event emitted by `EnemyEntity`.
@@ -52,8 +58,9 @@
     *   Modified `src/main.ts` to use `async/await` to ensure `configLoader.loadAllConfigs()` completes before `new Phaser.Game()` is called.
 
 **What's Left to Build (Milestone M3):**
-*   **Enemy Variety & Behavior (Refinement):** ~~Refine movement patterns (implement `boss_weaving`, `bomber_dive`)~~ *(Done)*, add `homing`? ~~Implement aiming logic~~ *(Done)*. ~~Add `hexagon_bomber`~~ *(Done)*. Add *more* enemy types/assets. Implement `death_bomb` projectile logic (visuals, collision). Add distinct enemy projectiles (graphics, types).
+*   **Enemy Variety & Behavior (Refinement):** ~~Refine movement patterns (implement `boss_weaving`, `bomber_dive`)~~ *(Done)*, add `homing`? ~~Implement aiming logic~~ *(Done)*. ~~Add `hexagon_bomber`~~ *(Done)*. Add *more* enemy types/assets. ~~Implement `death_bomb` projectile logic (visuals, collision)~~ *(Core logic Done)*. Add distinct enemy projectiles (graphics, types).
 *   **Difficulty Scaling:** Implement logic based on `difficulty.yml` (spawn rates, multipliers).
+*   **Visual Polish:** Add visual effect for death bomb explosion.
 
 **Overall Project Roadmap:**
 *   **M0: Szkielet Projektu (Setup)** - **COMPLETE**

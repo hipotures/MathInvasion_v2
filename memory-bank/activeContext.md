@@ -173,14 +173,33 @@
     *   Modified `src/main.ts` to wrap game initialization in an `async` function.
     *   Added `await configLoader.loadAllConfigs()` before `new Phaser.Game(config)` to ensure configurations are loaded before scenes and managers are created.
     *   Added basic error handling in `main.ts` if config loading fails.
+*   **M3 - Implement Death Bomb Ability:**
+    *   Added `PROJECTILE_DEATH_BOMB_KEY` constant to `src/core/constants/assets.ts`.
+    *   Updated `EnemyManager` to include the full `EnemyConfig` in the `ENEMY_DESTROYED` event payload (`EnemyDestroyedData` interface added).
+    *   Updated `GameSceneEventHandler.handleEnemyDestroyed` to use the config from the event, check for `death_bomb` ability, and emit `SPAWN_PROJECTILE` with bomb details (type, damage, radius, timeToExplodeMs). Added default values for radius and time.
+    *   Updated `GameSceneEventHandler.handleProjectileCreated` to map the `enemy_bomb` projectile type to the `PROJECTILE_DEATH_BOMB_KEY` texture.
+    *   Updated `GameScene.preload` to load the `death_bomb.png` asset (using `PROJECTILE_DEATH_BOMB_KEY`).
+    *   Added `PROJECTILE_EXPLODE` event constant to `src/core/constants/events.ts`.
+    *   Updated `ProjectileManager`:
+        *   Added `ProjectileExplodeData` interface.
+        *   Added optional `radius` and `timeToExplodeMs` to `SpawnProjectileData` and `ProjectileLike` interfaces.
+        *   Updated `spawnProjectile` to store these optional properties.
+        *   Updated `update` loop to check for and decrement `timeToExplodeMs`.
+        *   Added `triggerExplosion` method to emit `PROJECTILE_EXPLODE` event and remove the projectile state.
+    *   Updated `src/core/config/schemas/enemySchema.ts`: Added optional `timeToExplodeMs` to `deathBombAbilitySchema` (removed `.default()` to fix TS error).
+    *   Updated `GameSceneCollisionHandler`:
+        *   Added `ProjectileExplodeData` interface definition.
+        *   Added listener for `PROJECTILE_EXPLODE` event.
+        *   Implemented `handleProjectileExplode` method to find overlapping enemies and player within the explosion radius using `physics.overlapCirc` and emit `PROJECTILE_HIT_ENEMY` or `PLAYER_HIT_PROJECTILE` events respectively.
+        *   Added `destroy` method to clean up listener.
 
 **Next Steps (Milestone M3 - Wrogowie i Kolizje):**
 *   **Enemy Variety & Behavior (Refinement):**
     *   ~~Refine movement patterns: Implement actual `boss_weaving` (e.g., sine wave)~~ *(Done)*, ~~implement `bomber_dive`~~ *(Done)*, potentially add `'homing'` or other patterns from config. Update `EnemyEntity.preUpdate`.
     *   ~~Implement enemy aiming logic (e.g., fire towards player) in `GameScene.handleEnemyRequestFire`~~ *(Done)*.
     *   ~~Add `hexagon_bomber` enemy type~~ *(Done)*. Add *more* enemy types to `config/enemies.yml` and corresponding assets (`assets/images`, `constants/assets.ts`). Update `GameSceneEventHandler.handleEnemySpawned` mapping.
-    *   Implement `death_bomb` projectile logic (visuals, collision). Update `ProjectileManager` and `GameSceneEventHandler.handleProjectileCreated`.
-    *   Add distinct projectile graphics/types for enemies (e.g., `enemy_laser`, `enemy_bomb`). Update `GameSceneEventHandler.handleProjectileCreated`.
+    *   ~~Implement `death_bomb` projectile logic (visuals, collision)~~ *(Done - Core logic implemented)*.
+    *   Add distinct projectile graphics/types for enemies (e.g., `enemy_laser`, `enemy_bullet_fast`). Update `GameSceneEventHandler.handleProjectileCreated`. *(Partially done for bomb)*
 *   **Difficulty Scaling:**
     *   Implement logic based on `config/difficulty.yml` to control enemy spawn rates, health multipliers, speed multipliers, etc., possibly based on score or time. Update `EnemyManager` and potentially `GameScene` spawner.
 *   **Collision Refinement:**
@@ -188,6 +207,7 @@
     *   Consider adding brief invulnerability periods after hits (player and/or enemies). Update `PlayerManager` / `EnemyManager`.
 *   **Visual Polish:**
     *   Add more distinct visual effects for different enemy destructions.
+    *   Add visual effect for death bomb explosion in `GameSceneCollisionHandler.handleProjectileExplode`.
     *   Improve player death sequence (e.g., explosion animation).
     *   Add visual feedback for weapon switching in the UI.
 

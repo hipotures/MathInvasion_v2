@@ -28,9 +28,10 @@ const spawnMinionsAbilitySchema = z.object({
 
 const deathBombAbilitySchema = z.object({
   type: z.literal('death_bomb'),
-  projectileType: z.string().min(1), // Type of projectile to spawn on death
-  damage: z.number().nonnegative(),
-  radius: z.number().positive().optional(), // Optional: Area of effect
+  projectileType: z.string(), // Type of projectile to spawn on death
+  damage: z.number().positive(),
+  radius: z.number().positive().optional(), // Optional radius for the explosion effect
+  timeToExplodeMs: z.number().positive().optional(), // Optional delay before explosion (will default in logic)
 });
 
 // Use discriminated union for enemy abilities

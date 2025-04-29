@@ -8,6 +8,7 @@ export const PLAYER_KEY = 'playerShip';
 
 // Projectile Assets
 export const BULLET_KEY = 'bullet';
+export const PROJECTILE_DEATH_BOMB_KEY = 'deathBomb'; // Key for the hexagon bomber's death bomb
 
 // Enemy Assets
 export const ENEMY_SMALL_ALIEN_KEY = 'enemySmallAlien'; // triangle_scout

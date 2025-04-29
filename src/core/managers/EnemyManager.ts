@@ -20,6 +20,14 @@ interface ProjectileHitEnemyData {
   damage: number; // Damage is now expected from the event payload
 }
 
+/** Defines the data expected for the ENEMY_DESTROYED event */
+interface EnemyDestroyedData {
+  instanceId: string;
+  configId: string;
+  reward: number;
+  config: EnemyConfig; // Include the full config for ability checks etc.
+}
+
 // TODO: Define a proper EnemyInstance type/interface
 interface EnemyInstance {
   id: string; // Unique instance ID
@@ -123,12 +131,13 @@ export class EnemyManager {
     this.enemies.delete(instanceId);
     this.logger.log(`Destroyed enemy: ${enemy.configId} (Instance ID: ${instanceId})`); // Changed info to log
 
-    // Emit event for GameScene to remove sprite/body
+    // Emit event for GameScene to remove sprite/body and handle abilities
     this.eventBus.emit(ENEMY_DESTROYED, {
       instanceId: instanceId,
       configId: enemy.configId,
       reward: reward, // Send reward info for EconomyManager
-    });
+      config: config, // Send the full config
+    } as EnemyDestroyedData); // Cast to ensure type safety
   }
 
   // --- Event Handlers ---
