@@ -45,6 +45,8 @@
     *   Basic Phaser "Hello World" scene implemented.
     *   Basic PWA configuration (`manifest.json`, placeholder `service-worker.ts`).
     *   Initial commit pushed to GitHub.
+*   **Fix Config Loading Order:** (Runtime Fix)
+    *   Modified `src/main.ts` to use `async/await` to ensure `configLoader.loadAllConfigs()` completes before `new Phaser.Game()` is called.
 
 **What's Left to Build (Current Milestone - M2):**
 *   **Enemies:** ~~Config~~, ~~Manager~~, ~~Entity (placeholder)~~, ~~Spawning in `GameScene`~~. (All Done)

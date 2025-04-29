@@ -102,6 +102,10 @@
     *   Created simple "Hello World" Phaser scene (`HelloWorldScene.ts`).
     *   Set up basic PWA configuration (`public/manifest.json`, `src/pwa/service-worker.ts`).
     *   Made initial commit and pushed to GitHub.
+*   **Fix Config Loading Order:**
+    *   Modified `src/main.ts` to wrap game initialization in an `async` function.
+    *   Added `await configLoader.loadAllConfigs()` before `new Phaser.Game(config)` to ensure configurations are loaded before scenes and managers are created.
+    *   Added basic error handling in `main.ts` if config loading fails.
 
 **Next Steps (M2 - Continued):**
 *   **Enemies:**
