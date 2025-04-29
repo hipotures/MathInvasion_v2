@@ -1,0 +1,20 @@
+- id: shield
+  name: Energy Shield
+  effect: temporary_invulnerability
+  durationMs: 5000
+  dropChance: 0.03
+  visual: shield_icon
+- id: cash_boost
+  name: Cash Boost
+  effect: currency_multiplier
+  multiplier: 2
+  durationMs: 10000
+  dropChance: 0.05
+  visual: cash_icon
+- id: rapid_fire
+  name: Rapid Fire
+  effect: weapon_cooldown_reduction
+  multiplier: 0.5
+  durationMs: 8000
+  dropChance: 0.04
+  visual: rapid_fire_icon

@@ -1,0 +1,36 @@
+- id: bullet
+  name: Basic Bullet
+  baseCost: 50
+  baseCooldownMs: 300
+  baseDamage: 10
+  baseRange: 300
+  projectileType: basic_bullet
+  upgrade:
+    costMultiplier: 1.4
+    damageMultiplier: 1.15
+    cooldownMultiplier: 0.95
+    rangeAdd: 10
+- id: laser
+  name: Continuous Laser
+  baseCost: 150
+  baseCooldownMs: 0 # Laser might have charge time instead
+  baseDamagePerSec: 15
+  baseRange: 400
+  projectileType: laser_beam
+  upgrade:
+    costMultiplier: 1.5
+    damageMultiplier: 1.20
+    rangeAdd: 15
+- id: slow_field
+  name: Slow Field
+  baseCost: 100
+  baseCooldownMs: 1000
+  baseRange: 200
+  baseSlowFactor: 0.6
+  baseDurationMs: 2000
+  projectileType: none # Area effect
+  upgrade:
+    costMultiplier: 1.3
+    slowFactorMultiplier: 0.95 # Lower is stronger slow
+    durationAddMs: 500
+    rangeAdd: 10

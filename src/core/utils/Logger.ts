@@ -1,0 +1,47 @@
+/**
+ * Basic logger implementation.
+ * Currently logs to the console.
+ * Planned: Buffering and sending logs to an external API (M6).
+ */
+class Logger {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public log(message: string, ...optionalParams: any[]): void {
+    console.log(`[LOG] ${message}`, ...optionalParams);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public warn(message: string, ...optionalParams: any[]): void {
+    console.warn(`[WARN] ${message}`, ...optionalParams);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public error(message: string, ...optionalParams: any[]): void {
+    console.error(`[ERROR] ${message}`, ...optionalParams);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public debug(message: string, ...optionalParams: any[]): void {
+    // Only log debug messages if a specific flag is set (e.g., during development)
+    // For now, let's always log them, but add a check later if needed.
+    // if (import.meta.env.DEV) { // Example check using Vite env variable
+    console.debug(`[DEBUG] ${message}`, ...optionalParams);
+    // }
+  }
+
+  /**
+   * Logs a key game event.
+   * Planned: This method will buffer events for sending to an API.
+   * @param eventName Name of the event (e.g., 'ENEMY_KILLED', 'WEAPON_UPGRADED')
+   * @param data Additional data associated with the event
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public gameEvent(eventName: string, data: Record<string, any>): void {
+    // For now, just log it to the console
+    this.log(`Game Event: ${eventName}`, data);
+    // TODO (M6): Implement buffering and sending logic
+  }
+}
+
+// Export a singleton instance
+const logger = new Logger();
+export default logger;

@@ -1,22 +1,27 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Milestone M0 (Setup) in progress.
+**Current Status:** Starting Milestone M1: Konfiguracja i Zdarzenia.
 
 **What Works:**
-*   Project structure initialized.
-*   Dependencies installed.
-*   Git repository created locally and on GitHub.
-*   Code quality tools (ESLint, Prettier, Husky) configured.
-*   Initial Memory Bank files created.
+*   **Milestone M0: Szkielet Projektu (Setup) - COMPLETE**
+    *   Project structure initialized.
+    *   Dependencies installed (Vite, TS, Phaser, ESLint, Prettier, Husky, etc.).
+    *   Git repository created locally and on GitHub (`hipotures/MathInvasion_v2`).
+    *   Code quality tools (ESLint, Prettier, Husky) configured and working via pre-commit hook.
+    *   Initial Memory Bank files created.
+    *   Basic Phaser "Hello World" scene implemented.
+    *   Basic PWA configuration (`manifest.json`, placeholder `service-worker.ts`).
+    *   Initial commit pushed to GitHub.
 
-**What's Left to Build (Current Milestone - M0):**
-*   Simple "Hello World" Phaser scene.
-*   Basic PWA configuration (`manifest.json`, `service-worker.ts`).
-*   Initial commit and push to GitHub.
+**What's Left to Build (Current Milestone - M1):**
+*   Implement `EventBus`.
+*   Implement `ConfigLoader` with YAML validation (Zod/Yup).
+*   Create initial YAML config files.
+*   Implement basic `Logger`.
 
 **Overall Project Roadmap:**
-*   **M0: Szkielet Projektu (Setup)** - *In Progress*
-*   **M1: Konfiguracja i Zdarzenia**
+*   **M0: Szkielet Projektu (Setup)** - **COMPLETE**
+*   **M1: Konfiguracja i Zdarzenia** - *In Progress*
 *   **M2: Podstawowa Rozgrywka (Ruch i Strzelanie)**
 *   **M3: Wrogowie i Kolizje**
 *   **M4: Rozbudowa Broni i UI**

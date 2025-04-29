@@ -1,0 +1,51 @@
+- id: triangle_scout
+  shape: triangle
+  baseHealth: 50
+  baseSpeed: 40
+  baseReward: 5
+  movementPattern: invader_standard
+  collisionRadius: 15
+  canShoot: false
+- id: square_tank
+  shape: square
+  baseHealth: 150
+  baseSpeed: 25
+  baseReward: 15
+  movementPattern: invader_standard
+  collisionRadius: 25
+  canShoot: true
+  shootConfig:
+    projectileType: enemy_bullet
+    cooldownMs: 1500
+    damage: 5
+    speed: 100
+- id: pentagon_healer
+  shape: pentagon
+  baseHealth: 100
+  baseSpeed: 30
+  baseReward: 20
+  movementPattern: invader_support
+  collisionRadius: 20
+  canShoot: false
+  abilities:
+    - type: heal_aura
+      range: 100
+      healPerSec: 5
+- id: circle_boss
+  shape: circle
+  baseHealth: 2000
+  baseSpeed: 20
+  baseReward: 100
+  movementPattern: boss_weaving
+  collisionRadius: 50
+  canShoot: true
+  shootConfig:
+    projectileType: enemy_laser
+    cooldownMs: 800
+    damagePerSec: 10
+    range: 300
+  abilities:
+    - type: spawn_minions
+      minionId: triangle_scout
+      cooldownMs: 5000
+      count: 3
