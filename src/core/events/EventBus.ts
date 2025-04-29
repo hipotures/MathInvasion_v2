@@ -55,6 +55,7 @@ export class EventBus { // Add 'export' here
         try {
           callback(...args);
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error(`Error in event listener for ${eventName}:`, error);
         }
       });

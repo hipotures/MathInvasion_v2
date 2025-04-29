@@ -1,5 +1,5 @@
 // Import singleton instances
-import eventBus from '../events/EventBus';
+// import eventBus from '../events/EventBus'; // Removed - instance passed in constructor
 import logger from '../utils/Logger';
 // Import class type for annotations
 import { EventBus as EventBusType } from '../events/EventBus';
@@ -37,7 +37,7 @@ export default class InputManager {
 
   // Methods for processing input and emitting events
 
-  public update(deltaTime: number): void {
+  public update(_deltaTime: number): void { // Prefix with underscore
     // TODO: Implement input polling/processing if needed
   }
 

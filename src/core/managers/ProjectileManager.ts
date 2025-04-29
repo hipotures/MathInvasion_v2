@@ -1,5 +1,5 @@
 // Import singleton instances
-import eventBus from '../events/EventBus';
+// import eventBus from '../events/EventBus'; // Removed - instance passed in constructor
 import logger from '../utils/Logger';
 // Import class type for annotations
 import { EventBus as EventBusType } from '../events/EventBus';
@@ -10,7 +10,7 @@ import { EventBus as EventBusType } from '../events/EventBus';
 const SPAWN_PROJECTILE = 'SPAWN_PROJECTILE';
 const PROJECTILE_CREATED = 'PROJECTILE_CREATED'; // Event for Phaser layer
 const PROJECTILE_DESTROYED = 'PROJECTILE_DESTROYED'; // Event for Phaser layer
-// TODO: Add collision event constants later (e.g., PROJECTILE_HIT_ENEMY)
+const PROJECTILE_HIT_ENEMY = 'PROJECTILE_HIT_ENEMY'; // Event from GameScene collision
 
 /**
  * Manages active projectiles in the game world.
@@ -26,9 +26,27 @@ interface SpawnProjectileData {
   // ownerId?: string; // Optional: To distinguish player/enemy projectiles
 }
 
+/** Defines the data expected for the PROJECTILE_HIT_ENEMY event */
+interface ProjectileHitEnemyData {
+  projectileId: string;
+  enemyInstanceId: string;
+  // damage?: number; // Optional: Damage might be handled by EnemyManager based on projectile type
+}
+
+// Placeholder type until a proper Projectile entity class is created
+interface ProjectileLike {
+  id: string;
+  type: string;
+  x: number;
+  y: number;
+  velocityX: number;
+  velocityY: number;
+  update: (dt: number) => void;
+}
+
 export default class ProjectileManager {
   private eventBus: EventBusType;
-  private activeProjectiles: Map<string, unknown>; // Placeholder: Replace 'unknown' with ProjectileEntity type later
+  private activeProjectiles: Map<string, ProjectileLike>; // Use placeholder type
   private nextProjectileId: number = 0;
 
   constructor(eventBusInstance: EventBusType) {
@@ -38,16 +56,22 @@ export default class ProjectileManager {
 
     // Bind methods
     this.handleSpawnProjectile = this.handleSpawnProjectile.bind(this);
+    this.handleProjectileHitEnemy = this.handleProjectileHitEnemy.bind(this); // Bind new handler
 
     // Subscribe to events
     this.eventBus.on(SPAWN_PROJECTILE, this.handleSpawnProjectile);
-    // TODO: Subscribe to collision events
+    this.eventBus.on(PROJECTILE_HIT_ENEMY, this.handleProjectileHitEnemy); // Subscribe to hit event
   }
 
   // --- Event Handlers ---
 
   private handleSpawnProjectile(data: SpawnProjectileData): void {
     this.spawnProjectile(data);
+  }
+
+  private handleProjectileHitEnemy(data: ProjectileHitEnemyData): void {
+    logger.debug(`Projectile ${data.projectileId} hit enemy ${data.enemyInstanceId}. Removing projectile.`);
+    this.removeProjectile(data.projectileId);
   }
 
   // --- Core Logic ---
@@ -57,7 +81,7 @@ export default class ProjectileManager {
     const projectileIds = [...this.activeProjectiles.keys()];
 
     for (const id of projectileIds) {
-      const projectile = this.activeProjectiles.get(id) as any; // Cast to 'any' for placeholder access
+      const projectile = this.activeProjectiles.get(id); // Remove 'as any' cast
       if (!projectile) continue;
 
       // Update projectile position (using placeholder logic)
@@ -80,7 +104,7 @@ export default class ProjectileManager {
 
     // --- Placeholder Logic ---
     // TODO: Replace with actual projectile entity creation
-    const newProjectile = {
+    const newProjectile: ProjectileLike = { // Ensure object matches interface
       id: newId,
       type: data.type,
       x: data.x,
@@ -122,7 +146,7 @@ export default class ProjectileManager {
   /** Clean up event listeners when the manager is destroyed */
   public destroy(): void {
     this.eventBus.off(SPAWN_PROJECTILE, this.handleSpawnProjectile);
-    // TODO: Unsubscribe from collision events
+    this.eventBus.off(PROJECTILE_HIT_ENEMY, this.handleProjectileHitEnemy); // Unsubscribe from hit event
     this.activeProjectiles.clear(); // Clear any remaining projectiles
     logger.log('ProjectileManager destroyed and listeners removed');
   }

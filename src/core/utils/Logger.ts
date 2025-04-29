@@ -3,7 +3,7 @@
  * Currently logs to the console.
  * Planned: Buffering and sending logs to an external API (M6).
  */
-class Logger {
+export class Logger { // Add export keyword here
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public log(message: string, ...optionalParams: any[]): void {
     console.log(`[LOG] ${message}`, ...optionalParams);
