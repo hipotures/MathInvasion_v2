@@ -3,6 +3,12 @@
 **Current Focus:** Milestone M3: Wrogowie i Kolizje - *Refining enemy behavior.*
 
 **Recent Changes:**
+*   **Refactor GameScene (Line Limit):**
+    *   Identified `src/phaser/scenes/GameScene.ts` exceeded the 300-line limit.
+    *   Created `src/phaser/handlers/GameSceneCollisionHandler.ts` and moved collision logic (`handlePlayerEnemyCollision`, `handleProjectileEnemyCollision`, `handlePlayerProjectileCollision`) into it.
+    *   Created `src/phaser/handlers/GameSceneEventHandler.ts` and moved event handling logic (e.g., `handlePlayerStateUpdate`, `handleProjectileCreated`, `handleEnemySpawned`, `handlePlayerDied`, etc.) into it.
+    *   Updated `GameScene.ts` to instantiate and delegate to these new handler classes.
+    *   Reduced `GameScene.ts` line count to 239 lines, complying with the project standard.
 *   **M3 - Enemy Aiming:**
     *   Updated `GameScene.handleEnemyRequestFire` to calculate the angle between the enemy and the player sprite.
     *   Used `Phaser.Math.Angle.Between` and `this.physics.velocityFromAngle` to determine the correct `velocityX` and `velocityY` for the projectile.

@@ -3,6 +3,7 @@
 **Current Status:** Milestone M3: Wrogowie i Kolizje - **IN PROGRESS** (Enemy behavior refinement ongoing).
 
 **What Works:**
+*   **Refactor GameScene (Line Limit):** Extracted collision logic to `GameSceneCollisionHandler` and event logic to `GameSceneEventHandler`, bringing `GameScene.ts` under the 300-line limit.
 *   **Milestone M3: Wrogowie i Kolizje (Partial)**
     *   **Enemy Aiming:** Enemies now fire projectiles towards the player's current position (`GameScene.handleEnemyRequestFire` updated).
     *   **Enemy Movement (Refined):** Implemented sine-wave `boss_weaving` pattern. Basic side-to-side movement with downward drift (`invader_standard`, `invader_support`) remains functional.
