@@ -1,8 +1,15 @@
 # Active Context: Math Invasion v2
 
-**Current Focus:** Milestone M1: Konfiguracja i Zdarzenia
+**Current Focus:** Milestone M2: Podstawowa Rozgrywka (Ruch i Strzelanie)
 
 **Recent Changes:**
+*   **Completed M1: Konfiguracja i Zdarzenia**
+    *   Implemented `EventBus`.
+    *   Installed `js-yaml`, `zod`, `@types/js-yaml`.
+    *   Created initial YAML config files (`weapons`, `enemies`, `powerups`, `difficulty`).
+    *   Defined Zod schemas for config validation.
+    *   Implemented `ConfigLoader` using Vite `import.meta.glob`.
+    *   Implemented basic `Logger`.
 *   **Completed M0: Szkielet Projektu (Setup)**
     *   Initialized Vite project (Vanilla TS template).
     *   Installed dependencies (Phaser, ESLint, Prettier, Husky, lint-staged, typescript-eslint).
@@ -18,11 +25,13 @@
     *   Set up basic PWA configuration (`public/manifest.json`, `src/pwa/service-worker.ts`).
     *   Made initial commit and pushed to GitHub.
 
-**Next Steps (M1):**
-*   Implement `EventBus` (`src/core/events/EventBus.ts`).
-*   Implement `ConfigLoader` (`src/core/config/ConfigLoader.ts`) with YAML validation (Zod/Yup).
-*   Create initial YAML config files (`weapons.yml`, `enemies.yml`, `powerups.yml`, `difficulty.yml`).
-*   Implement `Logger` (`src/core/utils/Logger.ts`) - basic console logging for now.
+**Next Steps (M2):**
+*   Implement `PlayerManager` and `InputManager` (horizontal movement).
+*   Implement `WeaponManager` (basic switching, 'bullet' cooldown).
+*   Implement `ProjectileManager` (basic bullet).
+*   Implement `EconomyManager` (tracking currency).
+*   Update `GameScene` for player rendering, movement input, and 'bullet' firing.
+*   Update `UIScene` to display currency and weapon buttons (non-functional).
 
 **Important Patterns & Preferences:**
 *   **Clean Code:** Adhere strictly to guidelines (SRP, DRY, meaningful names, etc.).

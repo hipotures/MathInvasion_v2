@@ -1,8 +1,15 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Starting Milestone M1: Konfiguracja i Zdarzenia.
+**Current Status:** Starting Milestone M2: Podstawowa Rozgrywka (Ruch i Strzelanie).
 
 **What Works:**
+*   **Milestone M1: Konfiguracja i Zdarzenia - COMPLETE**
+    *   Implemented `EventBus`.
+    *   Installed `js-yaml`, `zod`, `@types/js-yaml`.
+    *   Created initial YAML config files.
+    *   Defined Zod schemas for config validation.
+    *   Implemented `ConfigLoader`.
+    *   Implemented basic `Logger`.
 *   **Milestone M0: Szkielet Projektu (Setup) - COMPLETE**
     *   Project structure initialized.
     *   Dependencies installed (Vite, TS, Phaser, ESLint, Prettier, Husky, etc.).
@@ -15,14 +22,16 @@
 
 **What's Left to Build (Current Milestone - M1):**
 *   Implement `EventBus`.
-*   Implement `ConfigLoader` with YAML validation (Zod/Yup).
-*   Create initial YAML config files.
-*   Implement basic `Logger`.
+*   Implement `PlayerManager` and `InputManager`.
+*   Implement `WeaponManager` (basic).
+*   Implement `ProjectileManager` (basic).
+*   Implement `EconomyManager`.
+*   Update `GameScene` and `UIScene`.
 
 **Overall Project Roadmap:**
 *   **M0: Szkielet Projektu (Setup)** - **COMPLETE**
-*   **M1: Konfiguracja i Zdarzenia** - *In Progress*
-*   **M2: Podstawowa Rozgrywka (Ruch i Strzelanie)**
+*   **M1: Konfiguracja i Zdarzenia** - **COMPLETE**
+*   **M2: Podstawowa Rozgrywka (Ruch i Strzelanie)** - *In Progress*
 *   **M3: Wrogowie i Kolizje**
 *   **M4: Rozbudowa Broni i UI**
 *   **M5: Power-upy i Zaawansowani Wrogowie**
