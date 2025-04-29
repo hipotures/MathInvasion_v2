@@ -31,6 +31,7 @@ const enemySchema = z.object({
   baseHealth: z.number().positive(),
   baseSpeed: z.number().positive(),
   baseReward: z.number().nonnegative(),
+  collisionDamage: z.number().nonnegative().describe('Damage dealt to the player on collision.'), // Added collision damage
   movementPattern: z.string().min(1), // Could be an enum later
   collisionRadius: z.number().positive(),
   canShoot: z.boolean(),

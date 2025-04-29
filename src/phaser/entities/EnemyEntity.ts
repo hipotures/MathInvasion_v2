@@ -6,7 +6,7 @@ import Logger from '../../core/utils/Logger'; // Use default import for Logger i
 export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
   public instanceId: string;
   public configId: string;
-  private enemyConfig: EnemyConfig; // Store the config for reference
+  public enemyConfig: EnemyConfig; // Store the config for reference (Made public)
 
   constructor(
     scene: Phaser.Scene,
@@ -14,7 +14,7 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
     y: number,
     texture: string, // Placeholder texture key (e.g., 'vite' or a specific enemy key later)
     instanceId: string,
-    config: EnemyConfig,
+    config: EnemyConfig
   ) {
     super(scene, x, y, texture);
     this.instanceId = instanceId;

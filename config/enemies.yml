@@ -3,6 +3,7 @@
   baseHealth: 50
   baseSpeed: 40
   baseReward: 5
+  collisionDamage: 10 # Added
   movementPattern: invader_standard
   collisionRadius: 15
   canShoot: false
@@ -11,6 +12,7 @@
   baseHealth: 150
   baseSpeed: 25
   baseReward: 15
+  collisionDamage: 20 # Added
   movementPattern: invader_standard
   collisionRadius: 25
   canShoot: true
@@ -24,6 +26,7 @@
   baseHealth: 100
   baseSpeed: 30
   baseReward: 20
+  collisionDamage: 5 # Added (lower for support?)
   movementPattern: invader_support
   collisionRadius: 20
   canShoot: false
@@ -36,6 +39,7 @@
   baseHealth: 2000
   baseSpeed: 20
   baseReward: 100
+  collisionDamage: 50 # Added (higher for boss)
   movementPattern: boss_weaving
   collisionRadius: 50
   canShoot: true

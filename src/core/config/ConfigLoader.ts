@@ -4,6 +4,7 @@ import { weaponsConfigSchema, type WeaponsConfig } from './schemas/weaponSchema'
 import { enemiesConfigSchema, type EnemiesConfig } from './schemas/enemySchema';
 import { powerupsConfigSchema, type PowerupsConfig } from './schemas/powerupSchema';
 import { difficultyConfigSchema, type DifficultyConfig } from './schemas/difficultySchema';
+import { playerSchema, type PlayerConfig } from './schemas/playerSchema'; // Added player schema
 
 // Use Vite's import.meta.glob to import YAML files as raw strings
 // Note: The path is relative to the current file (ConfigLoader.ts)
@@ -20,6 +21,7 @@ class ConfigLoader {
   private enemies: EnemiesConfig | null = null;
   private powerups: PowerupsConfig | null = null;
   private difficulty: DifficultyConfig | null = null;
+  private player: PlayerConfig | null = null; // Added player config property
 
   private loaded = false;
   private loadingPromise: Promise<void> | null = null;
@@ -54,6 +56,8 @@ class ConfigLoader {
           '../../../config/difficulty.yml',
           difficultyConfigSchema
         );
+        // Load player config
+        this.player = await this.loadAndValidate('../../../config/player.yml', playerSchema);
         this.loaded = true;
         console.log('All configurations loaded and validated successfully.');
       } catch (error) {
@@ -127,6 +131,13 @@ class ConfigLoader {
       throw new Error('Difficulty configuration not loaded yet.');
     }
     return this.difficulty;
+  }
+
+  public getPlayerConfig(): PlayerConfig {
+    if (!this.loaded || !this.player) {
+      throw new Error('Player configuration not loaded yet.');
+    }
+    return this.player;
   }
 }
 

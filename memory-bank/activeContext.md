@@ -3,10 +3,37 @@
 **Current Focus:** Milestone M2: Podstawowa Rozgrywka - *Enemy Spawning & Basic Collisions Implemented.*
 
 **Recent Changes:**
-*   **M2 - Enemy Spawning & Collisions:**
+*   **M2 - Load Core Values from Config:**
+    *   Created `playerSchema.ts` and `config/player.yml`.
+    *   Updated `ConfigLoader.ts` to load and validate `player.yml`.
+    *   Updated `PlayerManager.ts` to accept `PlayerConfig` and initialize `health` and `moveSpeed` from it.
+    *   Updated `GameScene.ts` to pass `PlayerConfig` to `PlayerManager`.
+    *   Updated `weaponSchema.ts` to include `projectileSpeed`.
+    *   Updated `config/weapons.yml` to include `projectileSpeed` for the `bullet` weapon.
+    *   Updated `WeaponManager.ts` to load `WeaponsConfig`, find the initial weapon config (`bullet`), and use `baseCooldownMs` and `projectileSpeed` from it. Added `baseDamage` to `SPAWN_PROJECTILE` event.
+    *   Updated `ProjectileManager.ts` interfaces (`SpawnProjectileData`, `ProjectileLike`) and `spawnProjectile` method to handle optional `damage`. Added `getProjectileDamage` method.
+    *   Updated `GameScene.ts` (`handleProjectileEnemyCollision`) to get damage via `projectileManager.getProjectileDamage` and include it in the `PROJECTILE_HIT_ENEMY` event.
+    *   Updated `EnemyManager.ts` (`ProjectileHitEnemyData` interface and `handleProjectileHitEnemy` method) to use damage from the event payload.
+    *   Updated `enemySchema.ts` to include `collisionDamage`.
+    *   Updated `config/enemies.yml` to include `collisionDamage` for all enemy types.
+    *   Made `EnemyEntity.enemyConfig` public to allow access from `GameScene`.
+    *   Updated `GameScene.ts` (`handlePlayerEnemyCollision`) to use `enemyEntity.enemyConfig.collisionDamage` for the `PLAYER_HIT_ENEMY` event.
+*   **M2 - Refactor Projectile Spawning:**
+    *   Added `REQUEST_FIRE_WEAPON` event constant.
+    *   Removed player position tracking from `WeaponManager`.
+    *   Updated `WeaponManager` (`attemptFire`) to emit `REQUEST_FIRE_WEAPON` with `weaponConfig` instead of `SPAWN_PROJECTILE`.
+    *   Added `handleRequestFireWeapon` method to `GameScene` to listen for `REQUEST_FIRE_WEAPON`.
+    *   Updated `GameScene` (`handleRequestFireWeapon`) to calculate spawn position using `playerSprite.getTopCenter()` and emit `SPAWN_PROJECTILE` with full details (including damage).
+*   **M2 - Implement Weapon Switching:**
+    *   Added `WEAPON_SWITCH` event constant.
+    *   Updated `InputManager` (`handleKeyDown`) to emit `WEAPON_SWITCH` with weapon IDs ('bullet', 'laser', 'slow_field') for keys '1', '2', '3'.
+    *   Updated `WeaponManager` to listen for `WEAPON_SWITCH`, find the new weapon config, update `currentWeaponId`, `currentWeaponConfig`, `weaponCooldown`, and reset `cooldownTimer`.
+*   **M2 - Add Non-functional UI Buttons:**
+    *   Added placeholder Text objects for weapon buttons ([1], [2], [3]) in `UIScene.ts`.
+*   **M2 - Enemy Spawning & Collisions:** (Previous changes)
     *   Verified enemy configuration (`config/enemies.yml`) and schema (`EnemySchema`).
-    *   Created `EnemyManager` to load configs, manage enemy state (health), handle spawning (`spawnEnemy`), damage (`handleDamage`), and destruction (`destroyEnemy`). Emits `ENEMY_SPAWNED`, `ENEMY_DESTROYED`, `ENEMY_HEALTH_UPDATED`. Listens for `PROJECTILE_HIT_ENEMY`.
-    *   Created placeholder `EnemyEntity` extending `Phaser.Physics.Arcade.Sprite` in `src/phaser/entities/`. Stores instance/config IDs, sets collision radius, basic velocity, and includes `takeDamage` (visual only) and `destroySelf` methods.
+    *   Created `EnemyManager` to load configs, manage enemy state (health - *now loaded from config*), handle spawning (`spawnEnemy`), damage (`handleDamage` - *now uses damage from event*), and destruction (`destroyEnemy`). Emits `ENEMY_SPAWNED`, `ENEMY_DESTROYED`, `ENEMY_HEALTH_UPDATED`. Listens for `PROJECTILE_HIT_ENEMY`.
+    *   Created placeholder `EnemyEntity` extending `Phaser.Physics.Arcade.Sprite` in `src/phaser/entities/`. Stores instance/config IDs, sets collision radius, basic velocity, and includes `takeDamage` (visual only) and `destroySelf` methods. *Made `enemyConfig` public.*
     *   Updated `GameScene`:
         *   Instantiated `EnemyManager`.
         *   Added `enemyGroup` (Phaser Group) and `enemySprites` (Map).
@@ -68,25 +95,25 @@
     *   ~~Create `EnemyManager` to handle spawning and state.~~ (Done)
     *   ~~Create basic `EnemyEntity` (placeholder).~~ (Done)
     *   ~~Update `GameScene` to spawn enemies (e.g., on a timer).~~ (Done - temporary spawner added)
-*   **Collisions:**
+*   **Collisions:** (Basic implementation done, damage now uses config)
     *   ~~Implement physics collision checks in `GameScene` (`this.physics.overlap`).~~ (Done)
         *   ~~Player vs Enemy~~ (Done)
         *   ~~Projectile vs Enemy~~ (Done)
-    *   ~~Define and handle collision events (e.g., `PLAYER_HIT_ENEMY`, `PROJECTILE_HIT_ENEMY`).~~ (Done)
-    *   ~~Update `PlayerManager` to handle taking damage.~~ (Done)
+    *   ~~Define and handle collision events (e.g., `PLAYER_HIT_ENEMY`, `PROJECTILE_HIT_ENEMY`).~~ (Done - *payloads updated with config damage*)
+    *   ~~Update `PlayerManager` to handle taking damage.~~ (Done - *uses damage from event*)
     *   ~~Update `ProjectileManager` to handle hitting enemies (removal).~~ (Done)
-    *   ~~Update `EnemyManager` to handle taking damage / destruction.~~ (Done)
+    *   ~~Update `EnemyManager` to handle taking damage / destruction.~~ (Done - *uses damage from event*)
     *   ~~Update `EconomyManager` to grant currency on enemy defeat.~~ (Done)
 *   **Assets:** Replace placeholder graphics (Vite logo) with actual sprites for player, bullet, and enemies.
 *   **Refinement:**
-    *   Implement actual damage calculation based on projectile/weapon config hitting enemy config.
-    *   Implement actual collision damage calculation for player vs enemy.
+    *   ~~Implement actual damage calculation based on projectile/weapon config hitting enemy config.~~ (Done for projectile -> enemy)
+    *   ~~Implement actual collision damage calculation for player vs enemy.~~ (Done)
     *   Refine enemy destruction logic (e.g., explosion animation, sound).
     *   Refine player death logic (e.g., game over screen, restart).
-    *   Load player speed, weapon cooldown, projectile speed from config.
-    *   Refine projectile spawn position relative to player sprite.
-    *   Implement weapon switching input and logic (if time permits in M2).
-    *   Implement UI buttons for weapons (non-functional initially).
+    *   ~~Load player speed, weapon cooldown, projectile speed from config.~~ (Done)
+    *   ~~Refine projectile spawn position relative to player sprite.~~ (Done - Handled by `GameScene` now)
+    *   ~~Implement weapon switching input and logic (if time permits in M2).~~ (Done)
+    *   ~~Implement UI buttons for weapons (non-functional initially).~~ (Done)
 
 **Important Patterns & Preferences:**
 *   **Clean Code:** Adhere strictly to guidelines (SRP, DRY, meaningful names, etc.).
@@ -100,11 +127,13 @@
 *   Singleton pattern usage for `EventBus` and `Logger` requires careful import handling (importing instance vs. type). Named class exports are needed alongside default instance exports for type annotations (`import { EventBus as EventBusType }`).
 *   Custom `EventBus` doesn't support Phaser's context argument in `on`/`off`. Event handler methods needing scene context must be bound explicitly (`this.handler = this.handler.bind(this)`).
 *   Clear separation of concerns: Core managers handle state and logic, Phaser scenes handle presentation (sprites, physics bodies) and react to manager events. Boundary checks for projectiles fit better in `ProjectileManager` than `GameScene`.
-*   Need for shared type definitions (like `PlayerState`, `ProjectileHitEnemyData`, `PlayerHitEnemyData`) for event payloads.
+*   Need for shared type definitions (like `PlayerState`, `ProjectileHitEnemyData`, `PlayerHitEnemyData`) for event payloads. *Updated `ProjectileHitEnemyData` and `SpawnProjectileData`.*
 *   Phaser's `physics.overlap` callback parameter types can be tricky; using `any` and casting internally is a viable workaround.
+*   Passing damage information through multiple managers/scenes can be complex. Chosen approach: `WeaponManager` adds damage to `SPAWN_PROJECTILE` -> `ProjectileManager` stores damage -> `GameScene` retrieves damage via `getProjectileDamage` -> `GameScene` adds damage to `PROJECTILE_HIT_ENEMY` -> `EnemyManager` uses damage from event.
+*   Refactored projectile spawning: `WeaponManager` requests fire -> `GameScene` calculates spawn point & emits spawn details -> `ProjectileManager` creates state -> `GameScene` creates sprite. This keeps scene-specific calculations (spawn point) in the scene.
 
 **Active Decisions & Considerations:**
 *   Repository name: `MathInvasion_v2` (Public).
 *   Using Vite with Vanilla TS template as base.
-*   Enemies are instantly destroyed on collision with the player (placeholder behavior).
-*   Damage values are currently hardcoded placeholders (e.g., 10 damage in `EnemyManager`, 10 collision damage in `GameScene`).
+*   Enemies are instantly destroyed on collision with the player (placeholder behavior - uses 9999 damage in `GameScene`).
+*   ~~Damage values are currently hardcoded placeholders (e.g., 10 damage in `EnemyManager`, 10 collision damage in `GameScene`).~~ (Fixed - loaded from config)

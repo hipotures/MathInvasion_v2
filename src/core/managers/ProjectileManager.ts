@@ -3,14 +3,29 @@
 import logger from '../utils/Logger';
 // Import class type for annotations
 import { EventBus as EventBusType } from '../events/EventBus';
+import * as Events from '../constants/events'; // Import event constants
 // TODO: Import projectile configuration types/interfaces when defined
 // TODO: Import projectile entity class when defined
 
-// Define constants for event names
-const SPAWN_PROJECTILE = 'SPAWN_PROJECTILE';
-const PROJECTILE_CREATED = 'PROJECTILE_CREATED'; // Event for Phaser layer
-const PROJECTILE_DESTROYED = 'PROJECTILE_DESTROYED'; // Event for Phaser layer
-const PROJECTILE_HIT_ENEMY = 'PROJECTILE_HIT_ENEMY'; // Event from GameScene collision
+/** Defines the data expected for the SPAWN_PROJECTILE event */
+// Note: This interface might be better placed in a shared types file or events.ts
+interface SpawnProjectileData {
+  type: string;
+  x: number;
+  y: number;
+  velocityX: number;
+  velocityY: number;
+  damage?: number; // Added optional damage from weapon
+  // ownerId?: string; // Optional: To distinguish player/enemy projectiles
+}
+
+/** Defines the data expected for the PROJECTILE_HIT_ENEMY event */
+// Note: This interface might be better placed in a shared types file or events.ts
+interface ProjectileHitEnemyData {
+  projectileId: string;
+  enemyInstanceId: string;
+  // damage?: number; // Optional: Damage might be handled by EnemyManager based on projectile type
+}
 
 /**
  * Manages active projectiles in the game world.
@@ -41,6 +56,7 @@ interface ProjectileLike {
   y: number;
   velocityX: number;
   velocityY: number;
+  damage?: number; // Added optional damage property
   update: (dt: number) => void;
 }
 
@@ -59,8 +75,8 @@ export default class ProjectileManager {
     this.handleProjectileHitEnemy = this.handleProjectileHitEnemy.bind(this); // Bind new handler
 
     // Subscribe to events
-    this.eventBus.on(SPAWN_PROJECTILE, this.handleSpawnProjectile);
-    this.eventBus.on(PROJECTILE_HIT_ENEMY, this.handleProjectileHitEnemy); // Subscribe to hit event
+    this.eventBus.on(Events.SPAWN_PROJECTILE, this.handleSpawnProjectile);
+    this.eventBus.on(Events.PROJECTILE_HIT_ENEMY, this.handleProjectileHitEnemy); // Subscribe to hit event
   }
 
   // --- Event Handlers ---
@@ -70,7 +86,9 @@ export default class ProjectileManager {
   }
 
   private handleProjectileHitEnemy(data: ProjectileHitEnemyData): void {
-    logger.debug(`Projectile ${data.projectileId} hit enemy ${data.enemyInstanceId}. Removing projectile.`);
+    logger.debug(
+      `Projectile ${data.projectileId} hit enemy ${data.enemyInstanceId}. Removing projectile.`
+    );
     this.removeProjectile(data.projectileId);
   }
 
@@ -104,13 +122,15 @@ export default class ProjectileManager {
 
     // --- Placeholder Logic ---
     // TODO: Replace with actual projectile entity creation
-    const newProjectile: ProjectileLike = { // Ensure object matches interface
+    const newProjectile: ProjectileLike = {
+      // Ensure object matches interface
       id: newId,
       type: data.type,
       x: data.x,
       y: data.y,
       velocityX: data.velocityX,
       velocityY: data.velocityY,
+      damage: data.damage, // Store damage from spawn data
       // ownerId: data.ownerId,
       update: (dt: number) => {
         // Basic movement logic (will be in the entity itself later)
@@ -123,7 +143,7 @@ export default class ProjectileManager {
     // --- End Placeholder ---
 
     // Emit event for the Phaser layer to create the visual sprite
-    this.eventBus.emit(PROJECTILE_CREATED, {
+    this.eventBus.emit(Events.PROJECTILE_CREATED, {
       id: newId,
       type: data.type,
       x: data.x,
@@ -137,16 +157,25 @@ export default class ProjectileManager {
       logger.debug(`Removing projectile: ${projectileId}`);
       this.activeProjectiles.delete(projectileId);
       // Emit event for the Phaser layer to remove the visual sprite
-      this.eventBus.emit(PROJECTILE_DESTROYED, { id: projectileId });
+      this.eventBus.emit(Events.PROJECTILE_DESTROYED, { id: projectileId });
     } else {
-      logger.warn(`Attempted to remove non-existent projectile: ${projectileId}`);
+      // logger.warn(`Attempted to remove non-existent projectile: ${projectileId}`); // Can be noisy if hit happens same frame as boundary check
     }
+  }
+
+  /**
+   * Retrieves the damage value associated with a specific projectile instance.
+   * @param projectileId The unique ID of the projectile.
+   * @returns The damage value, or undefined if the projectile doesn't exist or has no damage.
+   */
+  public getProjectileDamage(projectileId: string): number | undefined {
+    return this.activeProjectiles.get(projectileId)?.damage;
   }
 
   /** Clean up event listeners when the manager is destroyed */
   public destroy(): void {
-    this.eventBus.off(SPAWN_PROJECTILE, this.handleSpawnProjectile);
-    this.eventBus.off(PROJECTILE_HIT_ENEMY, this.handleProjectileHitEnemy); // Unsubscribe from hit event
+    this.eventBus.off(Events.SPAWN_PROJECTILE, this.handleSpawnProjectile);
+    this.eventBus.off(Events.PROJECTILE_HIT_ENEMY, this.handleProjectileHitEnemy); // Unsubscribe from hit event
     this.activeProjectiles.clear(); // Clear any remaining projectiles
     logger.log('ProjectileManager destroyed and listeners removed');
   }

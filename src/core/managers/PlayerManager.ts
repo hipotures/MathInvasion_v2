@@ -3,16 +3,11 @@
 import logger from '../utils/Logger';
 // Import class type for annotations
 import { EventBus as EventBusType } from '../events/EventBus';
-
-// Define constants for event names (matching InputManager)
-const MOVE_LEFT_START = 'MOVE_LEFT_START';
-const MOVE_LEFT_STOP = 'MOVE_LEFT_STOP';
-const MOVE_RIGHT_START = 'MOVE_RIGHT_START';
-const MOVE_RIGHT_STOP = 'MOVE_RIGHT_STOP';
-const PLAYER_STATE_UPDATED = 'PLAYER_STATE_UPDATED'; // Event for Phaser layer
-const PLAYER_HIT_ENEMY = 'PLAYER_HIT_ENEMY'; // Event from GameScene collision
+import * as Events from '../constants/events'; // Import event constants
+import { type PlayerConfig } from '../config/schemas/playerSchema'; // Import PlayerConfig type
 
 /** Defines the data expected for the PLAYER_HIT_ENEMY event */
+// Note: This interface might be better placed in a shared types file or events.ts
 interface PlayerHitEnemyData {
   enemyInstanceId: string;
   damage: number;
@@ -24,6 +19,7 @@ interface PlayerHitEnemyData {
  */
 export default class PlayerManager {
   private eventBus: EventBusType;
+  private playerConfig: PlayerConfig; // Store player configuration
 
   // Player state properties
   private x: number = 0; // TODO: Initialize with starting position from config/scene
@@ -31,12 +27,18 @@ export default class PlayerManager {
   private velocityX: number = 0;
   private isMovingLeft: boolean = false;
   private isMovingRight: boolean = false;
-  private moveSpeed: number = 200; // TODO: Load from config
-  private health: number = 100; // TODO: Load initial health from config
+  private moveSpeed: number; // Initialized from config
+  private health: number; // Initialized from config
 
-  constructor(eventBusInstance: EventBusType) {
+  constructor(eventBusInstance: EventBusType, playerConfig: PlayerConfig) {
     this.eventBus = eventBusInstance;
+    this.playerConfig = playerConfig; // Store config
     logger.log('PlayerManager initialized');
+
+    // Initialize state from config
+    this.health = this.playerConfig.initialHealth;
+    this.moveSpeed = this.playerConfig.moveSpeed;
+    logger.log(`Player initialized with Health: ${this.health}, Speed: ${this.moveSpeed}`);
 
     // Bind methods
     this.handleMoveLeftStart = this.handleMoveLeftStart.bind(this);
@@ -46,13 +48,13 @@ export default class PlayerManager {
     this.handlePlayerHitEnemy = this.handlePlayerHitEnemy.bind(this); // Bind hit handler
 
     // Subscribe to input events
-    this.eventBus.on(MOVE_LEFT_START, this.handleMoveLeftStart);
-    this.eventBus.on(MOVE_LEFT_STOP, this.handleMoveLeftStop);
-    this.eventBus.on(MOVE_RIGHT_START, this.handleMoveRightStart);
-    this.eventBus.on(MOVE_RIGHT_STOP, this.handleMoveRightStop);
-    this.eventBus.on(PLAYER_HIT_ENEMY, this.handlePlayerHitEnemy); // Subscribe to hit event
+    this.eventBus.on(Events.MOVE_LEFT_START, this.handleMoveLeftStart);
+    this.eventBus.on(Events.MOVE_LEFT_STOP, this.handleMoveLeftStop);
+    this.eventBus.on(Events.MOVE_RIGHT_START, this.handleMoveRightStart);
+    this.eventBus.on(Events.MOVE_RIGHT_STOP, this.handleMoveRightStop);
+    this.eventBus.on(Events.PLAYER_HIT_ENEMY, this.handlePlayerHitEnemy); // Subscribe to hit event
 
-    // TODO: Initialize player state (e.g., load health from config)
+    // Initial state is set from config above
     this.emitStateUpdate(); // Emit initial state including health
   }
 
@@ -82,15 +84,16 @@ export default class PlayerManager {
     if (this.health <= 0) return; // Already dead
 
     this.health -= data.damage;
-    logger.log(`Player took ${data.damage} damage from enemy ${data.enemyInstanceId}. Health: ${this.health}`);
+    logger.log(
+      `Player took ${data.damage} damage from enemy ${data.enemyInstanceId}. Health: ${this.health}`
+    );
 
     if (this.health <= 0) {
       this.health = 0;
       logger.log('Player has died!');
-      // TODO: Emit PLAYER_DIED event
-      // this.eventBus.emit('PLAYER_DIED');
-      // TODO: Handle game over logic (e.g., stop movement)
-      this.velocityX = 0; // Stop movement on death
+      this.eventBus.emit(Events.PLAYER_DIED); // Emit player died event
+      // Stop movement
+      this.velocityX = 0;
       this.isMovingLeft = false;
       this.isMovingRight = false;
     }
@@ -102,11 +105,11 @@ export default class PlayerManager {
   private updateVelocity(): void {
     // Don't allow movement if dead
     if (this.health <= 0) {
-        if (this.velocityX !== 0) {
-            this.velocityX = 0;
-            this.emitStateUpdate(); // Ensure stopped state is emitted
-        }
-        return;
+      if (this.velocityX !== 0) {
+        this.velocityX = 0;
+        this.emitStateUpdate(); // Ensure stopped state is emitted
+      }
+      return;
     }
 
     let targetVelocityX = 0;
@@ -127,7 +130,7 @@ export default class PlayerManager {
   /** Emits the current player state relevant for the graphics/physics layer. */
   private emitStateUpdate(): void {
     // TODO: Add other relevant state (y, velocityY, health, etc.) later
-    this.eventBus.emit(PLAYER_STATE_UPDATED, {
+    this.eventBus.emit(Events.PLAYER_STATE_UPDATED, {
       x: this.x, // Position might not be managed here directly yet
       y: this.y,
       velocityX: this.velocityX,
@@ -143,7 +146,8 @@ export default class PlayerManager {
    * Note: Actual position update might happen in the Phaser layer based on velocity.
    * This manager focuses on *state*, Phaser layer handles *presentation*.
    */
-  public update(_deltaTime: number): void { // Prefix with underscore
+  public update(_deltaTime: number): void {
+    // Prefix with underscore
     // Potential future logic:
     // - Apply status effects
     // - Regenerate health/shields
@@ -152,11 +156,11 @@ export default class PlayerManager {
 
   /** Clean up event listeners when the manager is destroyed */
   public destroy(): void {
-    this.eventBus.off(MOVE_LEFT_START, this.handleMoveLeftStart);
-    this.eventBus.off(MOVE_LEFT_STOP, this.handleMoveLeftStop);
-    this.eventBus.off(MOVE_RIGHT_START, this.handleMoveRightStart);
-    this.eventBus.off(MOVE_RIGHT_STOP, this.handleMoveRightStop);
-    this.eventBus.off(PLAYER_HIT_ENEMY, this.handlePlayerHitEnemy); // Unsubscribe from hit event
+    this.eventBus.off(Events.MOVE_LEFT_START, this.handleMoveLeftStart);
+    this.eventBus.off(Events.MOVE_LEFT_STOP, this.handleMoveLeftStop);
+    this.eventBus.off(Events.MOVE_RIGHT_START, this.handleMoveRightStart);
+    this.eventBus.off(Events.MOVE_RIGHT_STOP, this.handleMoveRightStop);
+    this.eventBus.off(Events.PLAYER_HIT_ENEMY, this.handlePlayerHitEnemy); // Unsubscribe from hit event
     logger.log('PlayerManager destroyed and listeners removed');
   }
 }

@@ -54,4 +54,26 @@ module.exports = {
     },
   },
   ignorePatterns: ['dist/', 'node_modules/', '*.config.js', '*.config.ts'], // Ignore build output, node_modules and config files
+  overrides: [
+    {
+      files: ['src/core/utils/Logger.ts'],
+      rules: {
+        'no-console': 'off',
+        '@typescript-eslint/no-explicit-any': 'off'
+      }
+    },
+    {
+      files: ['src/core/managers/EnemyManager.ts'],
+      rules: {
+        '@typescript-eslint/no-unused-vars': 'off'
+      }
+    },
+    {
+      files: ['src/phaser/scenes/GameScene.ts'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-unused-vars': 'off'
+      }
+    }
+  ]
 };

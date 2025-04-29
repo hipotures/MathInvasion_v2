@@ -3,18 +3,12 @@
 import logger from '../utils/Logger';
 // Import class type for annotations
 import { EventBus as EventBusType } from '../events/EventBus';
+import * as Events from '../constants/events'; // Import event constants
 
 /**
  * Manages player input from various sources (keyboard, mouse, touch).
  * Translates raw input into game actions and emits events.
  */
-// Define constants for event names
-const MOVE_LEFT_START = 'MOVE_LEFT_START';
-const MOVE_LEFT_STOP = 'MOVE_LEFT_STOP';
-const MOVE_RIGHT_START = 'MOVE_RIGHT_START';
-const MOVE_RIGHT_STOP = 'MOVE_RIGHT_STOP';
-const FIRE_START = 'FIRE_START';
-const FIRE_STOP = 'FIRE_STOP';
 // TODO: Add SWITCH_WEAPON event later
 
 export default class InputManager {
@@ -37,7 +31,8 @@ export default class InputManager {
 
   // Methods for processing input and emitting events
 
-  public update(_deltaTime: number): void { // Prefix with underscore
+  public update(_deltaTime: number): void {
+    // Prefix with underscore
     // TODO: Implement input polling/processing if needed
   }
 
@@ -51,7 +46,7 @@ export default class InputManager {
         if (!this.moveLeftActive) {
           logger.debug('Move Left Started');
           this.moveLeftActive = true;
-          this.eventBus.emit(MOVE_LEFT_START);
+          this.eventBus.emit(Events.MOVE_LEFT_START);
         }
         break;
       case 'd':
@@ -59,17 +54,29 @@ export default class InputManager {
         if (!this.moveRightActive) {
           logger.debug('Move Right Started');
           this.moveRightActive = true;
-          this.eventBus.emit(MOVE_RIGHT_START);
+          this.eventBus.emit(Events.MOVE_RIGHT_START);
         }
         break;
       case ' ': // Spacebar for firing
         if (!this.fireActive) {
           logger.debug('Fire Started');
           this.fireActive = true;
-          this.eventBus.emit(FIRE_START);
+          this.eventBus.emit(Events.FIRE_START);
         }
         break;
-      // TODO: Add cases for weapon switching keys
+      // Weapon Switching Keys
+      case '1':
+        logger.debug('Weapon Switch Key 1 pressed');
+        this.eventBus.emit(Events.WEAPON_SWITCH, { weaponId: 'bullet' });
+        break;
+      case '2':
+        logger.debug('Weapon Switch Key 2 pressed');
+        this.eventBus.emit(Events.WEAPON_SWITCH, { weaponId: 'laser' });
+        break;
+      case '3':
+        logger.debug('Weapon Switch Key 3 pressed');
+        this.eventBus.emit(Events.WEAPON_SWITCH, { weaponId: 'slow_field' });
+        break;
     }
   }
 
@@ -80,7 +87,7 @@ export default class InputManager {
         if (this.moveLeftActive) {
           logger.debug('Move Left Stopped');
           this.moveLeftActive = false;
-          this.eventBus.emit(MOVE_LEFT_STOP);
+          this.eventBus.emit(Events.MOVE_LEFT_STOP);
         }
         break;
       case 'd':
@@ -88,14 +95,14 @@ export default class InputManager {
         if (this.moveRightActive) {
           logger.debug('Move Right Stopped');
           this.moveRightActive = false;
-          this.eventBus.emit(MOVE_RIGHT_STOP);
+          this.eventBus.emit(Events.MOVE_RIGHT_STOP);
         }
         break;
       case ' ': // Spacebar for firing
         if (this.fireActive) {
           logger.debug('Fire Stopped');
           this.fireActive = false;
-          this.eventBus.emit(FIRE_STOP); // Emit stop event if needed, though often only START matters for triggering shots
+          this.eventBus.emit(Events.FIRE_STOP); // Emit stop event if needed, though often only START matters for triggering shots
         }
         break;
       // TODO: Add cases for weapon switching keys

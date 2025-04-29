@@ -3,14 +3,21 @@
 import logger from '../utils/Logger';
 // Import class type for annotations
 import { EventBus as EventBusType } from '../events/EventBus';
-// TODO: Import weapon configuration types/interfaces when defined
+import * as Events from '../constants/events'; // Import event constants
+import configLoader from '../config/ConfigLoader'; // Import config loader instance
+import { type WeaponsConfig, type WeaponConfig } from '../config/schemas/weaponSchema'; // Import weapon config types
 import { PlayerState } from '../types/PlayerState'; // Assuming a type definition exists or will be created
 
-// Define constants for event names
-const FIRE_START = 'FIRE_START';
-// const FIRE_STOP = 'FIRE_STOP'; // Likely not needed for basic firing logic
-const SPAWN_PROJECTILE = 'SPAWN_PROJECTILE';
-const PLAYER_STATE_UPDATED = 'PLAYER_STATE_UPDATED'; // To get player position for firing
+/** Defines the data expected for the PLAYER_STATE_UPDATED event */
+// Note: This interface might be better placed in a shared types file or events.ts
+// Duplicated from PlayerManager for now, consider centralizing later
+interface PlayerStateData {
+  x: number;
+  y: number;
+  velocityX: number;
+  velocityY: number;
+  health: number;
+}
 
 /**
  * Manages the player's weapons, including selection, firing, cooldowns,
@@ -18,28 +25,45 @@ const PLAYER_STATE_UPDATED = 'PLAYER_STATE_UPDATED'; // To get player position f
  */
 export default class WeaponManager {
   private eventBus: EventBusType;
-  private currentWeaponId: string = 'basic_gun'; // TODO: Load from config/player state
-  private weaponCooldown: number = 500; // ms - TODO: Load from weapon config
+  private weaponsConfig: WeaponsConfig; // Store all weapon configs
+  private currentWeaponConfig: WeaponConfig | null = null; // Store config for the active weapon
+  private currentWeaponId: string = 'bullet'; // Corrected initial weapon ID
+  private weaponCooldown: number = 500; // ms - Default, will be overwritten by config
   private cooldownTimer: number = 0; // ms
   private isFiring: boolean = false; // Is the fire button currently held?
-  private playerPosition: { x: number; y: number } = { x: 0, y: 0 }; // Track player position
+  // Removed playerPosition tracking
 
   constructor(eventBusInstance: EventBusType) {
     this.eventBus = eventBusInstance;
+    this.weaponsConfig = configLoader.getWeaponsConfig(); // Load all weapon configs
     logger.log('WeaponManager initialized');
+
+    // Find and set the initial weapon config
+    this.currentWeaponConfig =
+      this.weaponsConfig.find((w) => w.id === this.currentWeaponId) ?? null;
+    if (this.currentWeaponConfig) {
+      this.weaponCooldown = this.currentWeaponConfig.baseCooldownMs;
+      logger.log(
+        `Initial weapon set to ${this.currentWeaponId}, Cooldown: ${this.weaponCooldown}ms`
+      );
+    } else {
+      logger.error(`Initial weapon config not found for ID: ${this.currentWeaponId}`);
+      // Handle error appropriately - maybe default to a failsafe weapon or throw
+      this.weaponCooldown = 500; // Fallback cooldown
+    }
 
     // Bind methods
     this.handleFireStart = this.handleFireStart.bind(this);
-    this.handlePlayerStateUpdate = this.handlePlayerStateUpdate.bind(this);
+    this.handleWeaponSwitch = this.handleWeaponSwitch.bind(this); // Bind switch handler
+    // Removed handlePlayerStateUpdate binding
     // Note: handleFireStop might not be needed if firing is triggered on press
 
     // Subscribe to events
-    this.eventBus.on(FIRE_START, this.handleFireStart);
-    this.eventBus.on(PLAYER_STATE_UPDATED, this.handlePlayerStateUpdate);
-    // TODO: Subscribe to weapon switching events
+    this.eventBus.on(Events.FIRE_START, this.handleFireStart);
+    this.eventBus.on(Events.WEAPON_SWITCH, this.handleWeaponSwitch); // Subscribe to switch event
+    // Removed PLAYER_STATE_UPDATED subscription
 
-    // TODO: Load weapon configurations
-    // TODO: Set initial weapon based on player state or config
+    // Config loaded and initial weapon set above
   }
 
   // --- Event Handlers ---
@@ -50,10 +74,28 @@ export default class WeaponManager {
     this.attemptFire(); // Try to fire immediately
   }
 
-  // We need player position to know where projectiles should spawn
-  private handlePlayerStateUpdate(state: PlayerState): void {
-    this.playerPosition = { x: state.x, y: state.y };
+  private handleWeaponSwitch(data: { weaponId: string }): void {
+    const newWeaponId = data.weaponId;
+    if (newWeaponId === this.currentWeaponId) {
+      logger.debug(`Weapon ${newWeaponId} is already selected.`);
+      return; // No change needed
+    }
+
+    const newWeaponConfig = this.weaponsConfig.find((w) => w.id === newWeaponId);
+
+    if (newWeaponConfig) {
+      this.currentWeaponId = newWeaponId;
+      this.currentWeaponConfig = newWeaponConfig;
+      this.weaponCooldown = newWeaponConfig.baseCooldownMs;
+      this.cooldownTimer = 0; // Reset cooldown when switching
+      logger.log(`Switched weapon to ${this.currentWeaponId}, Cooldown: ${this.weaponCooldown}ms`);
+      // TODO: Emit WEAPON_CHANGED event for UI updates?
+    } else {
+      logger.warn(`Attempted to switch to unknown weapon ID: ${newWeaponId}`);
+    }
   }
+
+  // Removed handlePlayerStateUpdate method
 
   // --- Core Logic ---
 
@@ -76,20 +118,17 @@ export default class WeaponManager {
   private attemptFire(): void {
     if (this.cooldownTimer === 0) {
       logger.debug(`Firing weapon: ${this.currentWeaponId}`);
-      // TODO: Get specific weapon config (damage, speed, projectile type)
-      const projectileType = 'basic_bullet'; // Placeholder
-      const spawnX = this.playerPosition.x; // Adjust based on sprite origin/barrel position
-      const spawnY = this.playerPosition.y - 30; // Fire slightly above player center (adjust)
-      const velocityX = 0; // Firing straight up for now
-      const velocityY = -400; // Projectile speed - TODO: Load from config
+      // Ensure we have a valid config before firing
+      if (!this.currentWeaponConfig) {
+        logger.error(
+          `Cannot fire, current weapon config is missing for ID: ${this.currentWeaponId}`
+        );
+        return;
+      }
 
-      this.eventBus.emit(SPAWN_PROJECTILE, {
-        type: projectileType,
-        x: spawnX,
-        y: spawnY,
-        velocityX: velocityX,
-        velocityY: velocityY,
-        // TODO: Add owner info (player vs enemy) later
+      // Emit request for GameScene to handle spawn details
+      this.eventBus.emit(Events.REQUEST_FIRE_WEAPON, {
+        weaponConfig: this.currentWeaponConfig,
       });
 
       this.cooldownTimer = this.weaponCooldown; // Start cooldown
@@ -102,8 +141,9 @@ export default class WeaponManager {
 
   /** Clean up event listeners when the manager is destroyed */
   public destroy(): void {
-    this.eventBus.off(FIRE_START, this.handleFireStart);
-    this.eventBus.off(PLAYER_STATE_UPDATED, this.handlePlayerStateUpdate);
+    this.eventBus.off(Events.FIRE_START, this.handleFireStart);
+    this.eventBus.off(Events.WEAPON_SWITCH, this.handleWeaponSwitch); // Unsubscribe switch event
+    // Removed PLAYER_STATE_UPDATED unsubscription
     logger.log('WeaponManager destroyed and listeners removed');
   }
 }

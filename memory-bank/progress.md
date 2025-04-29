@@ -3,16 +3,21 @@
 **Current Status:** Milestone M2: Podstawowa Rozgrywka - *Enemy spawning and basic collision handling implemented.*
 
 **What Works:**
-*   **Milestone M2 (Partial): Enemy Spawning & Collisions**
-    *   `EnemyManager` created, loads config, manages state, spawns/destroys enemies via events.
-    *   Placeholder `EnemyEntity` created for visual representation in `GameScene`.
-    *   `GameScene` spawns enemies (via timer), handles `ENEMY_SPAWNED`/`ENEMY_DESTROYED` events to manage sprites.
+*   **Milestone M2 (Partial): Load Core Values from Config**
+    *   Player health and move speed loaded from `config/player.yml`.
+    *   Weapon cooldown and projectile speed loaded from `config/weapons.yml`.
+    *   Projectile damage loaded from weapon config and used in `EnemyManager`.
+    *   Player collision damage loaded from enemy config and used in `GameScene`.
+    *   Enemy health loaded from `config/enemies.yml`.
+*   **Milestone M2 (Partial): Enemy Spawning & Collisions** (Basic implementation done)
+    *   `EnemyManager` created, loads config, manages state (health from config), spawns/destroys enemies via events. Applies damage based on event payload.
+    *   Placeholder `EnemyEntity` created, stores config (made public).
+    *   `GameScene` spawns enemies (via timer), handles `ENEMY_SPAWNED`/`ENEMY_DESTROYED` events.
     *   `GameScene` implements `physics.overlap` for Player/Enemy and Projectile/Enemy.
-    *   Collision events (`PROJECTILE_HIT_ENEMY`, `PLAYER_HIT_ENEMY`) are emitted from `GameScene`.
-    *   `ProjectileManager` removes projectile state on `PROJECTILE_HIT_ENEMY`.
-    *   `EnemyManager` applies damage (placeholder value) on `PROJECTILE_HIT_ENEMY`.
+    *   Collision events (`PROJECTILE_HIT_ENEMY`, `PLAYER_HIT_ENEMY`) emitted from `GameScene` with damage from config.
+    *   `ProjectileManager` removes projectile state on `PROJECTILE_HIT_ENEMY`. Stores damage from `SPAWN_PROJECTILE` event and provides `getProjectileDamage` method.
     *   `EconomyManager` grants currency (from config) on `ENEMY_DESTROYED`.
-    *   `PlayerManager` applies damage (placeholder value) on `PLAYER_HIT_ENEMY`, includes health in state updates.
+    *   `PlayerManager` applies damage based on `PLAYER_HIT_ENEMY` event payload.
 *   **Milestone M2 (Partial): Basic Movement & Firing**
     *   Core managers created (`Player`, `Input`, `Weapon`, `Projectile`, `Economy`).
     *   Event-driven horizontal player movement implemented.
@@ -40,16 +45,16 @@
 
 **What's Left to Build (Current Milestone - M2):**
 *   **Enemies:** ~~Config~~, ~~Manager~~, ~~Entity (placeholder)~~, ~~Spawning in `GameScene`~~. (All Done)
-*   **Collisions:** ~~Physics checks (`overlap`)~~, ~~Collision events~~, ~~Damage handling (`PlayerManager`, `EnemyManager`)~~, ~~Projectile removal (`ProjectileManager`)~~, ~~Currency gain (`EconomyManager`)~~. (All Done - basic implementation)
+*   **Collisions:** ~~Physics checks (`overlap`)~~, ~~Collision events~~, ~~Damage handling (`PlayerManager`, `EnemyManager`)~~, ~~Projectile removal (`ProjectileManager`)~~, ~~Currency gain (`EconomyManager`)~~. (Done - uses config damage)
 *   **Assets:** Replace placeholder player/bullet/enemy graphics.
 *   **Refinement:**
-    *   Implement actual damage calculation (projectile vs enemy, player vs enemy).
+    *   ~~Implement actual damage calculation (projectile vs enemy, player vs enemy).~~ (Done)
     *   Refine enemy destruction (visuals, sound).
     *   Refine player death logic (game over).
-    *   Load values (speeds, health, damage, cooldowns) from config files.
-    *   Refine projectile spawn points.
-    *   Implement weapon switching (optional for M2).
-    *   Implement UI buttons (non-functional).
+    *   ~~Load values (speeds, health, damage, cooldowns) from config files.~~ (Done)
+    *   ~~Refine projectile spawn points.~~ (Done - Handled by `GameScene`)
+    *   ~~Implement weapon switching (optional for M2).~~ (Done - Keys 1, 2, 3)
+    *   ~~Implement UI buttons for weapons (non-functional).~~ (Done)
 
 **Overall Project Roadmap:**
 *   **M0: Szkielet Projektu (Setup)** - **COMPLETE**
@@ -63,14 +68,10 @@
 
 **Known Issues:**
 *   Using placeholder graphics (Vite logo) for player and bullets.
-*   Movement speed, cooldowns, projectile speeds are hardcoded.
-*   Projectile spawn position is a fixed offset from player center.
 *   Using placeholder graphics (Vite logo) for player, bullets, and enemies.
-*   Movement speed, cooldowns, projectile speeds, player health, enemy health, damage values are hardcoded placeholders.
-*   Projectile spawn position is a fixed offset from player center.
-*   ~~No collision detection implemented yet.~~ (Basic overlap implemented)
-*   ~~No enemies implemented yet.~~ (Basic enemies implemented)
-*   Player vs Enemy collision instantly destroys the enemy (placeholder).
+*   ~~Projectile spawn position is a fixed offset from player center.~~ (Fixed - calculated by `GameScene`)
+*   ~~Movement speed, cooldowns, projectile speeds, player health, enemy health, damage values are hardcoded placeholders.~~ (Fixed - loaded from config)
+*   Player vs Enemy collision instantly destroys the enemy (placeholder - uses 9999 damage).
 
 **Evolution of Project Decisions:**
 *   Established singleton pattern for `EventBus` and `Logger`, requiring specific import handling for types vs. instances.

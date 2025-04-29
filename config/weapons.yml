@@ -5,6 +5,7 @@
   baseDamage: 10
   baseRange: 300
   projectileType: basic_bullet
+  projectileSpeed: 400 # Added speed
   upgrade:
     costMultiplier: 1.4
     damageMultiplier: 1.15

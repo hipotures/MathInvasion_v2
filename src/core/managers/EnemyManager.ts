@@ -2,18 +2,22 @@ import EventBus, { EventBus as EventBusType } from '../events/EventBus'; // Impo
 import Logger, { Logger as LoggerType } from '../utils/Logger'; // Import default instance and type separately
 import { EnemyConfig, EnemiesConfig } from '../config/schemas/enemySchema'; // Keep EnemyConfig named, add EnemiesConfig
 import ConfigLoader from '../config/ConfigLoader'; // Import default instance
+// Event constants
 
-// Define event constants used or handled by this manager
-const ENEMY_SPAWNED = 'ENEMY_SPAWNED'; // Emitted by this manager
-const ENEMY_DESTROYED = 'ENEMY_DESTROYED'; // Emitted by this manager
-const ENEMY_HEALTH_UPDATED = 'ENEMY_HEALTH_UPDATED'; // Emitted by this manager
-const PROJECTILE_HIT_ENEMY = 'PROJECTILE_HIT_ENEMY'; // Handled by this manager
+import { ENEMY_SPAWNED } from '../constants/events';
+
+import { ENEMY_DESTROYED } from '../constants/events';
+
+import { ENEMY_HEALTH_UPDATED } from '../constants/events';
+
+import { PROJECTILE_HIT_ENEMY } from '../constants/events';
 
 /** Defines the data expected for the PROJECTILE_HIT_ENEMY event */
+// Note: This interface might be better placed in a shared types file or events.ts
 interface ProjectileHitEnemyData {
   projectileId: string;
   enemyInstanceId: string;
-  // damage?: number; // Optional: Damage might be handled by EnemyManager based on projectile type
+  damage: number; // Damage is now expected from the event payload
 }
 
 // TODO: Define a proper EnemyInstance type/interface
@@ -31,7 +35,7 @@ export class EnemyManager {
 
   constructor(
     private eventBus: EventBusType = EventBus, // Use type alias for annotation, default instance for default value
-    private logger: LoggerType = Logger, // Use type alias for annotation, default instance for default value
+    private logger: LoggerType = Logger // Use type alias for annotation, default instance for default value
   ) {
     this.loadConfigs();
     this.registerEventListeners(); // Call listener registration
@@ -42,7 +46,8 @@ export class EnemyManager {
     try {
       // Assuming ConfigLoader default instance has the method
       const configs: EnemiesConfig = ConfigLoader.getEnemiesConfig();
-      configs.forEach((config: EnemyConfig) => { // Add explicit type annotation for config
+      configs.forEach((config: EnemyConfig) => {
+        // Add explicit type annotation for config
         this.enemyConfigs.set(config.id, config);
       });
       this.logger.log(`Loaded ${this.enemyConfigs.size} enemy configurations.`); // Changed info to log
@@ -52,10 +57,7 @@ export class EnemyManager {
     }
   }
 
-  public spawnEnemy(
-    configId: string,
-    position: { x: number; y: number },
-  ): void {
+  public spawnEnemy(configId: string, position: { x: number; y: number }): void {
     const config = this.enemyConfigs.get(configId);
     if (!config) {
       this.logger.warn(`Attempted to spawn unknown enemy config ID: ${configId}`);
@@ -71,10 +73,12 @@ export class EnemyManager {
     };
 
     this.enemies.set(instanceId, newEnemy);
-    this.logger.debug(`Spawning enemy: ${configId} (Instance ID: ${instanceId}) at (${position.x}, ${position.y})`);
+    this.logger.debug(
+      `Spawning enemy: ${configId} (Instance ID: ${instanceId}) at (${position.x}, ${position.y})`
+    );
 
     // Emit an event for the GameScene to create the actual Phaser sprite/body
-    this.eventBus.emit('ENEMY_SPAWNED', {
+    this.eventBus.emit(ENEMY_SPAWNED, {
       instanceId: newEnemy.id,
       config: config,
       position: position,
@@ -97,7 +101,7 @@ export class EnemyManager {
       this.destroyEnemy(instanceId);
     } else {
       // Emit event for health update if needed by UI or effects
-      this.eventBus.emit('ENEMY_HEALTH_UPDATED', {
+      this.eventBus.emit(ENEMY_HEALTH_UPDATED, {
         instanceId: enemy.id,
         currentHealth: enemy.health,
         maxHealth: this.enemyConfigs.get(enemy.configId)?.baseHealth || enemy.health, // Provide max health for UI
@@ -120,7 +124,7 @@ export class EnemyManager {
     this.logger.log(`Destroyed enemy: ${enemy.configId} (Instance ID: ${instanceId})`); // Changed info to log
 
     // Emit event for GameScene to remove sprite/body
-    this.eventBus.emit('ENEMY_DESTROYED', {
+    this.eventBus.emit(ENEMY_DESTROYED, {
       instanceId: instanceId,
       configId: enemy.configId,
       reward: reward, // Send reward info for EconomyManager
@@ -130,10 +134,10 @@ export class EnemyManager {
   // --- Event Handlers ---
 
   private handleProjectileHitEnemy(data: ProjectileHitEnemyData): void {
-    // TODO: Determine damage based on projectile type/config later
-    const damage = 10; // Placeholder damage value
+    // Use damage from the event payload
+    const damage = data.damage;
     this.logger.debug(
-      `Enemy ${data.enemyInstanceId} hit by projectile ${data.projectileId}. Applying ${damage} damage.`,
+      `Enemy ${data.enemyInstanceId} hit by projectile ${data.projectileId}. Applying ${damage} damage.`
     );
     this.handleDamage(data.enemyInstanceId, damage);
   }
@@ -142,6 +146,7 @@ export class EnemyManager {
 
   private registerEventListeners(): void {
     // Bind the handler method to ensure 'this' context is correct
+    // No need to bind if using arrow function property, but this is fine too.
     this.handleProjectileHitEnemy = this.handleProjectileHitEnemy.bind(this);
     this.eventBus.on(PROJECTILE_HIT_ENEMY, this.handleProjectileHitEnemy);
   }

@@ -3,27 +3,28 @@
  * Currently logs to the console.
  * Planned: Buffering and sending logs to an external API (M6).
  */
-export class Logger { // Add export keyword here
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public log(message: string, ...optionalParams: any[]): void {
+export class Logger {
+  // Add export keyword here
+  public log(message: string, ...optionalParams: unknown[]): void {
+    // eslint-disable-next-line no-console
     console.log(`[LOG] ${message}`, ...optionalParams);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public warn(message: string, ...optionalParams: any[]): void {
+  public warn(message: string, ...optionalParams: unknown[]): void {
+    // eslint-disable-next-line no-console
     console.warn(`[WARN] ${message}`, ...optionalParams);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public error(message: string, ...optionalParams: any[]): void {
+  public error(message: string, ...optionalParams: unknown[]): void {
+    // eslint-disable-next-line no-console
     console.error(`[ERROR] ${message}`, ...optionalParams);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public debug(message: string, ...optionalParams: any[]): void {
+  public debug(message: string, ...optionalParams: unknown[]): void {
     // Only log debug messages if a specific flag is set (e.g., during development)
     // For now, let's always log them, but add a check later if needed.
     // if (import.meta.env.DEV) { // Example check using Vite env variable
+    // eslint-disable-next-line no-console
     console.debug(`[DEBUG] ${message}`, ...optionalParams);
     // }
   }
@@ -34,8 +35,7 @@ export class Logger { // Add export keyword here
    * @param eventName Name of the event (e.g., 'ENEMY_KILLED', 'WEAPON_UPGRADED')
    * @param data Additional data associated with the event
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public gameEvent(eventName: string, data: Record<string, any>): void {
+  public gameEvent(eventName: string, data: Record<string, unknown>): void {
     // For now, just log it to the console
     this.log(`Game Event: ${eventName}`, data);
     // TODO (M6): Implement buffering and sending logic

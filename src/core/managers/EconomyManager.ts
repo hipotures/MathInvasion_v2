@@ -3,12 +3,10 @@
 import logger from '../utils/Logger';
 // Import class type for annotations
 import { EventBus as EventBusType } from '../events/EventBus';
-
-// Define event constants used or handled by this manager
-const CURRENCY_UPDATED = 'CURRENCY_UPDATED'; // Emitted by this manager
-const ENEMY_DESTROYED = 'ENEMY_DESTROYED'; // Handled by this manager
+import * as Events from '../constants/events'; // Import event constants
 
 /** Defines the data expected for the ENEMY_DESTROYED event */
+// Note: This interface might be better placed in a shared types file or events.ts
 interface EnemyDestroyedData {
   instanceId: string;
   configId: string;
@@ -66,13 +64,15 @@ export default class EconomyManager {
 
   /** Emits an event with the current currency total. */
   private emitCurrencyUpdate(): void {
-    this.eventBus.emit(CURRENCY_UPDATED, { currentAmount: this.currentCurrency });
+    this.eventBus.emit(Events.CURRENCY_UPDATED, { currentAmount: this.currentCurrency });
   }
 
   // --- Event Handlers ---
 
   private handleEnemyDestroyed(data: EnemyDestroyedData): void {
-    logger.debug(`Enemy ${data.configId} (Instance: ${data.instanceId}) destroyed. Granting ${data.reward} currency.`);
+    logger.debug(
+      `Enemy ${data.configId} (Instance: ${data.instanceId}) destroyed. Granting ${data.reward} currency.`
+    );
     this.addCurrency(data.reward);
   }
 
@@ -80,12 +80,12 @@ export default class EconomyManager {
 
   private registerEventListeners(): void {
     this.handleEnemyDestroyed = this.handleEnemyDestroyed.bind(this);
-    this.eventBus.on(ENEMY_DESTROYED, this.handleEnemyDestroyed);
+    this.eventBus.on(Events.ENEMY_DESTROYED, this.handleEnemyDestroyed);
   }
 
   /** Clean up event listeners when the manager is destroyed */
   public destroy(): void {
-    this.eventBus.off(ENEMY_DESTROYED, this.handleEnemyDestroyed);
+    this.eventBus.off(Events.ENEMY_DESTROYED, this.handleEnemyDestroyed);
     logger.log('EconomyManager destroyed and listeners removed');
   }
 }
