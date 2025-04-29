@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 
-import { HelloWorldScene } from './phaser/scenes/HelloWorldScene';
+// Import the new scenes
+import GameScene from './phaser/scenes/GameScene';
+import UIScene from './phaser/scenes/UIScene';
 import './style.css'; // Keep basic styling
 
 // Phaser Game Configuration
@@ -15,7 +17,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false, // Set to true for physics debugging visuals
     },
   },
-  scene: [HelloWorldScene], // Add scenes here
+  scene: [GameScene, UIScene], // Load GameScene first, then UIScene in parallel
   parent: 'app', // ID of the DOM element to parent the canvas to
   scale: {
     mode: Phaser.Scale.RESIZE, // Resize game canvas to fill the browser window

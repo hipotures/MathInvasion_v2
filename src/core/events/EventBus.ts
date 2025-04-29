@@ -5,7 +5,7 @@ type EventCallback = (...args: any[]) => void;
 /**
  * A simple event bus implementation for pub/sub communication.
  */
-class EventBus {
+export class EventBus { // Add 'export' here
   // Use a Map to store event listeners: eventName -> Set<callback>
   private listeners: Map<string, Set<EventCallback>>;
 
