@@ -123,6 +123,9 @@ export class GameSceneEventHandler {
       case 'hexagon_bomber': // Added new enemy mapping
         enemyAssetKey = Assets.ENEMY_HEXAGON_BOMBER_KEY;
         break;
+      case 'diamond_strafer': // Added Diamond Strafer mapping
+        enemyAssetKey = Assets.ENEMY_DIAMOND_STRAFER_KEY;
+        break;
       case 'circle_boss': // TODO: Needs own asset?
         enemyAssetKey = Assets.ENEMY_LARGE_METEOR_KEY;
         break;

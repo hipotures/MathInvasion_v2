@@ -5,8 +5,10 @@
 **What Works:**
 *   **Refactor GameScene (Line Limit):** Extracted collision logic to `GameSceneCollisionHandler` and event logic to `GameSceneEventHandler`, bringing `GameScene.ts` under the 300-line limit.
 *   **Milestone M3: Wrogowie i Kolizje (Partial)**
-    *   **Enemy Variety (Hexagon Bomber):** Added `hexagon_bomber` config, schema update (discriminated union for abilities), asset key, asset loading, enemy-to-asset mapping (`GameSceneEventHandler`), and included in random spawner.
-    *   **Enemy Movement (Refined):** Implemented sine-wave `boss_weaving` pattern and `bomber_dive` pattern in `EnemyEntity.handleMovement`. Basic side-to-side movement (`invader_standard`, `invader_support`) remains functional.
+    *   **Enemy Variety (Hexagon Bomber, Diamond Strafer):**
+        *   Added `hexagon_bomber` config, schema update (discriminated union for abilities), asset key, asset loading, enemy-to-asset mapping (`GameSceneEventHandler`), and included in random spawner.
+        *   Added `diamond_strafer` config, schema update (`strafe_horizontal` pattern), asset key, asset loading, enemy-to-asset mapping (`GameSceneEventHandler`), and included in random spawner.
+    *   **Enemy Movement (Refined):** Implemented sine-wave `boss_weaving`, `bomber_dive`, and `strafe_horizontal` patterns in `EnemyEntity.handleMovement`. Basic side-to-side movement (`invader_standard`, `invader_support`) remains functional.
     *   **Enemy Abilities (Death Bomb):** Implemented `death_bomb` ability check in `GameSceneEventHandler.handleEnemyDestroyed` to emit `SPAWN_PROJECTILE` on enemy death (visual/collision logic for bomb projectile TBD).
     *   **Enemy Aiming:** Enemies now fire projectiles towards the player's current position (`GameSceneEventHandler.handleEnemyRequestFire` updated).
     *   **Enemy Firing (Basic):** Enemies with `canShoot: true` and `shootConfig` in `enemies.yml` fire projectiles periodically (now aimed).
@@ -52,8 +54,6 @@
 **What's Left to Build (Milestone M3):**
 *   **Enemy Variety & Behavior (Refinement):** ~~Refine movement patterns (implement `boss_weaving`, `bomber_dive`)~~ *(Done)*, add `homing`? ~~Implement aiming logic~~ *(Done)*. ~~Add `hexagon_bomber`~~ *(Done)*. Add *more* enemy types/assets. Implement `death_bomb` projectile logic (visuals, collision). Add distinct enemy projectiles (graphics, types).
 *   **Difficulty Scaling:** Implement logic based on `difficulty.yml` (spawn rates, multipliers).
-*   **Collision Refinement:** Review layers/groups, consider invulnerability periods.
-*   **Visual Polish:** Improve destruction/death effects, add UI feedback for weapon switching.
 
 **Overall Project Roadmap:**
 *   **M0: Szkielet Projektu (Setup)** - **COMPLETE**

@@ -49,7 +49,13 @@ const enemySchema = z.object({
   baseSpeed: z.number().positive(),
   baseReward: z.number().nonnegative(),
   collisionDamage: z.number().nonnegative().describe('Damage dealt to the player on collision.'), // Added collision damage
-  movementPattern: z.enum(['invader_standard', 'invader_support', 'boss_weaving', 'bomber_dive']), // Use enum for patterns
+  movementPattern: z.enum([
+    'invader_standard',
+    'invader_support',
+    'boss_weaving',
+    'bomber_dive',
+    'strafe_horizontal', // Added for Diamond Strafer
+  ]), // Use enum for patterns
   collisionRadius: z.number().positive(),
   canShoot: z.boolean(),
   shootConfig: enemyShootConfigSchema, // Use the optional schema

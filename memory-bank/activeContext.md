@@ -3,6 +3,15 @@
 **Current Focus:** Milestone M3: Wrogowie i Kolizje - *Refining enemy behavior & adding variety.*
 
 **Recent Changes:**
+*   **M3 - Add Diamond Strafer Enemy:**
+    *   Added `diamond_strafer` configuration to `config/enemies.yml` with `strafe_horizontal` movement pattern and shooting capabilities.
+    *   Updated `src/core/config/schemas/enemySchema.ts` to add `strafe_horizontal` to the `movementPattern` enum.
+    *   Added `ENEMY_DIAMOND_STRAFER_KEY` to `src/core/constants/assets.ts`.
+    *   Updated `src/phaser/scenes/GameScene.ts`:
+        *   Added loading for `diamond_strafer.png` (assuming filename) in `preload()`.
+        *   Included `diamond_strafer` in the temporary `spawnRandomEnemy()` pool.
+    *   Updated `src/phaser/handlers/GameSceneEventHandler.ts` to map `diamond_strafer` ID to `ENEMY_DIAMOND_STRAFER_KEY` in `handleEnemySpawned()`.
+    *   Updated `src/phaser/entities/EnemyEntity.ts` to implement `strafe_horizontal` movement logic (fast horizontal, reverse on bounds, slow drift) in `handleMovement()`.
 *   **M3 - Add Hexagon Bomber Enemy:**
     *   Added `hexagon_bomber` configuration to `config/enemies.yml` with `bomber_dive` movement pattern and `death_bomb` ability.
     *   Updated `src/core/config/schemas/enemySchema.ts`:

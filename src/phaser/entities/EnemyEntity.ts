@@ -151,6 +151,31 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
         this.setVelocityY(speed * 1.5); // Faster dive speed
         break;
       }
+      case 'strafe_horizontal': {
+        // Fast horizontal movement, reverse on bounds
+        if (this.body.blocked.right) {
+          this.setVelocityX(-speed);
+        } else if (this.body.blocked.left) {
+          this.setVelocityX(speed);
+        }
+        // Ensure velocity is maintained if not blocked
+        if (
+          Math.abs(this.body.velocity.x) < speed * 0.9 &&
+          (this.body.blocked.right || this.body.blocked.left)
+        ) {
+          this.setVelocityX(this.body.velocity.x >= 0 ? speed : -speed);
+        } else if (
+          Math.abs(this.body.velocity.x) < 1 &&
+          !this.body.blocked.right &&
+          !this.body.blocked.left
+        ) {
+          // If stopped mid-air, restart movement
+          this.setVelocityX(speed * (Math.random() < 0.5 ? -1 : 1));
+        }
+        // Slow downward drift
+        this.setVelocityY(speed * 0.05); // Very slow drift
+        break;
+      }
       default:
         // Default to simple downward movement if pattern is unknown
         Logger.warn(`Unknown movement pattern: ${this.enemyConfig.movementPattern}`);

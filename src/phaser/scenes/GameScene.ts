@@ -55,8 +55,9 @@ export default class GameScene extends Phaser.Scene {
     this.load.image(Assets.BULLET_KEY, 'assets/images/bullet.png');
     this.load.image(Assets.ENEMY_SMALL_ALIEN_KEY, 'assets/images/alien_small.png');
     this.load.image(Assets.ENEMY_MEDIUM_ALIEN_KEY, 'assets/images/alien_medium.png');
-    this.load.image(Assets.ENEMY_LARGE_METEOR_KEY, 'assets/images/meteor_large.png');
-    this.load.image(Assets.ENEMY_HEXAGON_BOMBER_KEY, 'assets/images/hexagon_enemy.png'); // Load new enemy asset
+    this.load.image(Assets.ENEMY_LARGE_METEOR_KEY, 'assets/images/meteor_large.png'); // Placeholder for pentagon
+    this.load.image(Assets.ENEMY_HEXAGON_BOMBER_KEY, 'assets/images/hexagon_enemy.png');
+    this.load.image(Assets.ENEMY_DIAMOND_STRAFER_KEY, 'assets/images/diamond_strafer.png'); // Load Diamond Strafer asset
     this.load.audio(Assets.AUDIO_EXPLOSION_SMALL_KEY, 'assets/audio/explosion_small.ogg');
   }
 
@@ -213,7 +214,7 @@ export default class GameScene extends Phaser.Scene {
 
   private spawnRandomEnemy(): void {
     // TODO: Use difficulty config
-    const enemyTypes = ['triangle_scout', 'square_tank', 'hexagon_bomber']; // Add new enemy to random pool
+    const enemyTypes = ['triangle_scout', 'square_tank', 'hexagon_bomber', 'diamond_strafer']; // Add diamond_strafer
     const randomType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
     const spawnPadding = 50;
     const spawnX = Phaser.Math.Between(spawnPadding, this.cameras.main.width - spawnPadding);

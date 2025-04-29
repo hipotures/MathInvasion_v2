@@ -14,6 +14,7 @@ export const ENEMY_SMALL_ALIEN_KEY = 'enemySmallAlien'; // triangle_scout
 export const ENEMY_MEDIUM_ALIEN_KEY = 'enemyMediumAlien'; // square_tank
 export const ENEMY_LARGE_METEOR_KEY = 'enemyLargeMeteor'; // pentagon_healer (placeholder?)
 export const ENEMY_HEXAGON_BOMBER_KEY = 'enemyHexagonBomber'; // hexagon_bomber
+export const ENEMY_DIAMOND_STRAFER_KEY = 'enemyDiamondStrafer'; // diamond_strafer
 // Add keys for other enemy types as needed (e.g., boss)
 
 // Placeholder/Debug Assets (Consider removing later)

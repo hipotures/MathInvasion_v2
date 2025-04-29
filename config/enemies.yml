@@ -48,6 +48,20 @@
       projectileType: enemy_bomb # Placeholder projectile type
       damage: 30
       radius: 50 # Placeholder for explosion radius if needed
+- id: diamond_strafer # New Enemy
+  shape: diamond
+  baseHealth: 70
+  baseSpeed: 150 # Fast horizontal speed
+  baseReward: 30
+  collisionDamage: 15
+  movementPattern: strafe_horizontal # New pattern
+  collisionRadius: 18
+  canShoot: true
+  shootConfig:
+    projectileType: enemy_bullet_fast # Placeholder, maybe faster bullet
+    cooldownMs: 1000
+    damage: 8
+    speed: 180
 - id: circle_boss
   shape: circle
   baseHealth: 2000
