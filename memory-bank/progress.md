@@ -1,11 +1,12 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Milestone M3: Wrogowie i Kolizje - **IN PROGRESS** (Basic movement & firing done).
+**Current Status:** Milestone M3: Wrogowie i Kolizje - **IN PROGRESS** (Enemy behavior refinement ongoing).
 
 **What Works:**
 *   **Milestone M3: Wrogowie i Kolizje (Partial)**
-    *   **Enemy Movement (Basic):** Implemented basic side-to-side movement with downward drift (`invader_standard`, `invader_support`) and placeholder downward movement (`boss_weaving`) in `EnemyEntity.preUpdate` based on config.
-    *   **Enemy Firing (Basic):** Enemies with `canShoot: true` and `shootConfig` in `enemies.yml` now fire projectiles downwards periodically.
+    *   **Enemy Aiming:** Enemies now fire projectiles towards the player's current position (`GameScene.handleEnemyRequestFire` updated).
+    *   **Enemy Movement (Refined):** Implemented sine-wave `boss_weaving` pattern. Basic side-to-side movement with downward drift (`invader_standard`, `invader_support`) remains functional.
+    *   **Enemy Firing (Basic):** Enemies with `canShoot: true` and `shootConfig` in `enemies.yml` fire projectiles periodically (now aimed).
         *   Added `ENEMY_REQUEST_FIRE` event emitted by `EnemyEntity`.
         *   Added `owner` property to projectiles (`ProjectileManager`, `SpawnProjectileData`, `ProjectileLike`).
         *   `GameScene` handles `ENEMY_REQUEST_FIRE`, emits `SPAWN_PROJECTILE` with `owner: 'enemy'`.
@@ -46,7 +47,7 @@
     *   Modified `src/main.ts` to use `async/await` to ensure `configLoader.loadAllConfigs()` completes before `new Phaser.Game()` is called.
 
 **What's Left to Build (Milestone M3):**
-*   **Enemy Variety & Behavior (Refinement):** Refine movement patterns (implement `boss_weaving`, add `homing`?), implement aiming logic, add more enemy types/assets, add distinct enemy projectiles.
+*   **Enemy Variety & Behavior (Refinement):** ~~Refine movement patterns (implement `boss_weaving`)~~ *(Done)*, add `homing`? ~~Implement aiming logic~~ *(Done)*. Add more enemy types/assets, add distinct enemy projectiles.
 *   **Difficulty Scaling:** Implement logic based on `difficulty.yml` (spawn rates, multipliers).
 *   **Collision Refinement:** Review layers/groups, consider invulnerability periods.
 *   **Visual Polish:** Improve destruction/death effects, add UI feedback for weapon switching.

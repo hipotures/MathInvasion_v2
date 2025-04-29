@@ -369,11 +369,32 @@ export default class GameScene extends Phaser.Scene {
     }
 
     const shootConfig = data.shootConfig;
+    const projectileSpeed = shootConfig.speed ?? 150; // Use config speed or default
 
-    // Determine velocity (simple downward for now)
-    // TODO: Aim at player?
-    const velocityX = 0;
-    const velocityY = shootConfig.speed ?? 150; // Use config speed or default
+    // Calculate angle towards player
+    let velocityX = 0;
+    let velocityY = projectileSpeed; // Default to downward if player doesn't exist
+
+    if (this.playerSprite && this.playerSprite.active) {
+      const angle = Phaser.Math.Angle.Between(
+        data.x,
+        data.y,
+        this.playerSprite.x,
+        this.playerSprite.y
+      );
+      // Convert angle to velocity components using physics helper
+      const velocity = this.physics.velocityFromAngle(
+        Phaser.Math.RadToDeg(angle), // Convert radians to degrees for velocityFromAngle
+        projectileSpeed
+      );
+      velocityX = velocity.x;
+      velocityY = velocity.y;
+      logger.debug(
+        `Enemy ${data.instanceId} aiming at player. Angle: ${Phaser.Math.RadToDeg(angle).toFixed(2)}deg, Vel: (${velocityX.toFixed(2)}, ${velocityY.toFixed(2)})`
+      );
+    } else {
+      logger.warn(`Enemy ${data.instanceId} firing downwards as player sprite is inactive.`);
+    }
 
     // Emit SPAWN_PROJECTILE for ProjectileManager
     eventBus.emit(SPAWN_PROJECTILE, {

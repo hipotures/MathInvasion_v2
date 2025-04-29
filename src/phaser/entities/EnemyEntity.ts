@@ -134,14 +134,15 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
         this.setVelocityY(speed * 0.1); // Adjust multiplier as needed
         break;
 
-      case 'boss_weaving':
-        // Placeholder: Simple downward movement for now
-        // Ensure horizontal velocity is zeroed if it wasn't already
-        if (this.body.velocity.x !== 0) this.setVelocityX(0);
-        this.setVelocityY(speed * 0.5); // Slower downward movement for boss
-        // TODO: Implement actual weaving pattern (e.g., sine wave using time)
+      case 'boss_weaving': {
+        // Implement sine wave horizontal movement
+        const frequency = 0.001; // Controls how fast the weave is (adjust as needed)
+        const amplitude = speed * 1.5; // Controls how wide the weave is (adjust as needed)
+        const horizontalVelocity = Math.sin(time * frequency) * amplitude;
+        this.setVelocityX(horizontalVelocity);
+        this.setVelocityY(speed * 0.5); // Maintain slower downward movement
         break;
-
+      }
       default:
         // Default to simple downward movement if pattern is unknown
         Logger.warn(`Unknown movement pattern: ${this.enemyConfig.movementPattern}`);

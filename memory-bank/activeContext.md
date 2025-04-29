@@ -1,10 +1,19 @@
 # Active Context: Math Invasion v2
 
-**Current Focus:** Milestone M3: Wrogowie i Kolizje - *Enemy movement and firing implemented.*
+**Current Focus:** Milestone M3: Wrogowie i Kolizje - *Refining enemy behavior.*
 
 **Recent Changes:**
+*   **M3 - Enemy Aiming:**
+    *   Updated `GameScene.handleEnemyRequestFire` to calculate the angle between the enemy and the player sprite.
+    *   Used `Phaser.Math.Angle.Between` and `this.physics.velocityFromAngle` to determine the correct `velocityX` and `velocityY` for the projectile.
+    *   Projectiles now fire towards the player's current position when the enemy fires.
+    *   Includes a fallback to fire straight down if the player sprite is inactive.
+*   **M3 - Boss Weaving Pattern:**
+    *   Implemented the `boss_weaving` movement pattern in `EnemyEntity.handleMovement`.
+    *   Uses `Math.sin(time * frequency)` to calculate horizontal velocity, creating a weaving effect.
+    *   Maintains the slower downward movement specific to the boss pattern.
 *   **M3 - Enemy Movement & Firing (Basic):**
-    *   Implemented basic movement patterns (`invader_standard`, `invader_support`, `boss_weaving` placeholders) in `EnemyEntity.preUpdate` based on `enemyConfig.movementPattern`. Standard invaders move side-to-side with downward drift.
+    *   Implemented basic movement patterns (`invader_standard`, `invader_support`, `boss_weaving` *placeholder initially*) in `EnemyEntity.preUpdate` based on `enemyConfig.movementPattern`. Standard invaders move side-to-side with downward drift.
     *   Added `ENEMY_REQUEST_FIRE` event constant.
     *   Added shooting cooldown logic (`shootCooldownTimer`) to `EnemyEntity`.
     *   Updated `EnemyEntity.preUpdate` to check `canShoot`, manage cooldown, and emit `ENEMY_REQUEST_FIRE` with position and `shootConfig`.
@@ -133,8 +142,8 @@
 
 **Next Steps (Milestone M3 - Wrogowie i Kolizje):**
 *   **Enemy Variety & Behavior (Refinement):**
-    *   Refine movement patterns: Implement actual `boss_weaving` (e.g., sine wave), potentially add `'homing'` or other patterns from config. Update `EnemyEntity.preUpdate`.
-    *   Implement enemy aiming logic (e.g., fire towards player) in `GameScene.handleEnemyRequestFire` or `EnemyEntity.handleShooting`.
+    *   ~~Refine movement patterns: Implement actual `boss_weaving` (e.g., sine wave)~~ *(Done)*, potentially add `'homing'` or other patterns from config. Update `EnemyEntity.preUpdate`.
+    *   ~~Implement enemy aiming logic (e.g., fire towards player) in `GameScene.handleEnemyRequestFire`~~ *(Done)*.
     *   Add more enemy types to `config/enemies.yml` and corresponding assets (`assets/images`, `constants/assets.ts`). Update `GameScene.handleEnemySpawned` mapping.
     *   Add distinct projectile graphics/types for enemies (e.g., `enemy_laser`). Update `GameScene.handleProjectileCreated`.
 *   **Difficulty Scaling:**
