@@ -12,6 +12,11 @@
         *   Updated player sprite creation in `create()` to use `PLAYER_KEY`.
         *   Updated projectile sprite creation in `handleProjectileCreated()` to use `BULLET_KEY`.
         *   Updated enemy entity creation in `handleEnemySpawned()` to use `ENEMY_SMALL_ALIEN_KEY` (with a TODO for proper mapping based on config ID).
+*   **M2 - Map Enemy Sprites & Add Destruction Sound:**
+    *   Added `ENEMY_MEDIUM_ALIEN_KEY`, `ENEMY_LARGE_METEOR_KEY`, `AUDIO_EXPLOSION_SMALL_KEY` to `src/core/constants/assets.ts`.
+    *   Updated `GameScene.preload()` to load corresponding images (`alien_medium.png`, `meteor_large.png`) and audio (`explosion_small.ogg`).
+    *   Updated `GameScene.handleEnemySpawned()` to map enemy config IDs (`triangle_scout`, `square_tank`, `pentagon_healer`, `circle_boss`) to the correct asset keys (`ENEMY_SMALL_ALIEN_KEY`, `ENEMY_MEDIUM_ALIEN_KEY`, `ENEMY_LARGE_METEOR_KEY`).
+    *   Updated `GameScene.handleEnemyDestroyed()` to play `AUDIO_EXPLOSION_SMALL_KEY` sound effect.
 *   **M2 - Load Core Values from Config:**
     *   Created `playerSchema.ts` and `config/player.yml`.
     *   Updated `ConfigLoader.ts` to load and validate `player.yml`.
@@ -117,8 +122,8 @@
 *   **Refinement:**
     *   ~~Implement actual damage calculation based on projectile/weapon config hitting enemy config.~~ (Done for projectile -> enemy)
     *   ~~Implement actual collision damage calculation for player vs enemy.~~ (Done)
-    *   Refine enemy destruction logic (e.g., explosion animation, sound).
-    *   Refine player death logic (e.g., game over screen, restart).
+    *   Refine enemy destruction logic (e.g., explosion animation, sound). -> *Sound effect added.*
+    *   Refine player death logic (e.g., game over screen, restart). -> *Basic GAME OVER text implemented.*
     *   ~~Load player speed, weapon cooldown, projectile speed from config.~~ (Done)
     *   ~~Refine projectile spawn position relative to player sprite.~~ (Done - Handled by `GameScene` now)
     *   ~~Implement weapon switching input and logic (if time permits in M2).~~ (Done)
@@ -147,3 +152,4 @@
 *   Enemies are instantly destroyed on collision with the player (placeholder behavior - uses 9999 damage in `GameScene`).
 *   ~~Damage values are currently hardcoded placeholders (e.g., 10 damage in `EnemyManager`, 10 collision damage in `GameScene`).~~ (Fixed - loaded from config)
 *   ~~Using placeholder graphics (Vite logo) for player, bullets, and enemies.~~ (Fixed - actual assets loaded)
+*   ~~Enemy sprites in `GameScene` currently default to `ENEMY_SMALL_ALIEN_KEY` regardless of the enemy type spawned by `EnemyManager`. Needs mapping based on config ID.~~ (Fixed - Mapped in `handleEnemySpawned`)

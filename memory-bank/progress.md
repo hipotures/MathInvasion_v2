@@ -52,8 +52,8 @@
 *   **Assets:** ~~Replace placeholder player/bullet/enemy graphics.~~ (Done)
 *   **Refinement:**
     *   ~~Implement actual damage calculation (projectile vs enemy, player vs enemy).~~ (Done)
-    *   Refine enemy destruction (visuals, sound).
-    *   Refine player death logic (game over).
+    *   Refine enemy destruction (visuals, sound). -> *Basic sound effect added.*
+    *   Refine player death logic (game over). -> *Basic GAME OVER text added.*
     *   ~~Load values (speeds, health, damage, cooldowns) from config files.~~ (Done)
     *   ~~Refine projectile spawn points.~~ (Done - Handled by `GameScene`)
     *   ~~Implement weapon switching (optional for M2).~~ (Done - Keys 1, 2, 3)
@@ -74,7 +74,7 @@
 *   ~~Projectile spawn position is a fixed offset from player center.~~ (Fixed - calculated by `GameScene`)
 *   ~~Movement speed, cooldowns, projectile speeds, player health, enemy health, damage values are hardcoded placeholders.~~ (Fixed - loaded from config)
 *   Player vs Enemy collision instantly destroys the enemy (placeholder - uses 9999 damage).
-*   Enemy sprites in `GameScene` currently default to `ENEMY_SMALL_ALIEN_KEY` regardless of the enemy type spawned by `EnemyManager`. Needs mapping based on config ID.
+*   ~~Enemy sprites in `GameScene` currently default to `ENEMY_SMALL_ALIEN_KEY` regardless of the enemy type spawned by `EnemyManager`. Needs mapping based on config ID.~~ (Fixed - Mapped in `GameScene.handleEnemySpawned`)
 
 **Evolution of Project Decisions:**
 *   Established singleton pattern for `EventBus` and `Logger`, requiring specific import handling for types vs. instances.

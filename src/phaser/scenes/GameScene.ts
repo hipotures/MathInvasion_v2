@@ -26,7 +26,14 @@ import { SPAWN_PROJECTILE } from '../../core/constants/events'; // Import spawn 
 import { PROJECTILE_HIT_ENEMY } from '../../core/constants/events';
 
 // Asset constants
-import { PLAYER_KEY, BULLET_KEY, ENEMY_SMALL_ALIEN_KEY } from '../../core/constants/assets';
+import {
+  PLAYER_KEY,
+  BULLET_KEY,
+  ENEMY_SMALL_ALIEN_KEY,
+  ENEMY_MEDIUM_ALIEN_KEY, // Added
+  ENEMY_LARGE_METEOR_KEY, // Added
+  AUDIO_EXPLOSION_SMALL_KEY, // Added
+} from '../../core/constants/assets';
 
 /** Defines the data expected for the PLAYER_HIT_ENEMY event */
 interface PlayerHitEnemyData {
@@ -65,7 +72,11 @@ export default class GameScene extends Phaser.Scene {
     this.load.image(PLAYER_KEY, 'assets/images/player_ship.png');
     this.load.image(BULLET_KEY, 'assets/images/bullet.png');
     this.load.image(ENEMY_SMALL_ALIEN_KEY, 'assets/images/alien_small.png');
-    // TODO: Load other assets (medium alien, meteors, powerups) as needed
+    this.load.image(ENEMY_MEDIUM_ALIEN_KEY, 'assets/images/alien_medium.png'); // Added
+    this.load.image(ENEMY_LARGE_METEOR_KEY, 'assets/images/meteor_large.png'); // Added
+    // Load audio
+    this.load.audio(AUDIO_EXPLOSION_SMALL_KEY, 'assets/audio/explosion_small.ogg');
+    // TODO: Load other assets (meteors, powerups, other audio) as needed
   }
 
   create(): void {
@@ -215,9 +226,25 @@ export default class GameScene extends Phaser.Scene {
     logger.debug(
       `GameScene creating enemy entity: ID ${data.instanceId}, Config ${data.config.id}`
     );
-    // TODO: Map enemy config ID (data.config.id) to the correct asset key.
-    // For now, defaulting to ENEMY_SMALL_ALIEN_KEY.
-    const enemyAssetKey = ENEMY_SMALL_ALIEN_KEY; // Placeholder mapping
+
+    // Map enemy config ID to the correct asset key
+    let enemyAssetKey: string;
+    switch (data.config.id) {
+      case 'triangle_scout':
+        enemyAssetKey = ENEMY_SMALL_ALIEN_KEY;
+        break;
+      case 'square_tank':
+      case 'pentagon_healer': // Use medium alien for healer too
+        enemyAssetKey = ENEMY_MEDIUM_ALIEN_KEY;
+        break;
+      case 'circle_boss':
+        enemyAssetKey = ENEMY_LARGE_METEOR_KEY; // Using meteor for boss
+        break;
+      default:
+        logger.warn(`Unknown enemy config ID: ${data.config.id}, defaulting to small alien`);
+        enemyAssetKey = ENEMY_SMALL_ALIEN_KEY;
+    }
+
     const enemyEntity = new EnemyEntity(
       this,
       data.position.x,
@@ -238,6 +265,9 @@ export default class GameScene extends Phaser.Scene {
     logger.debug(`GameScene destroying enemy entity: ID ${data.instanceId}`);
     const enemyEntity = this.enemySprites.get(data.instanceId);
     if (enemyEntity) {
+      // Play sound effect
+      this.sound.play(AUDIO_EXPLOSION_SMALL_KEY);
+
       enemyEntity.destroySelf(); // Trigger visual destruction in the entity
       // Note: Group removal happens automatically when the entity is destroyed
       this.enemySprites.delete(data.instanceId);
