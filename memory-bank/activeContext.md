@@ -2,6 +2,13 @@
 
 **Current Focus:** Milestone M7 - Balans, Testy, Optymalizacja i CI/CD
 
+**Recent Changes (M7 - Testing Setup):**
+*   Installed `vitest` as a dev dependency (`npm install --save-dev vitest`).
+*   Added `test` script (`"test": "vitest"`) to `package.json`.
+*   Created initial unit test file `tests/core/managers/EconomyManager.test.ts`.
+*   Implemented basic tests for `EconomyManager` covering initialization, currency/score addition and spending, and listener registration/cleanup.
+*   Fixed issues with mock call assertions related to initial constructor calls. All initial tests for `EconomyManager` are passing.
+
 **Recent Changes (M7 - Initial Balancing):**
 *   Reviewed `config/difficulty.yml`, `config/enemies.yml`, `config/weapons.yml`, `config/powerups.yml`.
 *   Adjusted `config/difficulty.yml`:

@@ -4,6 +4,11 @@
 
 **What Works:**
 *   **Milestone M7: Balans, Testy, Optymalizacja i CI/CD (In Progress)**
+    *   **Testing Setup (Initial):**
+        *   Installed `vitest` dev dependency.
+        *   Added `test` script to `package.json`.
+        *   Created `tests/core/managers/EconomyManager.test.ts`.
+        *   Implemented and passed initial unit tests for `EconomyManager` (initialization, currency/score add/spend, listener registration/cleanup).
     *   **Initial Balancing:**
         *   Reviewed `difficulty.yml`, `enemies.yml`, `weapons.yml`, `powerups.yml`.
         *   Adjusted `difficulty.yml`: Reduced health scaling (`enemyHealthMultiplierPerWave: 1.06`), added `diamond_strafer` (wave 10) and `hexagon_bomber` (wave 12) to unlock schedule.
