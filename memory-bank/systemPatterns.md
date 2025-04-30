@@ -15,8 +15,8 @@
 *   **Singleton:** Used for `EventBus` and `Logger` to provide global access points.
 *   **Observer (via EventBus):** Core managers and Phaser scenes subscribe to events on the `EventBus` to react to state changes without direct coupling.
 *   **Strategy (Implicit):** Enemy movement patterns (`EnemyEntity.handleMovement`) and weapon firing logic (`WeaponManager` / `ProjectileEventHandler`) select behavior based on configuration.
-*   **Facade (Implicit):** Core managers (`PlayerManager`, `EnemyManager`, `WeaponManager`, `PowerupManager`, etc.) provide simplified interfaces over more complex internal state and logic.
-*   **Dependency Injection (Manual):** Dependencies like `EventBus`, `Logger`, `EconomyManager`, and configurations are passed into constructors (e.g., `WeaponManager`, `GameScene` handlers, `PowerupManager`).
+*   **Facade (Implicit):** Core managers (`PlayerManager`, `EnemyManager`, `WeaponManager`, `PowerupManager`, etc.) provide simplified interfaces over more complex internal state and logic. Helper classes (`WeaponUpgrader`, `WeaponPowerupHandler`, `PlayerPowerupHandler`) further encapsulate specific logic within managers.
+*   **Dependency Injection (Manual):** Dependencies like `EventBus`, `Logger`, `EconomyManager`, and configurations are passed into constructors (e.g., `WeaponManager`, `GameScene` handlers, `PowerupManager`, helper classes). `GameSceneManagerInitializer` centralizes manager instantiation and injection for `GameScene`.
 
 **Component Relationships:**
 *   **Powerup Flow:**
@@ -26,10 +26,10 @@
     4.  `GameSceneEventHandler` (`handlePowerupSpawned`): Listens for spawn event, creates powerup sprite using visual key, adds to `powerupGroup` and `powerupSprites` map.
     5.  `GameSceneCollisionHandler` (`handlePlayerPowerupCollision`): Detects player/powerup overlap, emits `POWERUP_COLLECTED` with instance ID, destroys sprite.
     6.  `PowerupManager` (`handlePowerupCollected`): Listens for collection, applies effect (emits `POWERUP_EFFECT_APPLIED`), starts internal timer.
-    7.  Relevant Managers (`PlayerManager`, `WeaponManager`, `EconomyManager`): Listen for `POWERUP_EFFECT_APPLIED`, modify their state (e.g., `isShieldPowerupActive`, `rapidFireMultiplier`, `cashBoostMultiplier`).
+    7.  Helper Handlers (`PlayerPowerupHandler`, `WeaponPowerupHandler`) or Managers (`EconomyManager`): Listen for `POWERUP_EFFECT_APPLIED`, modify their internal state (e.g., `isShieldActive`, `rapidFireMultiplier`, `cashBoostMultiplier`).
     8.  `PowerupManager` (`update`): Decrements timer for active effects.
     9.  `PowerupManager` (`removeEffect`): When timer expires, emits `POWERUP_EFFECT_REMOVED`.
-    10. Relevant Managers: Listen for `POWERUP_EFFECT_REMOVED`, revert state modifications.
+    10. Helper Handlers/Managers: Listen for `POWERUP_EFFECT_REMOVED`, revert state modifications.
 *   **Death Bomb Flow:**
     1.  `EnemyEventHandler` (`handleEnemyDestroyed`): Checks enemy config for `death_bomb` ability.
     2.  If found, emits `SPAWN_PROJECTILE` with bomb details (type, damage, radius, time).

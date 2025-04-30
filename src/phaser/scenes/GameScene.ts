@@ -1,21 +1,23 @@
 import Phaser from 'phaser'; // Removed unused 'Types'
 import eventBus from '../../core/events/EventBus';
 import logger from '../../core/utils/Logger';
+// Managers are now initialized via the helper
 import PlayerManager from '../../core/managers/PlayerManager';
 import InputManager from '../../core/managers/InputManager';
 import WeaponManager from '../../core/managers/WeaponManager';
 import ProjectileManager from '../../core/managers/ProjectileManager';
 import EconomyManager from '../../core/managers/EconomyManager';
-import { EnemyManager } from '../../core/managers/EnemyManager'; // Import named export
-import { PowerupManager } from '../../core/managers/PowerupManager'; // Import named export
-import configLoader from '../../core/config/ConfigLoader';
+import { EnemyManager } from '../../core/managers/EnemyManager';
+import { PowerupManager } from '../../core/managers/PowerupManager';
+// import configLoader from '../../core/config/ConfigLoader'; // No longer needed directly here
 // import { type WeaponConfig } from '../../core/config/schemas/weaponSchema'; // Unused import
 // import { PlayerState } from '../../core/types/PlayerState'; // Unused import
 import { EnemyEntity } from '../entities/EnemyEntity';
 // import { EnemyConfig } from '../../core/config/schemas/enemySchema'; // Unused import
 import { GameSceneCollisionHandler } from '../handlers/GameSceneCollisionHandler';
-import { GameSceneEventHandler } from '../handlers/GameSceneEventHandler'; // Import the event handler
-import { GameSceneAreaEffectHandler } from '../handlers/GameSceneAreaEffectHandler'; // Import the area effect handler
+import { GameSceneEventHandler } from '../handlers/GameSceneEventHandler';
+import { GameSceneAreaEffectHandler } from '../handlers/GameSceneAreaEffectHandler';
+import { initializeGameManagers, GameManagers } from '../initializers/GameSceneManagerInitializer'; // Import initializer
 // Event constants
 import * as Events from '../../core/constants/events';
 // Asset constants
@@ -132,15 +134,15 @@ export default class GameScene extends Phaser.Scene {
   // --- Initialization Methods ---
 
   private initializeManagers(): void {
-    const playerConfig = configLoader.getPlayerConfig();
-    this.economyManager = new EconomyManager(eventBus, 0);
-    this.playerManager = new PlayerManager(eventBus, playerConfig);
-    this.inputManager = new InputManager(eventBus);
-    this.weaponManager = new WeaponManager(eventBus, this.economyManager); // Pass EconomyManager instance
-    this.projectileManager = new ProjectileManager(eventBus);
-    this.enemyManager = new EnemyManager(eventBus); // Instantiate here
-    this.powerupManager = new PowerupManager(eventBus, logger, configLoader.getPowerupsConfig()); // Instantiate PowerupManager
-    this.powerupManager.init(); // Initialize PowerupManager
+    // Use the initializer function
+    const managers: GameManagers = initializeGameManagers(eventBus, logger);
+    this.playerManager = managers.playerManager;
+    this.inputManager = managers.inputManager;
+    this.weaponManager = managers.weaponManager;
+    this.projectileManager = managers.projectileManager;
+    this.economyManager = managers.economyManager;
+    this.enemyManager = managers.enemyManager;
+    this.powerupManager = managers.powerupManager;
   }
 
   private createPlayer(): void {

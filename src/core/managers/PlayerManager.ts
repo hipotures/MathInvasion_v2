@@ -5,7 +5,8 @@ import logger from '../utils/Logger';
 import { EventBus as EventBusType } from '../events/EventBus';
 import * as Events from '../constants/events'; // Import event constants
 import { type PlayerConfig } from '../config/schemas/playerSchema'; // Import PlayerConfig type
-import { PowerupEffectData } from './PowerupManager'; // Import PowerupEffectData
+// PowerupEffectData no longer needed here
+import { PlayerPowerupHandler } from './helpers/PlayerPowerupHandler'; // Import the new helper
 
 /** Defines the data expected for the PLAYER_HIT_ENEMY event */
 // Note: This interface might be better placed in a shared types file or events.ts
@@ -42,11 +43,13 @@ export default class PlayerManager {
   private health: number; // Initialized from config
   private isInvulnerable: boolean = false; // Post-hit invulnerability
   private invulnerabilityTimer: number = 0; // Timer for post-hit invulnerability
-  private isShieldPowerupActive: boolean = false; // Shield powerup state
+  // isShieldPowerupActive removed - managed by PlayerPowerupHandler
+  private playerPowerupHandler: PlayerPowerupHandler; // Instance of the helper class
 
   constructor(eventBusInstance: EventBusType, playerConfig: PlayerConfig) {
     this.eventBus = eventBusInstance;
     this.playerConfig = playerConfig; // Store config
+    this.playerPowerupHandler = new PlayerPowerupHandler(this.eventBus, logger); // Instantiate helper
     logger.log('PlayerManager initialized');
 
     // Initialize state from config
@@ -61,8 +64,7 @@ export default class PlayerManager {
     this.handleMoveRightStop = this.handleMoveRightStop.bind(this);
     this.handlePlayerHitEnemy = this.handlePlayerHitEnemy.bind(this); // Bind enemy hit handler
     this.handlePlayerHitProjectile = this.handlePlayerHitProjectile.bind(this); // Bind projectile hit handler
-    this.handlePowerupEffectApplied = this.handlePowerupEffectApplied.bind(this); // Bind powerup applied handler
-    this.handlePowerupEffectRemoved = this.handlePowerupEffectRemoved.bind(this); // Bind powerup removed handler
+    // Powerup handlers removed - managed by PlayerPowerupHandler
 
     // Subscribe to input events
     this.eventBus.on(Events.MOVE_LEFT_START, this.handleMoveLeftStart);
@@ -72,9 +74,7 @@ export default class PlayerManager {
     // Subscribe to damage events
     this.eventBus.on(Events.PLAYER_HIT_ENEMY, this.handlePlayerHitEnemy);
     this.eventBus.on(Events.PLAYER_HIT_PROJECTILE, this.handlePlayerHitProjectile);
-    // Subscribe to powerup events
-    this.eventBus.on(Events.POWERUP_EFFECT_APPLIED, this.handlePowerupEffectApplied);
-    this.eventBus.on(Events.POWERUP_EFFECT_REMOVED, this.handlePowerupEffectRemoved);
+    // Powerup listeners removed - managed by PlayerPowerupHandler
 
     // Initial state is set from config above
     this.emitStateUpdate(); // Emit initial state including health
@@ -103,8 +103,12 @@ export default class PlayerManager {
   }
 
   private handlePlayerHitEnemy(data: PlayerHitEnemyData): void {
-    // Check both post-hit invulnerability and shield powerup
-    if (this.isInvulnerable || this.isShieldPowerupActive || this.health <= 0) {
+    // Check both post-hit invulnerability and shield powerup (via helper)
+    if (
+      this.isInvulnerable ||
+      this.playerPowerupHandler.isShieldPowerupActive() ||
+      this.health <= 0
+    ) {
       logger.debug(`Player hit enemy ${data.enemyInstanceId}, but is invulnerable.`);
       return;
     }
@@ -134,8 +138,12 @@ export default class PlayerManager {
 
   // Handler for when player is hit by a projectile
   private handlePlayerHitProjectile(data: PlayerHitProjectileData): void {
-    // Check both post-hit invulnerability and shield powerup
-    if (this.isInvulnerable || this.isShieldPowerupActive || this.health <= 0) {
+    // Check both post-hit invulnerability and shield powerup (via helper)
+    if (
+      this.isInvulnerable ||
+      this.playerPowerupHandler.isShieldPowerupActive() ||
+      this.health <= 0
+    ) {
       logger.debug(`Player hit projectile ${data.projectileId}, but is invulnerable.`);
       return;
     }
@@ -163,34 +171,7 @@ export default class PlayerManager {
     this.emitStateUpdate(); // Emit state update with new health
   }
 
-  // Handler for when a powerup effect is applied
-  private handlePowerupEffectApplied(data: PowerupEffectData): void {
-    if (data.effect === 'temporary_invulnerability') {
-      logger.log(`Shield powerup activated for ${data.durationMs}ms`);
-      this.isShieldPowerupActive = true;
-      // We don't manage the timer here; PowerupManager does.
-      // We emit state update so visuals can react.
-      this.emitStateUpdate();
-      // Optionally emit PLAYER_INVULNERABILITY_START if scene needs a specific trigger
-      // this.eventBus.emit(Events.PLAYER_INVULNERABILITY_START);
-    }
-    // Handle other powerup effects here (e.g., rapid_fire)
-  }
-
-  // Handler for when a powerup effect is removed (expires or replaced)
-  private handlePowerupEffectRemoved(data: PowerupEffectData): void {
-    if (data.effect === 'temporary_invulnerability') {
-      logger.log('Shield powerup deactivated');
-      this.isShieldPowerupActive = false;
-      this.emitStateUpdate();
-      // Optionally emit PLAYER_INVULNERABILITY_END if scene needs a specific trigger
-      // and if post-hit invulnerability isn't also active.
-      // if (!this.isInvulnerable) {
-      //   this.eventBus.emit(Events.PLAYER_INVULNERABILITY_END);
-      // }
-    }
-    // Handle removal of other powerup effects here
-  }
+  // Powerup handlers removed - managed by PlayerPowerupHandler
 
   // --- Core Logic ---
 
@@ -229,7 +210,8 @@ export default class PlayerManager {
       velocityY: 0, // Assuming no vertical movement for now
       health: this.health,
       // Combine both invulnerability states for the scene/visuals
-      isEffectivelyInvulnerable: this.isInvulnerable || this.isShieldPowerupActive,
+      isEffectivelyInvulnerable:
+        this.isInvulnerable || this.playerPowerupHandler.isShieldPowerupActive(),
     });
   }
 
@@ -247,8 +229,8 @@ export default class PlayerManager {
       if (this.invulnerabilityTimer <= 0) {
         this.isInvulnerable = false;
         this.invulnerabilityTimer = 0;
-        // Only emit END event if the shield isn't also active
-        if (!this.isShieldPowerupActive) {
+        // Only emit END event if the shield isn't also active (check via helper)
+        if (!this.playerPowerupHandler.isShieldPowerupActive()) {
           this.eventBus.emit(Events.PLAYER_INVULNERABILITY_END); // Notify scene
         }
         logger.debug('Player post-hit invulnerability ended');
@@ -270,8 +252,9 @@ export default class PlayerManager {
     this.eventBus.off(Events.MOVE_RIGHT_STOP, this.handleMoveRightStop);
     this.eventBus.off(Events.PLAYER_HIT_ENEMY, this.handlePlayerHitEnemy);
     this.eventBus.off(Events.PLAYER_HIT_PROJECTILE, this.handlePlayerHitProjectile);
-    this.eventBus.off(Events.POWERUP_EFFECT_APPLIED, this.handlePowerupEffectApplied); // Unsubscribe powerup listener
-    this.eventBus.off(Events.POWERUP_EFFECT_REMOVED, this.handlePowerupEffectRemoved); // Unsubscribe powerup listener
+    // Powerup listeners removed - managed by PlayerPowerupHandler
+    // Destroy helper handler
+    this.playerPowerupHandler.destroy();
     logger.log('PlayerManager destroyed and listeners removed');
   }
 }

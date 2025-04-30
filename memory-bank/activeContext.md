@@ -77,6 +77,18 @@
     *   Created `src/phaser/handlers/GameSceneAreaEffectHandler.ts`.
     *   Moved projectile explosion logic (`handleProjectileExplode`) from `GameSceneCollisionHandler` to `GameSceneAreaEffectHandler`.
     *   Updated `GameScene.ts` to instantiate and manage `GameSceneAreaEffectHandler`.
+*   **Refactor WeaponManager (Powerups):**
+    *   Created `src/core/managers/helpers/WeaponPowerupHandler.ts`.
+    *   Moved rapid fire powerup logic from `WeaponManager` to `WeaponPowerupHandler`.
+    *   Updated `WeaponManager` to instantiate and delegate to `WeaponPowerupHandler`.
+*   **Refactor PlayerManager (Powerups):**
+    *   Created `src/core/managers/helpers/PlayerPowerupHandler.ts`.
+    *   Moved shield powerup logic from `PlayerManager` to `PlayerPowerupHandler`.
+    *   Updated `PlayerManager` to instantiate and delegate to `PlayerPowerupHandler`.
+*   **Refactor GameScene (Initialization):**
+    *   Created `src/phaser/initializers/GameSceneManagerInitializer.ts`.
+    *   Moved core manager instantiation logic from `GameScene.initializeManagers` to `initializeGameManagers` function.
+    *   Updated `GameScene.ts` to import and use the initializer function.
 
 **Recent Changes (M4 - Completed):**
 *   **M4 - Wave Number Display:**
