@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import eventBus from '../../../core/events/EventBus';
 import logger from '../../../core/utils/Logger';
+import debugState from '../../../core/utils/DebugState'; // Import the shared debug state
 import { EnemyEntity } from '../../entities/EnemyEntity';
 import { EnemyConfig } from '../../../core/config/schemas/enemySchema';
 import { PowerupsConfig } from '../../../core/config/schemas/powerupSchema'; // Import powerup types (Removed unused PowerupConfig)
@@ -91,6 +92,9 @@ export class EnemyEventHandler {
     );
     this.enemyGroup.add(enemyEntity);
     this.enemySprites.set(data.instanceId, enemyEntity);
+
+    // Set initial visibility based on debug mode
+    enemyEntity.setVisible(!debugState.isDebugMode);
   }
 
   public handleEnemyDestroyed(data: EnemyDestroyedData): void {

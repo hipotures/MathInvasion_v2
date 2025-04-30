@@ -1,6 +1,7 @@
 // Main Event Handler - Delegates to sub-handlers
 import Phaser from 'phaser';
 import logger from '../../core/utils/Logger';
+import debugState from '../../core/utils/DebugState'; // Import the shared debug state
 import { EnemyEntity } from '../entities/EnemyEntity';
 import eventBus from '../../core/events/EventBus'; // Import EventBus
 import * as Events from '../../core/constants/events'; // Import Events
@@ -114,6 +115,9 @@ export class GameSceneEventHandler {
     // Add to the group and map
     this.powerupGroup.add(powerupSprite);
     this.powerupSprites.set(data.instanceId, powerupSprite);
+
+    // Set initial visibility based on debug mode
+    powerupSprite.setVisible(!debugState.isDebugMode);
 
     // Play spawn sound
     this.scene.sound.play(Assets.AUDIO_POWERUP_APPEAR_KEY);

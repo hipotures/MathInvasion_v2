@@ -2,6 +2,11 @@
 
 **Current Focus:** Milestone M7 - Balans, Testy, Optymalizacja i CI/CD
 
+**Recent Changes (M7 - Debug Visibility Fix):**
+*   Fixed issue where newly spawned entities (enemies, projectiles, powerups) ignored the current debug mode state.
+*   Updated `EnemyEventHandler`, `ProjectileEventHandler`, and `GameSceneEventHandler` to check `debugState.isDebugMode` when creating sprites.
+*   Newly created sprites now correctly set their initial visibility using `sprite.setVisible(!debugState.isDebugMode)`.
+
 **Recent Changes (M7 - UI Rendering Improvements):**
 *   Completely replaced Phaser text rendering with HTML-based UI:
     *   Created `HtmlUI` class to manage HTML UI elements that scale properly at high resolutions.

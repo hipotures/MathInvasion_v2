@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import eventBus from '../../../core/events/EventBus';
 import logger from '../../../core/utils/Logger';
+import debugState from '../../../core/utils/DebugState'; // Import the shared debug state
 import { WeaponConfig } from '../../../core/config/schemas/weaponSchema';
 import { EnemyConfig } from '../../../core/config/schemas/enemySchema';
 import * as Events from '../../../core/constants/events';
@@ -82,6 +83,9 @@ export class ProjectileEventHandler {
     projectileSprite.setScale(0.05); // Set much smaller scale for projectiles
     this.projectileGroup.add(projectileSprite);
     this.projectileSprites.set(data.id, projectileSprite);
+
+    // Set initial visibility based on debug mode
+    projectileSprite.setVisible(!debugState.isDebugMode);
   }
 
   public handleProjectileDestroyed(data: { id: string }): void {
