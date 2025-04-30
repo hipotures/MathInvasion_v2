@@ -17,6 +17,7 @@
         *   `ProjectileManager` handles timed explosion (`timeToExplodeMs`) and emits `PROJECTILE_EXPLODE` event.
         *   `GameSceneCollisionHandler` listens for `PROJECTILE_EXPLODE`, applies area damage to enemies/player, and displays a simple visual effect (tweening circle).
     *   **Enemy Projectile Graphics:** Added constants, loaded assets (placeholders), and updated `GameSceneEventHandler` to map `enemy_bullet`, `enemy_bullet_fast`, and `enemy_laser` types to distinct graphics.
+    *   **Player Invulnerability:** Added brief invulnerability period (1s) after player takes damage, with blinking visual effect. Implemented in `PlayerManager` and `GameSceneEventHandler`.
     *   **Enemy Aiming:** Enemies now fire projectiles towards the player's current position (`GameSceneEventHandler.handleEnemyRequestFire` updated).
     *   **Enemy Firing (Basic):** Enemies with `canShoot: true` and `shootConfig` in `enemies.yml` fire projectiles periodically (now aimed).
         *   Added `ENEMY_REQUEST_FIRE` event emitted by `EnemyEntity`.
@@ -61,6 +62,7 @@
 **What's Left to Build (Milestone M3):**
 *   **Enemy Variety & Behavior (Refinement):** ~~Refine movement patterns (implement `boss_weaving`, `bomber_dive`)~~ *(Done)*, add `homing`? ~~Implement aiming logic~~ *(Done)*. ~~Add `hexagon_bomber`~~ *(Done)*. Add *more* enemy types/assets. ~~Implement `death_bomb` projectile logic (visuals, collision)~~ *(Core logic Done)*. ~~Add distinct enemy projectiles (graphics, types)~~ *(Done - Mapped)*.
 *   **Difficulty Scaling:** Implement logic based on `difficulty.yml` (spawn rates, multipliers).
+*   **Collision Refinement:** Consider adding invulnerability for enemies?
 *   **Visual Polish:** ~~Add visual effect for death bomb explosion~~ *(Done - Basic effect)*.
 
 **Overall Project Roadmap:**

@@ -20,6 +20,9 @@ interface PlayerHitProjectileData {
   damage: number;
 }
 
+// Define constants for invulnerability
+const INVULNERABILITY_DURATION_MS = 1000; // 1 second invulnerability
+
 /**
  * Manages the state and behavior of the player character.
  * This includes position, health, movement logic, and interactions.
@@ -36,6 +39,8 @@ export default class PlayerManager {
   private isMovingRight: boolean = false;
   private moveSpeed: number; // Initialized from config
   private health: number; // Initialized from config
+  private isInvulnerable: boolean = false;
+  private invulnerabilityTimer: number = 0;
 
   constructor(eventBusInstance: EventBusType, playerConfig: PlayerConfig) {
     this.eventBus = eventBusInstance;
@@ -90,7 +95,7 @@ export default class PlayerManager {
   }
 
   private handlePlayerHitEnemy(data: PlayerHitEnemyData): void {
-    if (this.health <= 0) return; // Already dead
+    if (this.isInvulnerable || this.health <= 0) return; // Already dead or invulnerable
 
     this.health -= data.damage;
     logger.log(
@@ -105,13 +110,19 @@ export default class PlayerManager {
       this.velocityX = 0;
       this.isMovingLeft = false;
       this.isMovingRight = false;
+    } else {
+      // Become invulnerable if not dead
+      this.isInvulnerable = true;
+      this.invulnerabilityTimer = INVULNERABILITY_DURATION_MS;
+      this.eventBus.emit(Events.PLAYER_INVULNERABILITY_START); // Notify scene for visual effect
+      logger.debug(`Player invulnerability started (${this.invulnerabilityTimer}ms)`);
     }
     this.emitStateUpdate(); // Emit state update with new health
   }
 
   // Handler for when player is hit by a projectile
   private handlePlayerHitProjectile(data: PlayerHitProjectileData): void {
-    if (this.health <= 0) return; // Already dead
+    if (this.isInvulnerable || this.health <= 0) return; // Already dead or invulnerable
 
     this.health -= data.damage;
     logger.log(
@@ -126,6 +137,12 @@ export default class PlayerManager {
       this.velocityX = 0;
       this.isMovingLeft = false;
       this.isMovingRight = false;
+    } else {
+      // Become invulnerable if not dead
+      this.isInvulnerable = true;
+      this.invulnerabilityTimer = INVULNERABILITY_DURATION_MS;
+      this.eventBus.emit(Events.PLAYER_INVULNERABILITY_START); // Notify scene for visual effect
+      logger.debug(`Player invulnerability started (${this.invulnerabilityTimer}ms)`);
     }
     this.emitStateUpdate(); // Emit state update with new health
   }
@@ -166,6 +183,7 @@ export default class PlayerManager {
       velocityX: this.velocityX,
       velocityY: 0, // Assuming no vertical movement for now
       health: this.health, // Include health in state update
+      isInvulnerable: this.isInvulnerable, // Include invulnerability state
     });
   }
 
@@ -176,8 +194,19 @@ export default class PlayerManager {
    * Note: Actual position update might happen in the Phaser layer based on velocity.
    * This manager focuses on *state*, Phaser layer handles *presentation*.
    */
-  public update(_deltaTime: number): void {
-    // Prefix with underscore
+  public update(deltaTime: number): void {
+    // Handle invulnerability timer
+    if (this.isInvulnerable) {
+      this.invulnerabilityTimer -= deltaTime;
+      if (this.invulnerabilityTimer <= 0) {
+        this.isInvulnerable = false;
+        this.invulnerabilityTimer = 0;
+        this.eventBus.emit(Events.PLAYER_INVULNERABILITY_END); // Notify scene
+        logger.debug('Player invulnerability ended');
+        this.emitStateUpdate(); // Emit state change
+      }
+    }
+
     // Potential future logic:
     // - Apply status effects
     // - Regenerate health/shields

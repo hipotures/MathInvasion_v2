@@ -197,6 +197,16 @@
     *   Updated `GameScene.preload` to load corresponding placeholder assets (`enemy_bullet.png`, `enemy_bullet_fast.png`, `enemy_laser.png`).
     *   Updated `GameSceneEventHandler.handleProjectileCreated` to use the correct asset key based on the projectile type (`enemy_bullet`, `enemy_bullet_fast`, `enemy_laser`) specified in the `SPAWN_PROJECTILE` event data. Removed default tinting for enemy projectiles.
     *   Fixed syntax error in `GameSceneEventHandler.ts` caused by misplaced closing brace.
+*   **Fix Config Loading/Validation Errors:**
+    *   Changed `EnemyManager` to export class instead of singleton instance. Updated imports and instantiation in `GameScene` and `GameSceneCollisionHandler`.
+    *   Made `projectileSpeed` optional in `weaponSchema` and handled `undefined` case in `GameSceneEventHandler` to fix validation error for `weapons.yml`.
+*   **M3 - Add Player Invulnerability:**
+    *   Added `isInvulnerable` state and `invulnerabilityTimer` to `PlayerManager`.
+    *   Added `PLAYER_INVULNERABILITY_START` and `PLAYER_INVULNERABILITY_END` event constants.
+    *   Updated `PlayerManager` hit handlers to check/set invulnerability and emit start event.
+    *   Updated `PlayerManager.update` to handle timer countdown and emit end event.
+    *   Updated `PlayerManager.emitStateUpdate` to include `isInvulnerable` state.
+    *   Updated `GameSceneEventHandler` to listen for invulnerability events and apply/remove a blinking tween effect on the player sprite. Added `playerInvulnerabilityTween` property and updated `destroy` method.
 
 **Next Steps (Milestone M3 - Wrogowie i Kolizje):**
 *   **Enemy Variety & Behavior (Refinement):**
@@ -209,7 +219,7 @@
     *   Implement logic based on `config/difficulty.yml` to control enemy spawn rates, health multipliers, speed multipliers, etc., possibly based on score or time. Update `EnemyManager` and potentially `GameScene` spawner.
 *   **Collision Refinement:**
     *   Review and refine collision layers/groups if needed for more complex interactions (e.g., different projectile types vs. enemy types).
-    *   Consider adding brief invulnerability periods after hits (player and/or enemies). Update `PlayerManager` / `EnemyManager`.
+    *   ~~Consider adding brief invulnerability periods after hits (player and/or enemies). Update `PlayerManager` / `EnemyManager`.~~ *(Done for Player)*. Consider for enemies?
 *   **Visual Polish:**
     *   Add more distinct visual effects for different enemy destructions.
     *   Add visual effect for death bomb explosion in `GameSceneCollisionHandler.handleProjectileExplode`.

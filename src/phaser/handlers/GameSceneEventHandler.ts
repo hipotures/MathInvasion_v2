@@ -44,6 +44,7 @@ export class GameSceneEventHandler {
   private projectileSprites: Map<string, Phaser.Physics.Arcade.Sprite>;
   private enemySpawnerTimerRef?: Phaser.Time.TimerEvent; // To potentially stop it on death
   private gameOverTextRef?: Phaser.GameObjects.Text; // To potentially create it on death
+  private playerInvulnerabilityTween?: Phaser.Tweens.Tween; // To manage blinking tween
 
   constructor(
     scene: Phaser.Scene,
@@ -74,9 +75,14 @@ export class GameSceneEventHandler {
     this.handleRequestFireWeapon = this.handleRequestFireWeapon.bind(this);
     this.handleEnemyRequestFire = this.handleEnemyRequestFire.bind(this);
     this.handlePlayerDied = this.handlePlayerDied.bind(this);
+    this.handlePlayerInvulnerabilityStart = this.handlePlayerInvulnerabilityStart.bind(this); // Bind new handler
+    this.handlePlayerInvulnerabilityEnd = this.handlePlayerInvulnerabilityEnd.bind(this); // Bind new handler
 
     // Register the listener for ENEMY_DESTROYED
     eventBus.on(Events.ENEMY_DESTROYED, this.handleEnemyDestroyed);
+    // Register listeners for player invulnerability
+    eventBus.on(Events.PLAYER_INVULNERABILITY_START, this.handlePlayerInvulnerabilityStart);
+    eventBus.on(Events.PLAYER_INVULNERABILITY_END, this.handlePlayerInvulnerabilityEnd);
   }
 
   // Pass references during construction or via a setter if needed later
@@ -310,5 +316,49 @@ export class GameSceneEventHandler {
     });
     // Optional: Restart logic
     // this.time.delayedCall(3500, () => { this.scene.scene.restart(); }); // Use scene reference
+  }
+
+  // --- Invulnerability Visuals ---
+
+  private handlePlayerInvulnerabilityStart(): void {
+    if (!this.playerSprite?.active) return;
+
+    // Stop any existing tween first
+    if (this.playerInvulnerabilityTween) {
+      this.playerInvulnerabilityTween.stop();
+    }
+
+    // Make player blink
+    this.playerInvulnerabilityTween = this.tweens.add({
+      targets: this.playerSprite,
+      alpha: 0.5, // Target alpha
+      duration: 150, // Duration of one blink phase (fade out/in)
+      ease: 'Linear',
+      yoyo: true, // Fade back in
+      repeat: -1, // Repeat indefinitely until stopped
+    });
+  }
+
+  private handlePlayerInvulnerabilityEnd(): void {
+    if (this.playerInvulnerabilityTween) {
+      this.playerInvulnerabilityTween.stop();
+      this.playerInvulnerabilityTween = undefined; // Clear reference
+    }
+    // Ensure player is fully visible
+    if (this.playerSprite?.active) {
+      this.playerSprite.setAlpha(1);
+    }
+  }
+
+  /** Clean up event listeners */
+  public destroy(): void {
+    eventBus.off(Events.ENEMY_DESTROYED, this.handleEnemyDestroyed);
+    eventBus.off(Events.PLAYER_INVULNERABILITY_START, this.handlePlayerInvulnerabilityStart);
+    eventBus.off(Events.PLAYER_INVULNERABILITY_END, this.handlePlayerInvulnerabilityEnd);
+    // Stop tween if active
+    if (this.playerInvulnerabilityTween) {
+      this.playerInvulnerabilityTween.stop();
+    }
+    logger.log('GameSceneEventHandler destroyed and listeners removed');
   }
 }

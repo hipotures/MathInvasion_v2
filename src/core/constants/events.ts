@@ -5,6 +5,8 @@ export const PLAYER_STATE_UPDATED = 'PLAYER_STATE_UPDATED';
 export const PLAYER_HIT_ENEMY = 'PLAYER_HIT_ENEMY';
 export const PLAYER_HIT_PROJECTILE = 'PLAYER_HIT_PROJECTILE'; // Player hit by enemy projectile
 export const PLAYER_DIED = 'PLAYER_DIED'; // Player health reached zero
+export const PLAYER_INVULNERABILITY_START = 'PLAYER_INVULNERABILITY_START'; // Player becomes invulnerable
+export const PLAYER_INVULNERABILITY_END = 'PLAYER_INVULNERABILITY_END'; // Player invulnerability ends
 
 // Input Events
 export const MOVE_LEFT_START = 'MOVE_LEFT_START';
