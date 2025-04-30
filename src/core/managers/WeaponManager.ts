@@ -8,6 +8,7 @@ import configLoader from '../config/ConfigLoader'; // Import config loader insta
 import { type WeaponsConfig, type WeaponConfig } from '../config/schemas/weaponSchema'; // Import weapon config types
 import EconomyManager from './EconomyManager'; // Import EconomyManager type
 import { WeaponUpgrader } from './helpers/WeaponUpgrader'; // Import the helper class
+import { PowerupEffectData } from './PowerupManager'; // Import PowerupEffectData
 
 /** Defines the data expected for the WEAPON_STATE_UPDATED event */
 interface WeaponStateUpdateData {
@@ -53,6 +54,9 @@ export default class WeaponManager {
   private currentProjectileSpeed: number = 400; // Current speed, updated by upgrades
   private cooldownTimer: number = 0; // ms
   private isFiring: boolean = false; // Is the fire button currently held?
+  // Powerup state
+  private isRapidFireActive: boolean = false;
+  private rapidFireMultiplier: number = 1.0; // 1.0 means no effect
   // Removed playerPosition tracking
 
   constructor(eventBusInstance: EventBusType, economyManagerInstance: EconomyManager) {
@@ -86,6 +90,8 @@ export default class WeaponManager {
     this.handleWeaponSwitch = this.handleWeaponSwitch.bind(this); // Bind switch handler
     this.handleWeaponUpgradeRequest = this.handleWeaponUpgradeRequest.bind(this); // Bind upgrade handler
     this.emitStateUpdate = this.emitStateUpdate.bind(this); // Bind state update emitter
+    this.handlePowerupEffectApplied = this.handlePowerupEffectApplied.bind(this); // Bind powerup applied handler
+    this.handlePowerupEffectRemoved = this.handlePowerupEffectRemoved.bind(this); // Bind powerup removed handler
     // Removed handlePlayerStateUpdate binding
     // Note: handleFireStop might not be needed if firing is triggered on press
 
@@ -93,6 +99,8 @@ export default class WeaponManager {
     this.eventBus.on(Events.FIRE_START, this.handleFireStart);
     this.eventBus.on(Events.WEAPON_SWITCH, this.handleWeaponSwitch); // Subscribe to switch event
     this.eventBus.on(Events.REQUEST_WEAPON_UPGRADE, this.handleWeaponUpgradeRequest); // Subscribe to upgrade request
+    this.eventBus.on(Events.POWERUP_EFFECT_APPLIED, this.handlePowerupEffectApplied); // Subscribe to powerup applied
+    this.eventBus.on(Events.POWERUP_EFFECT_REMOVED, this.handlePowerupEffectRemoved); // Subscribe to powerup removed
     // Removed PLAYER_STATE_UPDATED subscription
 
     // Config loaded and initial weapon set above
@@ -184,6 +192,27 @@ export default class WeaponManager {
     }
   }
 
+  // Handler for when a powerup effect is applied
+  private handlePowerupEffectApplied(data: PowerupEffectData): void {
+    if (data.effect === 'weapon_cooldown_reduction') {
+      this.isRapidFireActive = true;
+      // Use the multiplier from the powerup config, default to 0.5 if missing/invalid
+      this.rapidFireMultiplier = data.multiplier && data.multiplier > 0 ? data.multiplier : 0.5;
+      logger.log(`Rapid Fire activated! Cooldown multiplier: ${this.rapidFireMultiplier}`);
+    }
+    // Handle other powerup effects here
+  }
+
+  // Handler for when a powerup effect is removed
+  private handlePowerupEffectRemoved(data: PowerupEffectData): void {
+    if (data.effect === 'weapon_cooldown_reduction') {
+      this.isRapidFireActive = false;
+      this.rapidFireMultiplier = 1.0; // Reset multiplier
+      logger.log('Rapid Fire deactivated.');
+    }
+    // Handle removal of other powerup effects here
+  }
+
   // --- Core Logic ---
 
   public update(deltaTime: number): void {
@@ -243,9 +272,13 @@ export default class WeaponManager {
       };
       this.eventBus.emit(Events.REQUEST_FIRE_WEAPON, fireData);
 
-      this.cooldownTimer = this.weaponCooldown; // Start cooldown
+      // Apply rapid fire multiplier if active when setting the timer
+      this.cooldownTimer = this.weaponCooldown * this.rapidFireMultiplier;
+      logger.debug(
+        `Cooldown started: ${this.cooldownTimer}ms (Base: ${this.weaponCooldown}, Multiplier: ${this.rapidFireMultiplier})`
+      );
     } else {
-      logger.debug('Weapon on cooldown');
+      logger.debug(`Weapon on cooldown (${this.cooldownTimer.toFixed(0)}ms remaining)`);
     }
   }
 
@@ -254,8 +287,10 @@ export default class WeaponManager {
   /** Clean up event listeners when the manager is destroyed */
   public destroy(): void {
     this.eventBus.off(Events.FIRE_START, this.handleFireStart);
-    this.eventBus.off(Events.WEAPON_SWITCH, this.handleWeaponSwitch); // Unsubscribe switch event
-    this.eventBus.off(Events.REQUEST_WEAPON_UPGRADE, this.handleWeaponUpgradeRequest); // Unsubscribe upgrade request
+    this.eventBus.off(Events.WEAPON_SWITCH, this.handleWeaponSwitch);
+    this.eventBus.off(Events.REQUEST_WEAPON_UPGRADE, this.handleWeaponUpgradeRequest);
+    this.eventBus.off(Events.POWERUP_EFFECT_APPLIED, this.handlePowerupEffectApplied); // Unsubscribe powerup listener
+    this.eventBus.off(Events.POWERUP_EFFECT_REMOVED, this.handlePowerupEffectRemoved); // Unsubscribe powerup listener
     // Removed PLAYER_STATE_UPDATED unsubscription
     logger.log('WeaponManager destroyed and listeners removed');
   }

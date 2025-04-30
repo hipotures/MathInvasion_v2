@@ -24,7 +24,14 @@ export const ENEMY_DIAMOND_STRAFER_KEY = 'enemyDiamondStrafer'; // diamond_straf
 // Placeholder/Debug Assets (Consider removing later)
 export const VITE_LOGO_KEY = 'viteLogo'; // Assuming this was the previous placeholder
 
+// Powerup Visual Assets
+export const POWERUP_SHIELD_KEY = 'powerupShield';
+export const POWERUP_RAPID_FIRE_KEY = 'powerupRapidFire';
+// Add key for cash boost visual if needed
+
 // Audio Assets
 export const AUDIO_EXPLOSION_SMALL_KEY = 'explosionSmall';
+export const AUDIO_POWERUP_APPEAR_KEY = 'powerupAppear';
+export const AUDIO_POWERUP_GET_KEY = 'powerupGet';
 
 // Add other asset types (audio, UI elements, etc.) as needed

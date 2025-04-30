@@ -4,6 +4,7 @@ import logger from '../utils/Logger';
 // Import class type for annotations
 import { EventBus as EventBusType } from '../events/EventBus';
 import * as Events from '../constants/events'; // Import event constants
+import { PowerupEffectData } from './PowerupManager'; // Import PowerupEffectData
 
 /** Defines the data expected for the ENEMY_DESTROYED event */
 // Note: This interface should ideally be defined centrally, perhaps in EnemyManager or a shared types file.
@@ -23,6 +24,9 @@ export default class EconomyManager {
   private eventBus: EventBusType;
   private currentCurrency: number;
   private currentScore: number; // Added score tracking
+  // Powerup state
+  private isCashBoostActive: boolean = false;
+  private cashBoostMultiplier: number = 1.0; // 1.0 means no effect
 
   constructor(
     eventBusInstance: EventBusType,
@@ -78,6 +82,37 @@ export default class EconomyManager {
     this.eventBus.emit(Events.CURRENCY_UPDATED, { currentAmount: this.currentCurrency });
   }
 
+  private handleEnemyDestroyed(data: EnemyDestroyedData): void {
+    // Apply cash boost multiplier if active
+    const effectiveReward = Math.round(data.reward * this.cashBoostMultiplier);
+    logger.debug(
+      `Enemy ${data.configId} (Instance: ${data.instanceId}) destroyed. Base Reward: ${data.reward}, Multiplier: ${this.cashBoostMultiplier}, Effective Reward: ${effectiveReward}. Score: ${data.scoreValue}.`
+    );
+    this.addCurrency(effectiveReward);
+    this.addScore(data.scoreValue); // Score is not affected by cash boost
+  }
+
+  // Handler for when a powerup effect is applied
+  private handlePowerupEffectApplied(data: PowerupEffectData): void {
+    if (data.effect === 'currency_multiplier') {
+      this.isCashBoostActive = true;
+      // Use the multiplier from the powerup config, default to 2 if missing/invalid
+      this.cashBoostMultiplier = data.multiplier && data.multiplier > 0 ? data.multiplier : 2.0;
+      logger.log(`Cash Boost activated! Currency multiplier: ${this.cashBoostMultiplier}`);
+    }
+    // Handle other powerup effects here if EconomyManager needs to react
+  }
+
+  // Handler for when a powerup effect is removed
+  private handlePowerupEffectRemoved(data: PowerupEffectData): void {
+    if (data.effect === 'currency_multiplier') {
+      this.isCashBoostActive = false;
+      this.cashBoostMultiplier = 1.0; // Reset multiplier
+      logger.log('Cash Boost deactivated.');
+    }
+    // Handle removal of other powerup effects here
+  }
+
   /** Adds score and emits an update event. */
   public addScore(amount: number): void {
     if (amount <= 0) {
@@ -99,26 +134,23 @@ export default class EconomyManager {
     this.eventBus.emit(Events.SCORE_UPDATED, { currentScore: this.currentScore });
   }
 
-  // --- Event Handlers ---
-
-  private handleEnemyDestroyed(data: EnemyDestroyedData): void {
-    logger.debug(
-      `Enemy ${data.configId} (Instance: ${data.instanceId}) destroyed. Granting ${data.reward} currency and ${data.scoreValue} score.`
-    );
-    this.addCurrency(data.reward);
-    this.addScore(data.scoreValue); // Add score
-  }
-
   // --- Listener Setup ---
 
   private registerEventListeners(): void {
     this.handleEnemyDestroyed = this.handleEnemyDestroyed.bind(this);
+    this.handlePowerupEffectApplied = this.handlePowerupEffectApplied.bind(this); // Bind powerup handler
+    this.handlePowerupEffectRemoved = this.handlePowerupEffectRemoved.bind(this); // Bind powerup handler
+
     this.eventBus.on(Events.ENEMY_DESTROYED, this.handleEnemyDestroyed);
+    this.eventBus.on(Events.POWERUP_EFFECT_APPLIED, this.handlePowerupEffectApplied); // Subscribe to powerup applied
+    this.eventBus.on(Events.POWERUP_EFFECT_REMOVED, this.handlePowerupEffectRemoved); // Subscribe to powerup removed
   }
 
   /** Clean up event listeners when the manager is destroyed */
   public destroy(): void {
     this.eventBus.off(Events.ENEMY_DESTROYED, this.handleEnemyDestroyed);
+    this.eventBus.off(Events.POWERUP_EFFECT_APPLIED, this.handlePowerupEffectApplied); // Unsubscribe powerup listener
+    this.eventBus.off(Events.POWERUP_EFFECT_REMOVED, this.handlePowerupEffectRemoved); // Unsubscribe powerup listener
     logger.log('EconomyManager destroyed and listeners removed');
   }
 }

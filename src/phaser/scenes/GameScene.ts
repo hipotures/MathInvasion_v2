@@ -7,6 +7,7 @@ import WeaponManager from '../../core/managers/WeaponManager';
 import ProjectileManager from '../../core/managers/ProjectileManager';
 import EconomyManager from '../../core/managers/EconomyManager';
 import { EnemyManager } from '../../core/managers/EnemyManager'; // Import named export
+import { PowerupManager } from '../../core/managers/PowerupManager'; // Import named export
 import configLoader from '../../core/config/ConfigLoader';
 // import { type WeaponConfig } from '../../core/config/schemas/weaponSchema'; // Unused import
 // import { PlayerState } from '../../core/types/PlayerState'; // Unused import
@@ -18,6 +19,7 @@ import { GameSceneEventHandler } from '../handlers/GameSceneEventHandler'; // Im
 import * as Events from '../../core/constants/events';
 // Asset constants
 import * as Assets from '../../core/constants/assets';
+import { PowerupSpawnedData } from '../../core/managers/PowerupManager'; // Import PowerupSpawnedData
 
 // --- Event Data Interfaces --- (Removed unused interfaces)
 // interface PlayerHitEnemyData { ... }
@@ -33,6 +35,7 @@ export default class GameScene extends Phaser.Scene {
   private projectileManager!: ProjectileManager;
   private economyManager!: EconomyManager;
   private enemyManager!: EnemyManager; // Store instance, not class type
+  private powerupManager!: PowerupManager; // Add PowerupManager instance
   private collisionHandler!: GameSceneCollisionHandler;
   private eventHandler!: GameSceneEventHandler; // Add property for the event handler
 
@@ -40,8 +43,10 @@ export default class GameScene extends Phaser.Scene {
   private playerSprite!: Phaser.Physics.Arcade.Sprite;
   private enemyGroup!: Phaser.GameObjects.Group;
   private projectileGroup!: Phaser.GameObjects.Group;
+  private powerupGroup!: Phaser.GameObjects.Group; // Add group for powerups
   private projectileSprites: Map<string, Phaser.Physics.Arcade.Sprite> = new Map();
   private enemySprites: Map<string, EnemyEntity> = new Map();
+  private powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite> = new Map(); // Map for powerup sprites
   private enemySpawnerTimer!: Phaser.Time.TimerEvent;
   private gameOverText?: Phaser.GameObjects.Text;
 
@@ -63,8 +68,14 @@ export default class GameScene extends Phaser.Scene {
     this.load.image(Assets.PROJECTILE_ENEMY_BULLET_KEY, 'assets/images/enemy_bullet.png'); // Load Enemy Bullet asset
     this.load.image(Assets.PROJECTILE_ENEMY_BULLET_FAST_KEY, 'assets/images/enemy_bullet_fast.png'); // Load Fast Enemy Bullet asset
     this.load.image(Assets.PROJECTILE_ENEMY_LASER_KEY, 'assets/images/enemy_laser.png'); // Load Enemy Laser asset
+    // Powerup Assets (Placeholders)
+    this.load.image(Assets.POWERUP_SHIELD_KEY, 'assets/images/powerup_shield.png');
+    this.load.image(Assets.POWERUP_RAPID_FIRE_KEY, 'assets/images/powerup_rapid.png');
+    // TODO: Add cash boost icon asset if needed
     // Audio Assets
     this.load.audio(Assets.AUDIO_EXPLOSION_SMALL_KEY, 'assets/audio/explosion_small.ogg');
+    this.load.audio(Assets.AUDIO_POWERUP_APPEAR_KEY, 'assets/audio/powerup_appear.ogg');
+    this.load.audio(Assets.AUDIO_POWERUP_GET_KEY, 'assets/audio/powerup_get.ogg');
   }
 
   create(): void {
@@ -77,8 +88,11 @@ export default class GameScene extends Phaser.Scene {
       this,
       this.projectileManager,
       this.enemyManager,
+      // this.powerupManager, // Collision handler doesn't need powerup manager directly
       this.playerSprite,
-      this.projectileSprites // Pass the map
+      this.projectileSprites, // Pass the map
+      this.powerupGroup, // Pass powerup group
+      this.powerupSprites // Pass powerup sprites map
     );
     // Instantiate the event handler
     this.eventHandler = new GameSceneEventHandler(
@@ -86,8 +100,10 @@ export default class GameScene extends Phaser.Scene {
       this.playerSprite,
       this.projectileGroup,
       this.enemyGroup, // Pass enemy group
+      this.powerupGroup, // Pass powerup group
       this.enemySprites,
-      this.projectileSprites
+      this.projectileSprites,
+      this.powerupSprites // Pass powerup sprites map
     );
     // this.bindEventHandlers(); // No longer needed as handlers are bound in their own class
     this.setupEventListeners(); // Will now use eventHandler methods
@@ -105,6 +121,7 @@ export default class GameScene extends Phaser.Scene {
     this.weaponManager.update(delta);
     this.projectileManager.update(delta);
     this.enemyManager.update(delta);
+    this.powerupManager.update(delta); // Update PowerupManager
     // EconomyManager is event-driven
   }
 
@@ -118,6 +135,8 @@ export default class GameScene extends Phaser.Scene {
     this.weaponManager = new WeaponManager(eventBus, this.economyManager); // Pass EconomyManager instance
     this.projectileManager = new ProjectileManager(eventBus);
     this.enemyManager = new EnemyManager(eventBus); // Instantiate here
+    this.powerupManager = new PowerupManager(eventBus, logger, configLoader.getPowerupsConfig()); // Instantiate PowerupManager
+    this.powerupManager.init(); // Initialize PowerupManager
   }
 
   private createPlayer(): void {
@@ -130,6 +149,7 @@ export default class GameScene extends Phaser.Scene {
   private createGroups(): void {
     this.projectileGroup = this.add.group({ runChildUpdate: true });
     this.enemyGroup = this.add.group({ classType: EnemyEntity, runChildUpdate: true });
+    this.powerupGroup = this.add.group({ runChildUpdate: true }); // Create powerup group
   }
 
   // private bindEventHandlers(): void { ... } // Removed
@@ -171,6 +191,14 @@ export default class GameScene extends Phaser.Scene {
       undefined,
       this.collisionHandler
     );
+    // Add collision for player vs powerups
+    this.physics.overlap(
+      this.playerSprite,
+      this.powerupGroup,
+      this.collisionHandler.handlePlayerPowerupCollision, // Add new handler method
+      undefined,
+      this.collisionHandler
+    );
   }
 
   private setupEnemySpawner(): void {
@@ -193,10 +221,12 @@ export default class GameScene extends Phaser.Scene {
       this.playerManager.destroy();
       this.weaponManager.destroy();
       this.projectileManager.destroy();
+      this.powerupManager.destroy(); // Destroy PowerupManager
       // this.enemyManager.destroy(); // Singleton, might not need destroy
       // this.economyManager.destroy(); // Add if needed
       this.projectileSprites.clear();
       this.enemySprites.clear();
+      this.powerupSprites.clear(); // Clear powerup sprites map
       if (this.enemySpawnerTimer) this.enemySpawnerTimer.destroy();
     });
   }

@@ -44,3 +44,11 @@ export const REQUEST_WEAPON_UPGRADE = 'REQUEST_WEAPON_UPGRADE'; // Emitted by In
 // export const WEAPON_COOLDOWN_START = 'WEAPON_COOLDOWN_START'; // Future event
 // export const WEAPON_COOLDOWN_FINISH = 'WEAPON_COOLDOWN_FINISH'; // Future event
 // export const WEAPON_READY = 'WEAPON_READY'; // Future event
+
+// Powerup Events
+export const REQUEST_SPAWN_POWERUP = 'REQUEST_SPAWN_POWERUP'; // Emitted by EnemyManager when a powerup should drop
+export const POWERUP_SPAWNED = 'POWERUP_SPAWNED'; // Emitted by PowerupManager for Scene to create sprite
+export const POWERUP_COLLECTED = 'POWERUP_COLLECTED'; // Emitted by Scene collision handler
+export const POWERUP_EXPIRED = 'POWERUP_EXPIRED'; // Emitted by PowerupManager when effect duration ends
+export const POWERUP_EFFECT_APPLIED = 'POWERUP_EFFECT_APPLIED'; // Emitted by PowerupManager when effect starts
+export const POWERUP_EFFECT_REMOVED = 'POWERUP_EFFECT_REMOVED'; // Emitted by PowerupManager when effect ends

@@ -3,8 +3,11 @@ import eventBus from '../../../core/events/EventBus';
 import logger from '../../../core/utils/Logger';
 import { EnemyEntity } from '../../entities/EnemyEntity';
 import { EnemyConfig } from '../../../core/config/schemas/enemySchema';
+import { PowerupsConfig, PowerupConfig } from '../../../core/config/schemas/powerupSchema'; // Import powerup types
+import configLoader from '../../../core/config/ConfigLoader'; // Import config loader
 import * as Events from '../../../core/constants/events';
 import * as Assets from '../../../core/constants/assets';
+import { RequestSpawnPowerupData } from '../../../core/managers/PowerupManager'; // Import event data type
 
 // Define the structure for the ENEMY_DESTROYED event data
 interface EnemyDestroyedData {
@@ -86,11 +89,12 @@ export class EnemyEventHandler {
     const enemyEntity = this.enemySprites.get(data.instanceId);
     if (enemyEntity) {
       const enemyConfig = data.config;
+      // Store position *before* destroying the entity
       const enemyPosition = { x: enemyEntity.x, y: enemyEntity.y };
 
       this.sound.play(Assets.AUDIO_EXPLOSION_SMALL_KEY);
-      enemyEntity.destroySelf();
-      this.enemySprites.delete(data.instanceId);
+      enemyEntity.destroySelf(); // Destroy visual representation
+      this.enemySprites.delete(data.instanceId); // Remove from tracking map
 
       // Check for death bomb ability
       const deathBombAbility = enemyConfig?.abilities?.find(
@@ -110,6 +114,9 @@ export class EnemyEventHandler {
           timeToExplodeMs: deathBombAbility.timeToExplodeMs ?? 500,
         });
       }
+
+      // --- Check for Powerup Drop ---
+      this.trySpawnPowerup(enemyConfig, enemyPosition);
     } else {
       logger.warn(`Could not find enemy entity to destroy: ID ${data.instanceId}`);
     }
@@ -118,6 +125,34 @@ export class EnemyEventHandler {
   public handleEnemyHealthUpdate(data: { instanceId: string }): void {
     const enemyEntity = this.enemySprites.get(data.instanceId);
     enemyEntity?.takeDamage(0); // Trigger visual effect
+  }
+
+  // --- Helper Methods ---
+
+  private trySpawnPowerup(enemyConfig: EnemyConfig, position: { x: number; y: number }): void {
+    const powerupsConfig: PowerupsConfig = configLoader.getPowerupsConfig();
+    let powerupDropped = false; // Flag to ensure only one powerup drops per enemy (optional)
+
+    for (const powerupConfig of powerupsConfig) {
+      if (powerupDropped) break; // Only allow one drop
+
+      const dropChance = powerupConfig.dropChance ?? 0; // Default to 0 if undefined
+      if (Math.random() <= dropChance) {
+        logger.debug(
+          `Enemy ${enemyConfig.id} dropped powerup: ${powerupConfig.id} (Chance: ${dropChance})`
+        );
+
+        const eventData: RequestSpawnPowerupData = {
+          x: position.x,
+          y: position.y,
+          enemyId: enemyConfig.id, // Pass enemy ID for potential future logic
+          // We don't specify *which* powerup here; PowerupManager decides based on its logic (currently hardcoded)
+          // If we wanted specific enemies to drop specific powerups, we'd need more complex logic here or in PowerupManager
+        };
+        eventBus.emit(Events.REQUEST_SPAWN_POWERUP, eventData);
+        powerupDropped = true; // Set flag
+      }
+    }
   }
 
   /** Clean up event listeners */

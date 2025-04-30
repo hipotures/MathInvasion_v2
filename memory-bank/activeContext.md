@@ -1,8 +1,72 @@
 # Active Context: Math Invasion v2
 
-**Current Focus:** Refactoring Complete - Ready for M5.
+**Current Focus:** Milestone M5 - Power-ups Implemented.
 
-**Recent Changes (Refactoring):**
+**Recent Changes (M5 - Power-ups):**
+*   **Powerup System Core:**
+    *   Added powerup event constants (`REQUEST_SPAWN_POWERUP`, `POWERUP_SPAWNED`, `POWERUP_COLLECTED`, `POWERUP_EXPIRED`, `POWERUP_EFFECT_APPLIED`, `POWERUP_EFFECT_REMOVED`) to `src/core/constants/events.ts`.
+    *   Created `src/core/managers/PowerupManager.ts`:
+        *   Loads powerup configurations (`config/powerups.yml`).
+        *   Listens for `REQUEST_SPAWN_POWERUP`.
+        *   Randomly selects a powerup to spawn from the available configurations.
+        *   Emits `POWERUP_SPAWNED` with instance ID, config details, position, and visual key.
+        *   Listens for `POWERUP_COLLECTED`.
+        *   Manages active powerup effects and their timers (`activeEffects` map).
+        *   Emits `POWERUP_EFFECT_APPLIED` when a powerup is collected.
+        *   Emits `POWERUP_EFFECT_REMOVED` and `POWERUP_EXPIRED` when a timer runs out.
+    *   Integrated `PowerupManager` into `src/phaser/scenes/GameScene.ts`:
+        *   Instantiated `PowerupManager`.
+        *   Added `powerupGroup` (Phaser Group) and `powerupSprites` (Map).
+        *   Loaded powerup assets (`powerup_shield.png`, `powerup_rapid.png`) and sounds (`powerup_appear.ogg`, `powerup_get.ogg`) in `preload()`. Added corresponding constants to `src/core/constants/assets.ts`.
+        *   Passed `powerupGroup` and `powerupSprites` to `GameSceneCollisionHandler` and `GameSceneEventHandler` constructors.
+        *   Added `powerupManager.update()` call to `GameScene.update()`.
+        *   Added `powerupManager.destroy()` call to `GameScene` shutdown cleanup.
+*   **Powerup Spawning & Visuals:**
+    *   Updated `src/phaser/handlers/event/EnemyEventHandler.ts`:
+        *   Imported powerup configs and `REQUEST_SPAWN_POWERUP` event data type.
+        *   Added `trySpawnPowerup` helper method called in `handleEnemyDestroyed`.
+        *   `trySpawnPowerup` iterates through `powerups.yml`, checks `dropChance` against `Math.random()`, and emits `REQUEST_SPAWN_POWERUP` if successful (limits to one drop per enemy).
+    *   Updated `src/phaser/handlers/GameSceneEventHandler.ts`:
+        *   Updated constructor to accept `powerupGroup` and `powerupSprites`.
+        *   Added listener for `POWERUP_SPAWNED`.
+        *   Implemented `handlePowerupSpawned` method:
+            *   Maps powerup visual key (`shield_icon`, `rapid_fire_icon`) to asset key (`POWERUP_SHIELD_KEY`, `POWERUP_RAPID_FIRE_KEY`).
+            *   Creates the powerup sprite using `physics.add.sprite`.
+            *   Adds sprite to `powerupGroup` and `powerupSprites` map.
+            *   Gives sprite downward velocity and a rotation tween.
+            *   Plays `AUDIO_POWERUP_APPEAR_KEY` sound.
+        *   Updated `destroy` method to unregister listener.
+*   **Powerup Collection:**
+    *   Updated `src/phaser/handlers/GameSceneCollisionHandler.ts`:
+        *   Updated constructor to accept `powerupGroup` and `powerupSprites`.
+        *   Added `handlePlayerPowerupCollision` method.
+        *   Added `physics.overlap` check between `playerSprite` and `powerupGroup` in `GameScene.setupCollisions`.
+        *   `handlePlayerPowerupCollision` identifies the collected powerup sprite, finds its instance ID from the map, emits `POWERUP_COLLECTED`, destroys the sprite, removes it from the map, and plays `AUDIO_POWERUP_GET_KEY` sound.
+*   **Powerup Effects Implementation:**
+    *   **Shield (Temporary Invulnerability):**
+        *   Updated `src/core/managers/PlayerManager.ts`:
+            *   Added `isShieldPowerupActive` state variable.
+            *   Added listeners for `POWERUP_EFFECT_APPLIED` and `POWERUP_EFFECT_REMOVED`.
+            *   Implemented handlers (`handlePowerupEffectApplied`, `handlePowerupEffectRemoved`) to set/unset `isShieldPowerupActive` based on `temporary_invulnerability` effect.
+            *   Modified damage handlers (`handlePlayerHitEnemy`, `handlePlayerHitProjectile`) to check `isShieldPowerupActive` in addition to post-hit `isInvulnerable`.
+            *   Modified `emitStateUpdate` to emit `isEffectivelyInvulnerable` (combined state).
+            *   Updated `destroy` to unregister listeners.
+    *   **Rapid Fire (Cooldown Reduction):**
+        *   Updated `src/core/managers/WeaponManager.ts`:
+            *   Added `isRapidFireActive` and `rapidFireMultiplier` state variables.
+            *   Added listeners for `POWERUP_EFFECT_APPLIED` and `POWERUP_EFFECT_REMOVED`.
+            *   Implemented handlers (`handlePowerupEffectApplied`, `handlePowerupEffectRemoved`) to set/unset `isRapidFireActive` and `rapidFireMultiplier` based on `weapon_cooldown_reduction` effect.
+            *   Modified `attemptFire` to multiply `weaponCooldown` by `rapidFireMultiplier` when setting `cooldownTimer`.
+            *   Updated `destroy` to unregister listeners.
+    *   **Cash Boost (Currency Multiplier):**
+        *   Updated `src/core/managers/EconomyManager.ts`:
+            *   Added `isCashBoostActive` and `cashBoostMultiplier` state variables.
+            *   Added listeners for `POWERUP_EFFECT_APPLIED` and `POWERUP_EFFECT_REMOVED`.
+            *   Implemented handlers (`handlePowerupEffectApplied`, `handlePowerupEffectRemoved`) to set/unset `isCashBoostActive` and `cashBoostMultiplier` based on `currency_multiplier` effect.
+            *   Modified `handleEnemyDestroyed` to multiply the base `reward` by `cashBoostMultiplier` before calling `addCurrency`.
+            *   Updated `destroy` to unregister listeners.
+
+**Recent Changes (Refactoring - Previous):**
 *   **Refactor WeaponManager (Line Limit):**
     *   Identified `src/core/managers/WeaponManager.ts` (297 lines) was approaching the 300-line limit.
     *   Created helper class `src/core/managers/helpers/WeaponUpgrader.ts`.

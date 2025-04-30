@@ -1,8 +1,20 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Milestone M4: Rozbudowa Broni i UI - **COMPLETE**
+**Current Status:** Milestone M5: Power-upy i Zaawansowani Wrogowie - **IN PROGRESS**
 
 **What Works:**
+*   **Milestone M5: Power-upy (Complete)**
+    *   Created `PowerupManager` to handle powerup state, timers, and effects.
+    *   Added powerup event constants.
+    *   Integrated `PowerupManager` into `GameScene`.
+    *   Loaded powerup assets and sounds.
+    *   Added powerup group and sprite map to `GameScene`.
+    *   Updated `EnemyEventHandler` to check drop chances and request powerup spawns.
+    *   Updated `GameSceneEventHandler` to handle powerup spawning visuals and sound.
+    *   Updated `GameSceneCollisionHandler` to handle player-powerup collisions and emit collection event.
+    *   Implemented Shield effect (`temporary_invulnerability`) in `PlayerManager`.
+    *   Implemented Rapid Fire effect (`weapon_cooldown_reduction`) in `WeaponManager`.
+    *   Implemented Cash Boost effect (`currency_multiplier`) in `EconomyManager`.
 *   **Milestone M4: Rozbudowa Broni i UI (Complete)**
     *   **Wave Number Display:** Wave number is tracked by `EnemyManager`, emitted via `WAVE_UPDATED` event, and displayed in `UIScene`.
     *   **Weapon Upgrades (Cooldown, Damage, Speed):**
@@ -91,7 +103,7 @@
 *   **M2: Podstawowa Rozgrywka (Ruch i Strzelanie)** - **COMPLETE**
 *   **M3: Wrogowie i Kolizje** - **COMPLETE** (Core features implemented, remaining tasks deferred)
 *   **M4: Rozbudowa Broni i UI** - **COMPLETE**
-*   **M5: Power-upy i Zaawansowani Wrogowie** - **NEXT**
+*   **M5: Power-upy i Zaawansowani Wrogowie** - **IN PROGRESS** (Power-ups done, Advanced Enemies next)
 *   **M6: Pełny Cykl Gry i PWA**
 *   **M7: Balans, Testy, Optymalizacja i CI/CD**
 
