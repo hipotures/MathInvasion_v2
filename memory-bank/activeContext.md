@@ -8,7 +8,7 @@
     *   `src/phaser/handlers/GameSceneDebugHandler.ts`: Extracted debug panel update logic into `debug/DebugPanelUpdater.ts`.
     *   `src/core/utils/HtmlUI.ts`: Extracted element creation logic into `helpers/HtmlElementFactory.ts`.
     *   `src/core/managers/WeaponManager.ts`: Refactored `emitStateUpdate` to use `WeaponUpgrader.calculateNextUpgradeCost`, removing duplicate logic.
-    *   `tests/core/managers/WeaponManager.test.ts`: Restructured tests using nested `describe` blocks for better organization.
+    *   `tests/core/managers/WeaponManager.test.ts`: Restructured tests using nested `describe` blocks for better organization. Split into multiple files: `Initialization`, `Firing`, `Upgrades`, `Powerups`, `Cleanup`.
     *   `tests/core/managers/EnemyManager.test.ts`: Restructured tests using nested `describe` blocks.
     *   `tests/core/managers/PlayerManager.test.ts`: Restructured tests using nested `describe` blocks.
     *   `tests/core/managers/ProjectileManager.test.ts`: Restructured tests using nested `describe` blocks.
@@ -56,6 +56,7 @@
 *   Fixed issues in `PowerupManager.test.ts` related to incorrect import style (named vs. default), schema mismatches (`effect`/`visual` vs `type`/`visualKey`), constructor signature, missing `init()` call, and event data types.
 *   Implemented and passed tests (5 tests) for `PowerupManager` covering initialization, powerup spawning, collection, effect application/timer management, and listener cleanup.
 *   Ran `npm test` and confirmed all tests are passing (69 tests total - *Note: total test count decreased slightly, likely due to refactoring/removal of some previous tests*).
+*   Completed restructuring and splitting of `WeaponManager.test.ts` into `Initialization`, `Firing`, `Upgrades`, `Powerups`, and `Cleanup` files. All tests passing.
 
 **Recent Changes (M7 - Initial Balancing):**
 *   Reviewed `config/difficulty.yml`, `config/enemies.yml`, `config/weapons.yml`, `config/powerups.yml`.
@@ -108,7 +109,7 @@
 *   Refactored projectile spawning: `WeaponManager` requests fire -> `GameScene` calculates spawn point & emits spawn details -> `ProjectileManager` creates state -> `GameScene` creates sprite. This keeps scene-specific calculations (spawn point) in the scene.
 *   Vitest mocking requires careful setup, especially for class instances and their methods. Using `vi.fn()` for methods within the `vi.mock` factory and referencing those mocks correctly is crucial. Assertions need to match exact event payloads or use `expect.objectContaining` carefully.
 *   Refactoring large classes into smaller, focused helpers (e.g., `HtmlDebugElementFactory`, `DebugPanelUpdater`, `HtmlElementFactory`) improves readability and maintainability, making it easier to adhere to line limits.
-*   Restructuring large test files with nested `describe` blocks improves organization even if it doesn't drastically reduce line count.
+*   Restructuring large test files with nested `describe` blocks improves organization even if it doesn't drastically reduce line count. Splitting tests into logical files (e.g., by functionality like Initialization, Firing, Upgrades) is a better approach for managing complexity and line limits.
 
 **Active Decisions & Considerations:**
 *   Repository name: `MathInvasion_v2` (Public).

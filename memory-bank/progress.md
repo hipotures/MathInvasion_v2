@@ -7,7 +7,7 @@
     *   **Code Modularity Refactoring:**
         *   Refactored `HtmlDebugUI`, `GameSceneDebugHandler`, `HtmlUI` by extracting element creation/update logic into helper classes (`HtmlDebugElementFactory`, `DebugPanelUpdater`, `HtmlElementFactory`).
         *   Refactored `WeaponManager` to use `WeaponUpgrader` for cost calculation (DRY).
-        *   Restructured test files (`WeaponManager.test.ts`, `EnemyManager.test.ts`, `PlayerManager.test.ts`, `ProjectileManager.test.ts`) using nested `describe` blocks for better organization.
+        *   Restructured test files (`EnemyManager.test.ts`, `PlayerManager.test.ts`, `ProjectileManager.test.ts`) using nested `describe` blocks for better organization. Split `WeaponManager.test.ts` into multiple files (`Initialization`, `Firing`, `Upgrades`, `Powerups`, `Cleanup`).
         *   All refactored files are now under the 300-line limit.
     *   **Testing Setup & Initial Tests:**
         *   Installed `vitest` dev dependency.
