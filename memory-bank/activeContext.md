@@ -9,9 +9,9 @@
     *   `src/core/utils/HtmlUI.ts`: Extracted element creation logic into `helpers/HtmlElementFactory.ts`.
     *   `src/core/managers/WeaponManager.ts`: Refactored `emitStateUpdate` to use `WeaponUpgrader.calculateNextUpgradeCost`, removing duplicate logic.
     *   `tests/core/managers/WeaponManager.test.ts`: Restructured tests using nested `describe` blocks for better organization. Split into multiple files: `Initialization`, `Firing`, `Upgrades`, `Powerups`, `Cleanup`.
-    *   `tests/core/managers/EnemyManager.test.ts`: Restructured tests using nested `describe` blocks.
-    *   `tests/core/managers/PlayerManager.test.ts`: Restructured tests using nested `describe` blocks.
-    *   `tests/core/managers/ProjectileManager.test.ts`: Restructured tests using nested `describe` blocks.
+    *   `tests/core/managers/EnemyManager.test.ts`: Split into multiple files (`Initialization`, `Spawning`, `DamageDestruction`, `Cleanup`).
+    *   `tests/core/managers/PlayerManager.test.ts`: Split into multiple files (`Initialization`, `DamageInvulnerability`, `Death`, `Movement`, `Cleanup`).
+    *   `tests/core/managers/ProjectileManager.test.ts`: Split into multiple files (`Initialization`, `SpawningState`, `Destruction`, `Getters`, `Cleanup`).
 
 **Recent Changes (M7 - Debug Visibility Fix):**
 *   Fixed issue where newly spawned entities (enemies, projectiles, powerups) ignored the current debug mode state.
