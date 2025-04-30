@@ -18,17 +18,6 @@ interface WeaponStateUpdateData {
   nextUpgradeCost: number | null; // Cost for the next level, null if maxed or no upgrades
 }
 
-/** Defines the data expected for the PLAYER_STATE_UPDATED event */
-// Note: This interface might be better placed in a shared types file or events.ts
-// Duplicated from PlayerManager for now, consider centralizing later
-interface PlayerStateData {
-  x: number;
-  y: number;
-  velocityX: number;
-  velocityY: number;
-  health: number;
-}
-
 /** Defines the data expected for the REQUEST_FIRE_WEAPON event */
 // Ensure this matches the payload emitted in attemptFire
 interface RequestFireWeaponData {
@@ -59,11 +48,16 @@ export default class WeaponManager {
   // Powerup state removed - managed by WeaponPowerupHandler
   // Removed playerPosition tracking
 
-  constructor(eventBusInstance: EventBusType, economyManagerInstance: EconomyManager) {
+  constructor(
+    eventBusInstance: EventBusType,
+    economyManagerInstance: EconomyManager,
+    weaponUpgraderInstance: WeaponUpgrader, // Inject WeaponUpgrader
+    weaponPowerupHandlerInstance: WeaponPowerupHandler // Inject WeaponPowerupHandler
+  ) {
     this.eventBus = eventBusInstance;
     this.economyManager = economyManagerInstance; // Store EconomyManager
-    this.weaponUpgrader = new WeaponUpgrader(this.economyManager); // Instantiate the upgrade helper
-    this.weaponPowerupHandler = new WeaponPowerupHandler(this.eventBus, logger); // Instantiate the powerup helper
+    this.weaponUpgrader = weaponUpgraderInstance; // Assign injected instance
+    this.weaponPowerupHandler = weaponPowerupHandlerInstance; // Assign injected instance
     this.weaponsConfig = configLoader.getWeaponsConfig(); // Load all weapon configs
     logger.log('WeaponManager initialized');
 

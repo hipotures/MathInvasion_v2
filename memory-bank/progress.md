@@ -12,6 +12,8 @@
         *   Created `tests/core/managers/PlayerManager.test.ts`.
         *   Added `invulnerabilityDurationMs` to `playerSchema.ts` and `player.yml`.
         *   Implemented and passed unit tests for `PlayerManager` (initialization, state updates, invulnerability, death, movement event handling, interaction with mocked `PlayerPowerupHandler`).
+        *   Reviewed existing unit tests for `WeaponManager` (`tests/core/managers/WeaponManager.test.ts`).
+        *   Ran `npm test` and confirmed all tests for `EconomyManager`, `PlayerManager`, and `WeaponManager` pass (35 total).
     *   **Initial Balancing:**
         *   Reviewed `difficulty.yml`, `enemies.yml`, `weapons.yml`, `powerups.yml`.
         *   Adjusted `difficulty.yml`: Reduced health scaling (`enemyHealthMultiplierPerWave: 1.06`), added `diamond_strafer` (wave 10) and `hexagon_bomber` (wave 12) to unlock schedule.

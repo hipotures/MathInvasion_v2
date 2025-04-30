@@ -2,7 +2,7 @@
 
 **Current Focus:** Milestone M7 - Balans, Testy, Optymalizacja i CI/CD
 
-**Recent Changes (M7 - Testing Setup):**
+**Recent Changes (M7 - Testing Setup & ESLint Fixes):**
 *   Installed `vitest` as a dev dependency (`npm install --save-dev vitest`).
 *   Added `test` script (`"test": "vitest"`) to `package.json`.
 *   Created initial unit test file `tests/core/managers/EconomyManager.test.ts`.
@@ -11,6 +11,14 @@
 *   Added `invulnerabilityDurationMs` to `playerSchema.ts` and `player.yml` to support testing.
 *   Implemented tests for `PlayerManager` covering initialization, state updates (health, movement via events), invulnerability logic, death event, and interaction with mocked `PlayerPowerupHandler`.
 *   Fixed various issues in `PlayerManager.test.ts` related to imports (default vs. named), Vitest mock setup (`vi.mock`, `vi.fn`, `mockReturnValue`), event payload assertions, and test matchers (`toBeLessThanOrEqual`). All tests for `PlayerManager` are now passing.
+*   Reviewed existing unit test file `tests/core/managers/WeaponManager.test.ts`.
+*   Fixed ESLint issues in `tests/core/managers/WeaponManager.test.ts`:
+    *   Removed unused imports (`Logger`, `POWERUP_EFFECT_APPLIED`, `POWERUP_EFFECT_REMOVED`).
+    *   Removed unused `mockRapidFirePowerup` variable.
+    *   Replaced `any` types with more specific types in constructor arguments and function parameters.
+    *   Replaced generic `Function` type with specific function signatures in event listener type assertions.
+    *   Removed unused `ListenerFn` type definition.
+*   Ran `npm test` and confirmed all tests (including `EconomyManager`, `PlayerManager`, and `WeaponManager`) are passing (35 tests total).
 
 **Recent Changes (M7 - Initial Balancing):**
 *   Reviewed `config/difficulty.yml`, `config/enemies.yml`, `config/weapons.yml`, `config/powerups.yml`.
@@ -479,7 +487,7 @@
     *   Fine-tune enemy spawn patterns and wave composition.
     *   Adjust powerup drop rates.
 *   **Testing:**
-    *   Implement unit tests (Vitest/Jest) for core managers and utility functions. *(EconomyManager, PlayerManager done)* -> Next: `WeaponManager`.
+    *   Implement unit tests (Vitest/Jest) for core managers and utility functions. *(EconomyManager, PlayerManager, WeaponManager done)* -> Next: `ProjectileManager`, `PowerupManager`, `EnemyManager`, `InputManager`, Helpers (`WeaponUpgrader`, `WeaponPowerupHandler`, `PlayerPowerupHandler`, `EnemyWaveHandler`), `ConfigLoader`.
     *   Implement end-to-end tests (Playwright) for key gameplay flows (movement, shooting, upgrades, powerups, game over).
 *   **Optimization:**
     *   Profile game performance (FPS, memory usage) and identify bottlenecks.

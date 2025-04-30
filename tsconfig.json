@@ -18,7 +18,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "types": ["vite/client", "vite-plugin-pwa/client", "vitest/globals"] // Added vitest/globals
   },
-  "include": ["src"]
+  "include": ["src", "tests"] // Added tests directory
 }

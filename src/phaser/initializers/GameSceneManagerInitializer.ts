@@ -8,6 +8,8 @@ import ProjectileManager from '../../core/managers/ProjectileManager';
 import EconomyManager from '../../core/managers/EconomyManager';
 import { EnemyManager } from '../../core/managers/EnemyManager';
 import { PowerupManager } from '../../core/managers/PowerupManager';
+import { WeaponUpgrader } from '../../core/managers/helpers/WeaponUpgrader'; // Import helper
+import { WeaponPowerupHandler } from '../../core/managers/helpers/WeaponPowerupHandler'; // Import helper
 
 /**
  * Structure to hold the initialized managers for GameScene.
@@ -38,7 +40,16 @@ export function initializeGameManagers(eventBus: EventBus, logger: Logger): Game
   const economyManager = new EconomyManager(eventBus, 0); // Initial currency 0
   const playerManager = new PlayerManager(eventBus, playerConfig);
   const inputManager = new InputManager(eventBus);
-  const weaponManager = new WeaponManager(eventBus, economyManager); // Inject EconomyManager
+  // Create helper instances first
+  const weaponUpgrader = new WeaponUpgrader(economyManager); // Pass EconomyManager
+  const weaponPowerupHandler = new WeaponPowerupHandler(eventBus, logger); // Pass EventBus and Logger
+  // Inject helpers into WeaponManager
+  const weaponManager = new WeaponManager(
+    eventBus,
+    economyManager,
+    weaponUpgrader,
+    weaponPowerupHandler
+  );
   const projectileManager = new ProjectileManager(eventBus);
   const enemyManager = new EnemyManager(eventBus, logger); // Inject logger
   const powerupManager = new PowerupManager(eventBus, logger, powerupsConfig); // Inject logger & config
