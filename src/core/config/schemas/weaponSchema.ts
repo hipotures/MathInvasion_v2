@@ -20,7 +20,11 @@ const weaponSchema = z.object({
   baseDamagePerSec: z.number().nonnegative().optional(), // Optional for non-DPS weapons
   baseRange: z.number().positive(),
   projectileType: z.string(), // Could be 'none' for area effects
-  projectileSpeed: z.number().positive().describe('Speed of the projectile in pixels per second.'), // Added projectile speed
+  projectileSpeed: z
+    .number()
+    .positive()
+    .optional()
+    .describe('Speed of the projectile in pixels per second.'), // Make optional
   baseSlowFactor: z.number().positive().optional(), // Optional for non-slowing weapons
   baseDurationMs: z.number().positive().optional(), // Optional for non-slowing weapons
   upgrade: weaponUpgradeSchema,

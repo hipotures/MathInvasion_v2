@@ -6,7 +6,7 @@ import InputManager from '../../core/managers/InputManager';
 import WeaponManager from '../../core/managers/WeaponManager';
 import ProjectileManager from '../../core/managers/ProjectileManager';
 import EconomyManager from '../../core/managers/EconomyManager';
-import EnemyManager from '../../core/managers/EnemyManager';
+import { EnemyManager } from '../../core/managers/EnemyManager'; // Import named export
 import configLoader from '../../core/config/ConfigLoader';
 // import { type WeaponConfig } from '../../core/config/schemas/weaponSchema'; // Unused import
 // import { PlayerState } from '../../core/types/PlayerState'; // Unused import
@@ -32,7 +32,7 @@ export default class GameScene extends Phaser.Scene {
   private weaponManager!: WeaponManager;
   private projectileManager!: ProjectileManager;
   private economyManager!: EconomyManager;
-  private enemyManager!: typeof EnemyManager;
+  private enemyManager!: EnemyManager; // Store instance, not class type
   private collisionHandler!: GameSceneCollisionHandler;
   private eventHandler!: GameSceneEventHandler; // Add property for the event handler
 
@@ -117,7 +117,7 @@ export default class GameScene extends Phaser.Scene {
     this.inputManager = new InputManager(eventBus);
     this.weaponManager = new WeaponManager(eventBus);
     this.projectileManager = new ProjectileManager(eventBus);
-    this.enemyManager = EnemyManager; // Singleton instance
+    this.enemyManager = new EnemyManager(eventBus); // Instantiate here
   }
 
   private createPlayer(): void {

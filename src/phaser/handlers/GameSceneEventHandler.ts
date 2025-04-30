@@ -233,7 +233,9 @@ export class GameSceneEventHandler {
     if (!this.playerSprite?.active) return;
     const { weaponConfig } = data;
     const spawnPoint = this.playerSprite.getTopCenter();
-    const velocityY = -weaponConfig.projectileSpeed;
+    // Provide a default speed if undefined (e.g., for lasers or area effects)
+    const speed = weaponConfig.projectileSpeed ?? 0;
+    const velocityY = -speed;
     eventBus.emit(Events.SPAWN_PROJECTILE, {
       type: weaponConfig.projectileType,
       x: spawnPoint.x,

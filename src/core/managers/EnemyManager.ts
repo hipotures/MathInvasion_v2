@@ -177,6 +177,9 @@ export class EnemyManager {
   }
 }
 
-// Export a singleton instance using the default export pattern
-const EnemyManagerInstance = new EnemyManager();
-export default EnemyManagerInstance;
+// Export the class directly, removing the singleton instance creation.
+// The scene will be responsible for creating and managing the instance.
+// export default EnemyManager; // Keep the default export for now, but it exports the class
+// Let's explicitly export the class as named export for clarity in GameScene
+// and remove the default export to avoid confusion.
+// export default EnemyManager;

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import eventBus from '../../core/events/EventBus';
 import logger from '../../core/utils/Logger';
 import ProjectileManager from '../../core/managers/ProjectileManager';
-import EnemyManager from '../../core/managers/EnemyManager';
+import { EnemyManager } from '../../core/managers/EnemyManager'; // Import named export
 import { EnemyEntity } from '../entities/EnemyEntity';
 import * as Events from '../../core/constants/events';
 
@@ -33,14 +33,14 @@ interface ProjectileExplodeData {
 export class GameSceneCollisionHandler {
   private scene: Phaser.Scene; // Reference to the GameScene if needed (e.g., for physics)
   private projectileManager: ProjectileManager;
-  private enemyManager: typeof EnemyManager;
+  private enemyManager: EnemyManager; // Use the class type directly
   private playerSprite: Phaser.Physics.Arcade.Sprite;
   private projectileSprites: Map<string, Phaser.Physics.Arcade.Sprite>;
 
   constructor(
     scene: Phaser.Scene,
     projectileManager: ProjectileManager,
-    enemyManager: typeof EnemyManager,
+    enemyManager: EnemyManager, // Expect an instance now
     playerSprite: Phaser.Physics.Arcade.Sprite,
     projectileSprites: Map<string, Phaser.Physics.Arcade.Sprite>
   ) {
