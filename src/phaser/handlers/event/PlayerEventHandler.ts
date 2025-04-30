@@ -3,6 +3,7 @@ import eventBus from '../../../core/events/EventBus';
 import logger from '../../../core/utils/Logger';
 import { PlayerState } from '../../../core/types/PlayerState';
 import * as Events from '../../../core/constants/events';
+import * as Assets from '../../../core/constants/assets'; // Import assets constants
 
 export class PlayerEventHandler {
   private scene: Phaser.Scene;
@@ -50,11 +51,53 @@ export class PlayerEventHandler {
   public handlePlayerDied(): void {
     logger.log('Game Over - Player Died');
     if (this.enemySpawnerTimerRef) this.enemySpawnerTimerRef.destroy(); // Stop spawner
+
     if (this.playerSprite?.active) {
-      this.playerSprite.disableBody(true, false);
+      const playerX = this.playerSprite.x;
+      const playerY = this.playerSprite.y;
+
+      // 1. Play explosion sound
+      this.scene.sound.play(Assets.AUDIO_EXPLOSION_SMALL_KEY); // Use Assets import
+
+      // 2. Add visual explosion effect
+      const explosionRadius = 40; // Smaller radius for player death
+      const explosionCore = this.scene.add.circle(
+        playerX,
+        playerY,
+        explosionRadius * 0.1,
+        0xffffff,
+        1
+      );
+      const explosionRing = this.scene.add.circle(
+        playerX,
+        playerY,
+        explosionRadius * 0.15,
+        0xffff00,
+        0.8
+      ); // Yellow ring
+
+      this.tweens.add({
+        targets: explosionCore,
+        radius: explosionRadius * 0.3,
+        alpha: 0,
+        duration: 150, // Faster than bomb
+        ease: 'Quad.easeOut',
+        onComplete: () => explosionCore.destroy(),
+      });
+      this.tweens.add({
+        targets: explosionRing,
+        radius: explosionRadius,
+        alpha: 0,
+        duration: 300, // Faster than bomb
+        ease: 'Quad.easeOut',
+        onComplete: () => explosionRing.destroy(),
+      });
+
+      // 3. Existing player sprite tween (disable body first)
+      this.playerSprite.disableBody(true, false); // Disable physics immediately
       this.tweens.add({
         targets: this.playerSprite,
-        duration: 300,
+        duration: 200, // Slightly faster fade/shrink
         alpha: 0,
         scale: 0.5,
         angle: 90,

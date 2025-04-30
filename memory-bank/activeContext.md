@@ -28,8 +28,15 @@
         *   Calculates scaled enemy count.
         *   Checks for boss wave based on `difficultyConfig.bossWaveFrequency`.
         *   Spawns boss (`difficultyConfig.bossId`) or regular enemies (randomly chosen from `availableEnemyTypes`) using placeholder positions.
-        *   Includes TODOs for implementing actual spawn patterns and wave clear conditions.
-    *   Updated `destroy` method to clear the `waveTimer`.
+        *   ~~Includes TODOs for implementing actual spawn patterns and wave clear conditions.~~ *(Grid pattern and wave clear implemented)*
+    *   Updated `destroy` method to clear the `waveClearTimer`.
+    *   Implemented `standard_grid` spawn pattern logic in `spawnWave`, replacing random spawning.
+    *   Implemented wave clearing condition:
+        *   Added `isWaveActive` flag and `enemiesInCurrentWave` set to track enemies.
+        *   Updated `spawnEnemy` to add enemies to the set.
+        *   Updated `destroyEnemy` to remove enemies from the set and check if the wave is clear (`enemiesInCurrentWave.size === 0`).
+        *   If wave is clear, schedule `advanceWave` after `timeBetweenWavesSec` using `waveClearTimer`.
+        *   Modified `advanceWave` to spawn the wave directly and clear any pending `waveClearTimer`.
 *   **EnemyEventHandler Update (`src/phaser/handlers/event/EnemyEventHandler.ts`):**
     *   Defined `EnemySpawnedData` interface matching the event payload (including `maxHealth`, `speedMultiplier`).
     *   Updated `handleEnemySpawned` to accept `EnemySpawnedData` and pass `maxHealth` and `speedMultiplier` to the `EnemyEntity` constructor.
@@ -435,6 +442,11 @@
 *(Deferred M3 Tasks: Add more enemy types/assets, implement difficulty scaling, consider enemy invulnerability)*
 *(Deferred M4 Tasks: Apply range upgrades - requires changes in ProjectileManager/EventHandler)*
 
+**Recent Changes (M6 - Visual Polish):**
+*   **Death Bomb Explosion:** Enhanced visual effect in `GameSceneAreaEffectHandler.handleProjectileExplode` using expanding/fading core (white) and ring (orange) tweens.
+*   **Player Death Sequence:** Improved in `PlayerEventHandler.handlePlayerDied` by adding `AUDIO_EXPLOSION_SMALL_KEY` sound and a visual explosion effect (yellow ring, white core) centered on the player.
+*   **Weapon Switch Feedback:** Added a brief scaling tween animation to the newly selected weapon button in `UIScene.handleWeaponStateUpdate` for better visual indication.
+
 **Important Patterns & Preferences:**
     *   ~~Refine movement patterns: Implement actual `boss_weaving` (e.g., sine wave)~~ *(Done)*, ~~implement `bomber_dive`~~ *(Done)*, potentially add `'homing'` or other patterns from config. Update `EnemyEntity.preUpdate`.
     *   ~~Implement enemy aiming logic (e.g., fire towards player) in `GameScene.handleEnemyRequestFire`~~ *(Done)*.
@@ -442,16 +454,16 @@
     *   ~~Implement `death_bomb` projectile logic (visuals, collision)~~ *(Done - Core logic implemented)*.
     *   ~~Add distinct projectile graphics/types for enemies (e.g., `enemy_laser`, `enemy_bullet_fast`)~~ *(Done - Graphics loaded and mapped)*.
 *   **Difficulty Scaling:** *(Core logic implemented in EnemyManager)*
-    *   Implement actual spawn pattern logic (e.g., `standard_grid`) in `EnemyManager.spawnWave` or a dedicated spawner, replacing placeholder random spawning.
-    *   Implement wave clearing condition (e.g., check `this.enemies.size === 0` before calling `advanceWave` again, instead of relying solely on timer). Requires adding logic to track when a wave *starts* spawning vs. when it *ends*.
+    *   ~~Implement actual spawn pattern logic (e.g., `standard_grid`) in `EnemyManager.spawnWave` or a dedicated spawner, replacing placeholder random spawning.~~ *(Done - Basic grid implemented)*
+    *   ~~Implement wave clearing condition (e.g., check `this.enemiesInCurrentWave.size === 0` before calling `advanceWave` again, instead of relying solely on timer).~~ *(Done)*
 *   **Collision Refinement:**
     *   Review and refine collision layers/groups if needed.
     *   ~~Consider adding brief invulnerability periods after hits (player and/or enemies). Update `PlayerManager` / `EnemyManager`.~~ *(Done for Player)*. Consider for enemies?
 *   **Visual Polish:**
     *   Add more distinct visual effects for different enemy destructions.
-    *   Add visual effect for death bomb explosion in `GameSceneCollisionHandler.handleProjectileExplode`.
-    *   Improve player death sequence (e.g., explosion animation).
-    *   Add visual feedback for weapon switching in the UI.
+    *   ~~Add visual effect for death bomb explosion in `GameSceneAreaEffectHandler.handleProjectileExplode`.~~ *(Done - Enhanced existing effect)*
+    *   ~~Improve player death sequence (e.g., explosion animation).~~ *(Done - Added sound and visual)*
+    *   ~~Add visual feedback for weapon switching in the UI.~~ *(Done - Added tween)*
 
 **Important Patterns & Preferences:**
 *   **Clean Code:** Adhere strictly to guidelines (SRP, DRY, meaningful names, etc.).

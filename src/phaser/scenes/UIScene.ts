@@ -214,11 +214,25 @@ export default class UIScene extends Phaser.Scene {
       else if (buttonText.includes('slow')) buttonWeaponId = 'slow_field'; // Match the ID used in emit
 
       if (buttonWeaponId === data.weaponId) {
+        // Check if this button wasn't already active (to avoid tweening unnecessarily)
+        const wasActive = button.style.color === activeColor;
         button.setColor(activeColor);
         button.setBackgroundColor(activeBgColor);
+        // Add a quick scale tween if it just became active
+        if (!wasActive) {
+          this.tweens.add({
+            targets: button,
+            scaleX: 1.1,
+            scaleY: 1.1,
+            duration: 100,
+            yoyo: true, // Scale back down
+            ease: 'Quad.easeInOut',
+          });
+        }
       } else {
         button.setColor(inactiveColor);
         button.setBackgroundColor(inactiveBgColor);
+        button.setScale(1); // Ensure inactive buttons are at normal scale
       }
     });
   }

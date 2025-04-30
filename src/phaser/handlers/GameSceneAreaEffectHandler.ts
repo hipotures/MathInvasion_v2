@@ -50,16 +50,32 @@ export class GameSceneAreaEffectHandler {
       `Handling explosion for projectile ${data.id} at (${data.x}, ${data.y}) with radius ${data.radius}`
     );
 
-    // Add visual effect for explosion
-    const explosionCircle = this.scene.add.circle(data.x, data.y, 5, 0xff8800, 0.5); // Start smaller
+    // Add enhanced visual effect for explosion
+    // Start with a bright, small core
+    const explosionCore = this.scene.add.circle(data.x, data.y, data.radius * 0.1, 0xffffff, 1); // White core
+    const explosionRing = this.scene.add.circle(data.x, data.y, data.radius * 0.15, 0xff8800, 0.8); // Orange ring
+
+    // Tween the core: expand slightly and fade fast
     this.scene.tweens.add({
-      targets: explosionCircle,
-      radius: data.radius, // Expand to full radius
+      targets: explosionCore,
+      radius: data.radius * 0.3, // Expand a bit
       alpha: 0,
-      duration: 150, // Short duration
+      duration: 100, // Very fast fade
       ease: 'Quad.easeOut',
       onComplete: () => {
-        explosionCircle.destroy();
+        explosionCore.destroy();
+      },
+    });
+
+    // Tween the ring: expand to full radius and fade slower
+    this.scene.tweens.add({
+      targets: explosionRing,
+      radius: data.radius, // Expand to full radius
+      alpha: 0,
+      duration: 250, // Slightly longer duration
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        explosionRing.destroy();
       },
     });
 

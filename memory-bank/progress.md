@@ -1,10 +1,10 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Milestone M6: Pełny Cykl Gry i PWA - **IN PROGRESS** (Difficulty Scaling Implemented)
+**Current Status:** Milestone M6: Pełny Cykl Gry i PWA - **IN PROGRESS** (Difficulty Scaling, Spawn Patterns, Wave Clear, Visual Polish Implemented)
 
 **What Works:**
-*   **Milestone M6: Difficulty Scaling (Core Implemented)**
-    *   `EnemyManager` now loads `difficulty.yml` configuration.
+*   **Milestone M6: Difficulty Scaling & Wave Logic (Implemented)**
+    *   `EnemyManager` loads `difficulty.yml` configuration.
     *   Enemy health, speed, reward, and wave enemy count are scaled based on the current wave number and multipliers defined in `difficulty.yml`.
     *   Enemy types available per wave are determined by `waveEnemyTypeUnlock` in `difficulty.yml`.
     *   Wave progression is timed based on `timeBetweenWavesSec` from `difficulty.yml`.
@@ -13,6 +13,12 @@
     *   `EnemyEntity` uses the scaled speed multiplier for movement calculations.
     *   Scaled reward is passed via `ENEMY_DESTROYED` event.
     *   Scaled max health is passed via `ENEMY_HEALTH_UPDATED` event for UI consistency.
+    *   Implemented `standard_grid` spawn pattern in `EnemyManager.spawnWave`.
+    *   Implemented wave clearing condition: Waves now advance only after all enemies in the current wave are destroyed (plus the configured delay).
+*   **Milestone M6: Visual Polish (Implemented)**
+    *   Enhanced death bomb explosion visual effect (`GameSceneAreaEffectHandler`).
+    *   Improved player death sequence with sound and visual explosion (`PlayerEventHandler`).
+    *   Added scaling tween feedback for weapon switching in UI (`UIScene`).
 *   **Milestone M5: Power-upy (Complete)**
     *   Created `PowerupManager` to handle powerup state, timers, and effects.
     *   Added powerup event constants.
@@ -101,11 +107,12 @@
     *   Modified `src/main.ts` to use `async/await` to ensure `configLoader.loadAllConfigs()` completes before `new Phaser.Game()` is called.
 *   **Fix Config Loading/Validation Errors:** Fixed EnemyManager singleton instantiation and optional projectileSpeed in weapon schema.
 
-**What's Left to Build (Deferred from M3):**
+**What's Left to Build (Deferred from M3 / Remaining M6):**
 *   Add more enemy types/assets.
 *   Implement 'homing' movement pattern?
-*   Implement difficulty scaling logic (`difficulty.yml`). *(Core logic done, needs spawn pattern/wave clear)*
 *   Consider enemy invulnerability after hits.
+*   Add more distinct visual effects for different enemy destructions (M6 Polish).
+*   Implement PWA features (offline support, installability) (M6).
 
 **Overall Project Roadmap:**
 *   **M0: Szkielet Projektu (Setup)** - **COMPLETE**
@@ -114,7 +121,7 @@
 *   **M3: Wrogowie i Kolizje** - **COMPLETE** (Core features implemented, remaining tasks deferred)
 *   **M4: Rozbudowa Broni i UI** - **COMPLETE**
 *   **M5: Power-upy i Zaawansowani Wrogowie** - **COMPLETE**
-*   **M6: Pełny Cykl Gry i PWA** - **IN PROGRESS** (Difficulty Scaling done, next: Spawn Patterns, Wave Clear, Polish)
+*   **M6: Pełny Cykl Gry i PWA** - **IN PROGRESS** (Difficulty, Spawning, Wave Clear, Polish done. Next: PWA features, Enemy Destruction Effects)
 *   **M7: Balans, Testy, Optymalizacja i CI/CD**
 
 **Known Issues:**

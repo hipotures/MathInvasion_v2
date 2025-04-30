@@ -46,11 +46,13 @@ interface WaveUpdateData {
 export class EnemyManager {
   private enemies: Map<string, EnemyInstance> = new Map();
   private nextInstanceId = 0;
-  private enemyConfigs: Map<string, EnemyConfig>; // Initialize in constructor
-  private difficultyConfig: DifficultyConfig; // Store difficulty config
+  private enemyConfigs: Map<string, EnemyConfig>;
+  private difficultyConfig: DifficultyConfig;
   private currentWave: number;
-  private waveTimer: number | null = null; // Timer ID for setTimeout/setInterval
-  private availableEnemyTypes: string[] = []; // Types available for the current wave
+  private availableEnemyTypes: string[] = [];
+  private isWaveActive: boolean = false; // Is a wave currently being spawned or fought?
+  private enemiesInCurrentWave: Set<string> = new Set(); // Instance IDs of enemies in the active wave
+  private waveClearTimer: number | null = null; // Timer for delay AFTER wave clear
 
   constructor(
     private eventBus: EventBusType = EventBus,
@@ -64,7 +66,8 @@ export class EnemyManager {
 
     this.registerEventListeners();
     this.logger.log('EnemyManager initialized');
-    this.advanceWave(); // Start the first wave sequence
+    // Start the first wave sequence immediately (advanceWave calls spawnWave directly now)
+    this.advanceWave();
   }
 
   private loadEnemyConfigs(): Map<string, EnemyConfig> {
@@ -168,11 +171,14 @@ export class EnemyManager {
     const newEnemy: EnemyInstance = {
       id: instanceId,
       configId: config.id,
-      health: scaledHealth, // Use scaled health
-      // TODO: Initialize other state properties based on config and position
+      health: scaledHealth,
     };
 
     this.enemies.set(instanceId, newEnemy);
+    // If a wave is active, track this enemy as part of it
+    if (this.isWaveActive) {
+      this.enemiesInCurrentWave.add(instanceId);
+    }
     this.logger.debug(
       `Spawning enemy: ${configId} (Instance ID: ${instanceId}) at (${position.x}, ${position.y}) with ${scaledHealth} health (Speed x${speedMultiplier.toFixed(2)})`
     );
@@ -229,6 +235,8 @@ export class EnemyManager {
     const scoreValue = config?.scoreValue ?? 0;
 
     this.enemies.delete(instanceId);
+    // Stop tracking this enemy if it was part of the current wave
+    const wasInCurrentWave = this.enemiesInCurrentWave.delete(instanceId);
     this.logger.log(`Destroyed enemy: ${enemy.configId} (Instance ID: ${instanceId})`);
 
     // Emit event for GameScene to remove sprite/body and handle abilities
@@ -237,9 +245,26 @@ export class EnemyManager {
       configId: enemy.configId,
       reward: scaledReward, // Send SCALED reward info
       scoreValue: scoreValue,
-      config: config as EnemyConfig, // Send the full config
+      config: config as EnemyConfig,
     };
     this.eventBus.emit(ENEMY_DESTROYED, eventData);
+
+    // Check if the wave is now clear
+    if (wasInCurrentWave && this.isWaveActive && this.enemiesInCurrentWave.size === 0) {
+      this.logger.log(`Wave ${this.currentWave} cleared.`);
+      this.isWaveActive = false;
+      // Schedule the next wave advance after the configured delay
+      const delayMs = this.difficultyConfig.timeBetweenWavesSec * 1000;
+      this.logger.log(`Scheduling next wave advance in ${delayMs}ms`);
+      // Clear any existing timer before setting a new one
+      if (this.waveClearTimer !== null) {
+        clearTimeout(this.waveClearTimer);
+      }
+      this.waveClearTimer = setTimeout(() => {
+        this.advanceWave();
+        this.waveClearTimer = null; // Clear timer ID after execution
+      }, delayMs);
+    }
   }
 
   // --- Event Handlers ---
@@ -273,43 +298,44 @@ export class EnemyManager {
   /** Clean up event listeners and timers when the manager is destroyed */
   public destroy(): void {
     this.eventBus.off(PROJECTILE_HIT_ENEMY, this.handleProjectileHitEnemy);
-    if (this.waveTimer !== null) {
-      clearTimeout(this.waveTimer); // Use clearTimeout for setTimeout ID
-      this.waveTimer = null;
+    // Clear the wave clear timer if it's active
+    if (this.waveClearTimer !== null) {
+      clearTimeout(this.waveClearTimer);
+      this.waveClearTimer = null;
     }
-    this.enemies.clear(); // Clear any remaining enemies
+    this.enemies.clear();
+    this.enemiesInCurrentWave.clear();
     this.enemyConfigs.clear();
     this.logger.log('EnemyManager destroyed, listeners and timers removed');
   }
 
   // --- Wave Management ---
 
-  /** Advances the wave number, updates available enemies, emits event, and schedules next spawn */
+  /** Advances the wave number, updates available enemies, emits event, and spawns the wave */
   public advanceWave(): void {
-    // Clear any existing timer
-    if (this.waveTimer !== null) {
-      clearTimeout(this.waveTimer);
-      this.waveTimer = null;
+    // Clear any pending wave clear timer, as we are advancing now anyway
+    if (this.waveClearTimer !== null) {
+      clearTimeout(this.waveClearTimer);
+      this.waveClearTimer = null;
+      this.logger.debug('Cleared pending wave clear timer due to advanceWave call.');
     }
 
     this.currentWave++;
     this.logger.log(`Advanced to Wave ${this.currentWave}`);
-    this.updateAvailableEnemyTypes(); // Update available types for the new wave
+    this.updateAvailableEnemyTypes();
     this.emitWaveUpdate();
 
-    // Schedule the actual spawning of the wave
-    const delayMs = this.difficultyConfig.timeBetweenWavesSec * 1000;
-    this.logger.log(`Scheduling wave ${this.currentWave} spawn in ${delayMs}ms`);
-    this.waveTimer = setTimeout(() => {
-      this.spawnWave();
-      this.waveTimer = null; // Clear timer ID after execution
-    }, delayMs);
+    // Spawn the wave directly
+    this.spawnWave();
   }
 
   /** Spawns enemies for the current wave based on difficulty settings */
   private spawnWave(): void {
     this.logger.log(`Spawning Wave ${this.currentWave}`);
-    const enemyCount = this.getScaledEnemyCount();
+    this.isWaveActive = true; // Mark wave as active
+    this.enemiesInCurrentWave.clear(); // Reset tracker for the new wave
+
+    const enemyCount = this.getScaledEnemyCount(); // Note: Grid pattern currently ignores this
     const isBossWave = this.currentWave % this.difficultyConfig.bossWaveFrequency === 0;
 
     if (isBossWave) {
@@ -320,28 +346,52 @@ export class EnemyManager {
       // For now, just spawn the boss enemy type at a default position
       this.spawnEnemy(this.difficultyConfig.bossId, { x: 400, y: 100 }); // Example position
     } else {
-      this.logger.log(`Spawning ${enemyCount} enemies for regular wave ${this.currentWave}`);
-      // TODO: Implement spawn pattern logic (e.g., standard_grid)
-      // This likely needs coordination with GameScene or a dedicated Spawner class
-      // For now, spawn randomly selected available types at random positions (placeholder)
-      for (let i = 0; i < enemyCount; i++) {
-        if (this.availableEnemyTypes.length === 0) {
-          this.logger.warn('No available enemy types to spawn!');
-          break;
+      this.logger.log(`Spawning enemies for regular wave ${this.currentWave} using standard_grid`);
+      // --- Implement standard_grid pattern ---
+      const gridConfig = {
+        columns: 8, // Example: 8 columns
+        rows: 3, // Example: 3 rows
+        horizontalSpacing: 60, // Example: pixels between columns
+        verticalSpacing: 50, // Example: pixels between rows
+        startXOffset: 0, // Adjust grid starting X relative to center
+        startY: 100, // Example: Starting Y position for the top row
+        gameWidth: 800, // Assume game width for centering
+      };
+
+      const totalGridWidth = (gridConfig.columns - 1) * gridConfig.horizontalSpacing;
+      const gridStartX = gridConfig.gameWidth / 2 - totalGridWidth / 2 + gridConfig.startXOffset;
+      let enemiesSpawned = 0;
+
+      for (let row = 0; row < gridConfig.rows; row++) {
+        for (let col = 0; col < gridConfig.columns; col++) {
+          // Note: Currently spawning the full grid, ignoring scaledEnemyCount for this pattern.
+          // Future enhancement: Use scaledEnemyCount to determine how many grid slots to fill.
+
+          if (this.availableEnemyTypes.length === 0) {
+            this.logger.warn('No available enemy types to spawn for grid!');
+            break; // Break inner loop if no types left
+          }
+
+          // Select enemy type (using random available type for now)
+          const randomTypeIndex = Math.floor(Math.random() * this.availableEnemyTypes.length);
+          const configId = this.availableEnemyTypes[randomTypeIndex];
+
+          const spawnX = gridStartX + col * gridConfig.horizontalSpacing;
+          const spawnY = gridConfig.startY + row * gridConfig.verticalSpacing;
+
+          this.spawnEnemy(configId, { x: spawnX, y: spawnY });
+          enemiesSpawned++;
         }
-        const randomTypeIndex = Math.floor(Math.random() * this.availableEnemyTypes.length);
-        const randomConfigId = this.availableEnemyTypes[randomTypeIndex];
-        // Placeholder random position - replace with pattern logic
-        const randomX = Math.random() * 700 + 50; // Example range
-        const randomY = Math.random() * 200 + 50; // Example range
-        this.spawnEnemy(randomConfigId, { x: randomX, y: randomY });
+        if (this.availableEnemyTypes.length === 0) break; // Break outer loop if no types left
       }
+      this.logger.log(`Spawned ${enemiesSpawned} enemies in standard_grid pattern.`);
+      // --- End standard_grid pattern ---
     }
 
-    // TODO: Consider adding logic to trigger the *next* advanceWave only when
-    // the current wave is cleared (e.g., all enemies destroyed).
-    // This requires tracking active enemies per wave.
-    // For now, waves advance purely on timer.
+    // Wave spawning logic (boss or grid) remains the same...
+    // ... enemies spawned within this method will be added to enemiesInCurrentWave by spawnEnemy
+
+    // The logic to advance to the next wave is now handled in destroyEnemy when the wave is cleared.
   }
 
   /** Emits the current wave number */
