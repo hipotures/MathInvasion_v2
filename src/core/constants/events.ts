@@ -16,6 +16,8 @@ export const MOVE_RIGHT_STOP = 'MOVE_RIGHT_STOP';
 export const FIRE_START = 'FIRE_START';
 export const FIRE_STOP = 'FIRE_STOP';
 export const WEAPON_SWITCH = 'WEAPON_SWITCH'; // Request to switch active weapon
+export const DEBUG_TOGGLE = 'DEBUG_TOGGLE'; // Toggle debug mode
+export const DEBUG_MODE_CHANGED = 'DEBUG_MODE_CHANGED'; // Notify that debug mode has changed
 
 // Projectile Events
 export const SPAWN_PROJECTILE = 'SPAWN_PROJECTILE'; // Request from WeaponManager

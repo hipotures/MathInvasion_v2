@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
@@ -62,5 +63,11 @@ export default defineConfig({
   server: {
     // Optional: Configure dev server options if needed
     // port: 3000, // Example
+  },
+  // Add Vitest configuration
+  test: {
+    globals: true, // Use global APIs like describe, it, expect
+    environment: 'jsdom', // Use jsdom for browser-like environment (provides 'window')
+    // setupFiles: './tests/setup.ts', // Optional setup file
   },
 });

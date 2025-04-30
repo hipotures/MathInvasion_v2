@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
+    "@types/webfontloader": "^1.6.38",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
     "eslint": "^9.25.1",
@@ -19,6 +20,7 @@
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-prettier": "^5.2.6",
     "husky": "^9.1.7",
+    "jsdom": "^26.1.0",
     "lint-staged": "^15.5.1",
     "prettier": "^3.5.3",
     "typescript": "~5.7.2",
@@ -31,6 +33,7 @@
   "dependencies": {
     "js-yaml": "^4.1.0",
     "phaser": "^3.88.2",
+    "webfontloader": "^1.6.28",
     "zod": "^3.24.3"
   },
   "lint-staged": {

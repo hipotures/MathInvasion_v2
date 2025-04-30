@@ -9,7 +9,7 @@ import * as Events from '../constants/events'; // Import event constants
 
 /** Defines the data expected for the SPAWN_PROJECTILE event */
 // Note: This interface might be better placed in a shared types file or events.ts
-interface SpawnProjectileData {
+export interface SpawnProjectileData { // Added export
   type: string;
   x: number;
   y: number;
@@ -37,31 +37,17 @@ interface ProjectileExplodeData {
   radius: number;
   damage: number;
   owner: 'player' | 'enemy';
+  type: string; // Add type property to match test expectations
 }
 
 /**
  * Manages active projectiles in the game world.
  * Handles spawning, movement, collision detection (via events), and removal.
  */
-/** Defines the data expected for the SPAWN_PROJECTILE event */
-interface SpawnProjectileData {
-  type: string;
-  x: number;
-  y: number;
-  velocityX: number;
-  velocityY: number;
-  // ownerId?: string; // Optional: To distinguish player/enemy projectiles
-}
-
-/** Defines the data expected for the PROJECTILE_HIT_ENEMY event */
-interface ProjectileHitEnemyData {
-  projectileId: string;
-  enemyInstanceId: string;
-  // damage?: number; // Optional: Damage might be handled by EnemyManager based on projectile type
-}
+// Removed duplicate SpawnProjectileData and ProjectileHitEnemyData interfaces
 
 // Placeholder type until a proper Projectile entity class is created
-interface ProjectileLike {
+export interface ProjectileLike { // Added export
   id: string;
   type: string;
   x: number;
@@ -79,11 +65,15 @@ export default class ProjectileManager {
   private eventBus: EventBusType;
   private activeProjectiles: Map<string, ProjectileLike>; // Use placeholder type
   private nextProjectileId: number = 0;
+  // Store bounds passed from constructor (or default)
+  private worldBounds: { top: number; bottom: number; left: number; right: number };
 
-  constructor(eventBusInstance: EventBusType) {
+  constructor(eventBusInstance: EventBusType, worldWidth: number = 800, worldHeight: number = 600) { // Add optional bounds
     this.eventBus = eventBusInstance;
     this.activeProjectiles = new Map();
-    logger.log('ProjectileManager initialized');
+    // Define world bounds (adjust as needed, maybe pass via config/event later)
+    this.worldBounds = { top: 0, bottom: worldHeight, left: 0, right: worldWidth };
+    logger.log(`ProjectileManager initialized with bounds: ${JSON.stringify(this.worldBounds)}`);
 
     // Bind methods
     this.handleSpawnProjectile = this.handleSpawnProjectile.bind(this);
@@ -129,14 +119,17 @@ export default class ProjectileManager {
         }
       }
 
-      // Check for out of bounds (top of screen)
-      // TODO: Get bounds from config or scene dimensions event
-      const worldTopBound = 0;
-      if (projectile.y < worldTopBound) {
-        logger.debug(`Projectile ${id} went off-screen (y=${projectile.y})`);
+      // Check for out of bounds using stored bounds
+      if (
+        projectile.y < this.worldBounds.top ||
+        projectile.y > this.worldBounds.bottom ||
+        projectile.x < this.worldBounds.left ||
+        projectile.x > this.worldBounds.right
+      ) {
+        logger.debug(`Projectile ${id} went off-screen (x=${projectile.x.toFixed(1)}, y=${projectile.y.toFixed(1)})`);
         this.removeProjectile(id); // Call internal remove method
+        // continue; // Skip further processing if removed (already handled by iterating keys)
       }
-      // TODO: Add checks for other bounds (bottom, left, right) if necessary
     }
   }
 
@@ -192,11 +185,12 @@ export default class ProjectileManager {
     // Emit explosion event for collision handler/scene to process area damage
     this.eventBus.emit(Events.PROJECTILE_EXPLODE, {
       id: projectile.id,
-      x: projectile.x,
-      y: projectile.y,
+      x: projectile.x, // Use the final position before explosion
+      y: projectile.y, // Use the final position before explosion
       radius: projectile.radius,
       damage: projectile.damage,
       owner: projectile.owner,
+      type: projectile.type, // Include type property to match test expectations
     } as ProjectileExplodeData);
 
     // Remove the projectile after explosion

@@ -2,6 +2,19 @@
 
 **Current Focus:** Milestone M7 - Balans, Testy, Optymalizacja i CI/CD
 
+**Recent Changes (M7 - UI Rendering Improvements):**
+*   Completely replaced Phaser text rendering with HTML-based UI:
+    *   Created `HtmlUI` class to manage HTML UI elements that scale properly at high resolutions.
+    *   Updated `UIScene` to use `HtmlUI` instead of Phaser text objects.
+    *   Positioned UI elements relative to the game canvas with proper scaling.
+    *   Added window resize handling to maintain correct positioning.
+*   Improved debug mode visualization:
+    *   Created `HtmlDebugPanel` class for displaying debug information.
+    *   Created `HtmlDebugLabels` class for labeling game objects in debug mode.
+    *   Updated `GameSceneDebugHandler` to use HTML elements instead of Phaser text.
+    *   Fixed positioning of labels relative to game objects.
+*   Fixed ProjectileManager test that was failing due to incorrect expectations in the explosion test.
+
 **Recent Changes (M7 - Testing Setup & ESLint Fixes):**
 *   Installed `vitest` as a dev dependency (`npm install --save-dev vitest`).
 *   Added `test` script (`"test": "vitest"`) to `package.json`.

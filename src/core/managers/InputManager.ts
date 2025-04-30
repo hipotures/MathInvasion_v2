@@ -67,15 +67,14 @@ export default class InputManager {
       // Weapon Switching Keys
       case '1':
         logger.debug('Weapon Switch Key 1 pressed');
-        this.eventBus.emit(Events.WEAPON_SWITCH, { weaponId: 'bullet' });
+        this.eventBus.emit(Events.WEAPON_SWITCH, 'bullet');
         break;
       case '2':
         logger.debug('Weapon Switch Key 2 pressed');
-        this.eventBus.emit(Events.WEAPON_SWITCH, { weaponId: 'laser' });
+        this.eventBus.emit(Events.WEAPON_SWITCH, 'laser');
         break;
       case '3':
         logger.debug('Weapon Switch Key 3 pressed');
-        // Note: WeaponManager expects just the ID string now, not an object
         this.eventBus.emit(Events.WEAPON_SWITCH, 'slow_field');
         break;
       // Weapon Upgrade Key
@@ -83,6 +82,10 @@ export default class InputManager {
       case 'U':
         logger.debug('Weapon Upgrade Key U pressed');
         this.eventBus.emit(Events.REQUEST_WEAPON_UPGRADE); // No payload needed
+        break;
+      case ';':
+        logger.debug('Debug Toggle Key ; pressed');
+        this.eventBus.emit(Events.DEBUG_TOGGLE); // Toggle debug mode
         break;
     }
   }

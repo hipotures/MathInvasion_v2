@@ -40,9 +40,13 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
+    // Set appropriate scale for the sprite (much smaller)
+    this.setScale(0.05);
+
     // Basic physics properties
     this.setCollideWorldBounds(true);
-    this.setCircle(config.collisionRadius);
+    // Adjust collision radius to match the new scale
+    this.setCircle(config.collisionRadius * 0.1);
     // Apply speed multiplier to initial velocity
     const initialSpeed = config.baseSpeed * this.speedMultiplier;
     this.setVelocityX(initialSpeed * (Math.random() < 0.5 ? -1 : 1));

@@ -79,6 +79,7 @@ export class ProjectileEventHandler {
     }
 
     const projectileSprite = this.physics.add.sprite(data.x, data.y, textureKey);
+    projectileSprite.setScale(0.05); // Set much smaller scale for projectiles
     this.projectileGroup.add(projectileSprite);
     this.projectileSprites.set(data.id, projectileSprite);
   }
