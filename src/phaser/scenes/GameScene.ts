@@ -10,11 +10,13 @@ import EconomyManager from '../../core/managers/EconomyManager';
 import { EnemyManager } from '../../core/managers/EnemyManager';
 import { PowerupManager } from '../../core/managers/PowerupManager';
 import DebugManager from '../../core/managers/DebugManager';
-import debugState from '../../core/utils/DebugState';
+// import debugState from '../../core/utils/DebugState'; // Removed unused import
 // import configLoader from '../../core/config/ConfigLoader'; // No longer needed directly here
 import { EnemyEntity } from '../entities/EnemyEntity';
 import { GameSceneCollisionHandler } from '../handlers/GameSceneCollisionHandler';
 import { GameSceneEventHandler } from '../handlers/GameSceneEventHandler';
+// Import ProjectileShape type
+import { ProjectileShape } from '../handlers/event/ProjectileEventHandler';
 import { GameSceneAreaEffectHandler } from '../handlers/GameSceneAreaEffectHandler';
 import { GameSceneDebugHandler } from '../handlers/GameSceneDebugHandler';
 import { initializeGameManagers, GameManagers } from '../initializers/GameSceneManagerInitializer';
@@ -43,11 +45,13 @@ export default class GameScene extends Phaser.Scene {
   private enemyGroup!: Phaser.GameObjects.Group;
   private projectileGroup!: Phaser.GameObjects.Group;
   private powerupGroup!: Phaser.GameObjects.Group;
-  private projectileSprites: Map<string, Phaser.Physics.Arcade.Sprite> = new Map();
+  // Rename and update type for projectile map
+  private projectileShapes: Map<string, ProjectileShape> = new Map();
   private enemySprites: Map<string, EnemyEntity> = new Map();
   private powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite> = new Map();
   private enemySpawnerTimer!: Phaser.Time.TimerEvent;
   private gameOverText?: Phaser.GameObjects.Text;
+  private isPaused: boolean = false; // Pause state flag
 
   constructor() {
     super({ key: 'GameScene' });
@@ -56,18 +60,14 @@ export default class GameScene extends Phaser.Scene {
   preload(): void {
     logger.log('GameScene preload');
     this.load.image(Assets.PLAYER_KEY, 'assets/images/player_ship.png');
-    this.load.image(Assets.BULLET_KEY, 'assets/images/bullet.png');
+    // Remove unused projectile image loads if they are all dynamic now
+    // Keep enemy/player/powerup/other assets
     this.load.image(Assets.ENEMY_SMALL_ALIEN_KEY, 'assets/images/alien_small.png');
     this.load.image(Assets.ENEMY_MEDIUM_ALIEN_KEY, 'assets/images/alien_medium.png');
     this.load.image(Assets.ENEMY_LARGE_METEOR_KEY, 'assets/images/meteor_large.png');
     this.load.image(Assets.ENEMY_HEXAGON_BOMBER_KEY, 'assets/images/hexagon_enemy.png');
     this.load.image(Assets.ENEMY_DIAMOND_STRAFER_KEY, 'assets/images/diamond_strafer.png');
-    // Projectile Assets
-    this.load.image(Assets.PROJECTILE_DEATH_BOMB_KEY, 'assets/images/death_bomb.png');
-    this.load.image(Assets.PROJECTILE_ENEMY_BULLET_KEY, 'assets/images/enemy_bullet.png');
-    this.load.image(Assets.PROJECTILE_ENEMY_BULLET_FAST_KEY, 'assets/images/enemy_bullet_fast.png');
-    this.load.image(Assets.PROJECTILE_ENEMY_LASER_KEY, 'assets/images/enemy_laser.png');
-    // Powerup Assets
+    this.load.image(Assets.PROJECTILE_DEATH_BOMB_KEY, 'assets/images/death_bomb.png'); // Keep if death bomb uses sprite
     this.load.image(Assets.POWERUP_SHIELD_KEY, 'assets/images/powerup_shield.png');
     this.load.image(Assets.POWERUP_RAPID_FIRE_KEY, 'assets/images/powerup_rapid.png');
     // Audio Assets
@@ -81,18 +81,19 @@ export default class GameScene extends Phaser.Scene {
     this.initializeManagers();
     this.createPlayer();
     this.createGroups();
-    
+
     // Instantiate the collision handler after managers and player sprite are ready
     this.collisionHandler = new GameSceneCollisionHandler(
       this,
       this.projectileManager,
       this.enemyManager,
       this.playerSprite,
-      this.projectileSprites,
+      // Pass the renamed map
+      this.projectileShapes,
       this.powerupGroup,
       this.powerupSprites
     );
-    
+
     // Instantiate the event handler
     this.eventHandler = new GameSceneEventHandler(
       this,
@@ -101,27 +102,33 @@ export default class GameScene extends Phaser.Scene {
       this.enemyGroup,
       this.powerupGroup,
       this.enemySprites,
-      this.projectileSprites,
+      // Pass the renamed map
+      this.projectileShapes,
       this.powerupSprites
     );
-    
+
     // Instantiate the area effect handler
     this.areaEffectHandler = new GameSceneAreaEffectHandler(this, this.playerSprite);
-    
+
     // Instantiate the debug handler
     this.debugHandler = new GameSceneDebugHandler(
       this,
       this.playerSprite,
       this.enemySprites,
-      this.projectileSprites,
+      // Pass the renamed map
+      this.projectileShapes,
       this.powerupSprites,
       this.playerManager,
       this.weaponManager,
       this.enemyManager,
+      this.projectileManager, // Pass projectileManager
+      this.powerupManager, // Pass powerupManager
       this.economyManager,
       this.debugManager
     );
-    
+    // Bind event handlers
+    this.handleTogglePause = this.handleTogglePause.bind(this);
+
     this.setupEventListeners();
     this.setupCollisions();
     this.setupEnemySpawner();
@@ -138,7 +145,7 @@ export default class GameScene extends Phaser.Scene {
     this.projectileManager.update(delta);
     this.enemyManager.update(delta);
     this.powerupManager.update(delta);
-    
+
     // Update debug visuals if debug mode is enabled
     this.debugHandler.updateDebugVisuals();
   }
@@ -173,7 +180,9 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private setupEventListeners(): void {
-    logger.debug('GameScene: Event listeners are now managed by sub-handlers.');
+    logger.debug('GameScene: Core event listeners are now managed by sub-handlers.');
+    // Add listener for pause toggle
+    eventBus.on(Events.TOGGLE_PAUSE, this.handleTogglePause); // Remove context argument
   }
 
   private setupCollisions(): void {
@@ -185,7 +194,7 @@ export default class GameScene extends Phaser.Scene {
       undefined,
       this.collisionHandler
     );
-    
+
     this.physics.overlap(
       this.projectileGroup,
       this.enemyGroup,
@@ -193,7 +202,7 @@ export default class GameScene extends Phaser.Scene {
       undefined,
       this.collisionHandler
     );
-    
+
     this.physics.overlap(
       this.playerSprite,
       this.projectileGroup,
@@ -201,7 +210,7 @@ export default class GameScene extends Phaser.Scene {
       undefined,
       this.collisionHandler
     );
-    
+
     // Add collision for player vs powerups
     this.physics.overlap(
       this.playerSprite,
@@ -219,7 +228,7 @@ export default class GameScene extends Phaser.Scene {
       callbackScope: this,
       loop: true,
     });
-    
+
     // Pass the timer reference to the event handler so it can stop it on player death
     this.eventHandler.setEnemySpawnerTimer(this.enemySpawnerTimer);
   }
@@ -228,7 +237,7 @@ export default class GameScene extends Phaser.Scene {
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
       logger.log('GameScene shutdown, cleaning up managers and listeners');
       this.cleanupEventListeners();
-      
+
       // Destroy managers to remove their global listeners if necessary
       this.inputManager.destroy();
       this.playerManager.destroy();
@@ -240,20 +249,42 @@ export default class GameScene extends Phaser.Scene {
       this.eventHandler.destroy();
       this.areaEffectHandler.destroy();
       this.debugHandler.destroy();
-      
-      this.projectileSprites.clear();
+
+      // Clear the renamed map
+      this.projectileShapes.clear();
       this.enemySprites.clear();
       this.powerupSprites.clear();
-      
+
       if (this.enemySpawnerTimer) this.enemySpawnerTimer.destroy();
     });
   }
 
   private cleanupEventListeners(): void {
-    logger.debug('GameScene: Event listener cleanup is now managed by sub-handlers.');
+    logger.debug('GameScene: Core event listener cleanup is now managed by sub-handlers.');
+    // Remove pause toggle listener
+    eventBus.off(Events.TOGGLE_PAUSE, this.handleTogglePause); // Remove context argument
+  }
+
+  // --- Event Handlers ---
+
+  private handleTogglePause(): void {
+    this.isPaused = !this.isPaused;
+    if (this.isPaused) {
+      logger.log('Game Paused');
+      this.scene.pause(); // Pause this scene (stops update loop, physics, etc.)
+      eventBus.emit(Events.GAME_PAUSED);
+    } else {
+      logger.log('Game Resumed');
+      this.scene.resume(); // Resume this scene
+      eventBus.emit(Events.GAME_RESUMED);
+    }
   }
 
   // --- Helper Methods ---
+
+  // Bind event handlers in constructor or initialization
+  // (Add this binding in the constructor or create method)
+  // Example: this.handleTogglePause = this.handleTogglePause.bind(this);
 
   private spawnRandomEnemy(): void {
     // TODO: Use difficulty config
@@ -264,5 +295,4 @@ export default class GameScene extends Phaser.Scene {
     const spawnY = Phaser.Math.Between(spawnPadding, this.cameras.main.height / 3);
     this.enemyManager.spawnEnemy(randomType, { x: spawnX, y: spawnY });
   }
-  
 }

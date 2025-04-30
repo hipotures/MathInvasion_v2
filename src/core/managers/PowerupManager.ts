@@ -45,6 +45,7 @@ interface SpawnedPowerupInstance {
   config: PowerupConfig;
   x: number;
   y: number;
+  creationTime: number; // Timestamp when spawned
 }
 
 export class PowerupManager {
@@ -110,6 +111,7 @@ export class PowerupManager {
         config: selectedPowerupConfig, // Use the randomly selected config
         x: data.x,
         y: data.y,
+        creationTime: Date.now(), // Record creation time
       };
       this.spawnedPowerups.set(instanceId, spawnedInstance);
 
@@ -185,6 +187,15 @@ export class PowerupManager {
       // Also emit POWERUP_EXPIRED for potential UI updates?
       this.eventBus.emit(Events.POWERUP_EXPIRED, { configId: effect.config.id });
     }
+  }
+
+  /**
+   * Retrieves the creation timestamp of a specific spawned powerup instance.
+   * @param instanceId The unique ID of the powerup instance.
+   * @returns The creation timestamp (milliseconds since epoch), or undefined if not found.
+   */
+  public getPowerupCreationTime(instanceId: number): number | undefined {
+    return this.spawnedPowerups.get(instanceId)?.creationTime;
   }
 
   public destroy(): void {

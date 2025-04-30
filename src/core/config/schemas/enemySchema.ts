@@ -9,6 +9,29 @@ const enemyShootConfigSchema = z
     damagePerSec: z.number().nonnegative().optional(), // Optional for non-DPS projectiles
     speed: z.number().positive().optional(), // Optional if projectile defines speed
     range: z.number().positive().optional(), // Optional for non-ranged attacks
+    // New visual properties for dynamic generation
+    visualShape: z
+      .enum(['rectangle', 'ellipse'])
+      .optional()
+      .describe('Shape of the dynamically generated projectile visual.'),
+    visualWidth: z
+      .number()
+      .positive()
+      .optional()
+      .describe('Width of the dynamically generated projectile visual in pixels.'),
+    visualHeight: z
+      .number()
+      .positive()
+      .optional()
+      .describe('Height of the dynamically generated projectile visual in pixels.'),
+    visualColor: z
+      .string()
+      .regex(/^0x[0-9A-Fa-f]{6}$/) // Matches '0x' followed by 6 hex characters
+      .optional()
+      .describe(
+        'Hex color of the dynamically generated projectile visual (e.g., "0xff0000" for red).'
+      ),
+    // End new visual properties
   })
   .optional();
 
@@ -70,3 +93,5 @@ export const enemiesConfigSchema = z.array(enemySchema);
 // Infer the TypeScript type from the schema
 export type EnemyConfig = z.infer<typeof enemySchema>;
 export type EnemiesConfig = z.infer<typeof enemiesConfigSchema>;
+// Also export the shoot config type if needed elsewhere
+export type EnemyShootConfig = z.infer<typeof enemyShootConfigSchema>;

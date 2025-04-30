@@ -60,6 +60,9 @@ export class HtmlUI {
 
     // Delegate creation to the factory
     this.elementFactory.createAllElements();
+
+    // Ensure pause indicator is hidden initially
+    this.hidePauseIndicator();
   }
 
   /**
@@ -223,6 +226,26 @@ export class HtmlUI {
     if (button3) {
       button3.style.color = weaponId === 'slow_field' ? activeColor : inactiveColor;
       button3.style.backgroundColor = weaponId === 'slow_field' ? activeBgColor : inactiveBgColor;
+    }
+  }
+
+  /**
+   * Shows the pause indicator element.
+   */
+  public showPauseIndicator(): void {
+    const element = this.uiElements.get('pauseIndicator');
+    if (element) {
+      element.style.display = 'block';
+    }
+  }
+
+  /**
+   * Hides the pause indicator element.
+   */
+  public hidePauseIndicator(): void {
+    const element = this.uiElements.get('pauseIndicator');
+    if (element) {
+      element.style.display = 'none';
     }
   }
 

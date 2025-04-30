@@ -9,15 +9,21 @@
         *   Refactored `WeaponManager` to use `WeaponUpgrader` for cost calculation (DRY).
         *   Split large test files (`WeaponManager.test.ts`, `EnemyManager.test.ts`, `PlayerManager.test.ts`, `ProjectileManager.test.ts`) into smaller, focused files based on functionality (e.g., Initialization, Spawning, Damage, Cleanup).
         *   All refactored files are now under the 300-line limit.
-    *   **Testing Setup & Initial Tests:**
+    *   **Testing Setup & Unit Tests:**
         *   Installed `vitest` dev dependency.
         *   Added `test` script to `package.json`.
-        *   Created and passed unit tests for `EconomyManager`, `PlayerManager`, `WeaponManager`, `ProjectileManager`, `PowerupManager`, `EnemyManager`. *(Note: EnemyManager tests were fixed/completed during refactoring)*.
+        *   Created and passed unit tests for `EconomyManager`, `PlayerManager`, `WeaponManager`, `ProjectileManager`, `PowerupManager`, `EnemyManager`, `InputManager`, `ConfigLoader`, `WeaponUpgrader`, `WeaponPowerupHandler`, `PlayerPowerupHandler`, `EnemyWaveHandler`.
+        *   Fixed various test issues (mocks, imports, types, event names).
+        *   Resolved ESLint errors in test files.
     *   **Initial Balancing:**
         *   Reviewed `difficulty.yml`, `enemies.yml`, `weapons.yml`, `powerups.yml`.
         *   Adjusted `difficulty.yml`: Reduced health scaling (`enemyHealthMultiplierPerWave: 1.06`), added `diamond_strafer` (wave 10) and `hexagon_bomber` (wave 12) to unlock schedule.
+    *   **Debug Panel Enhancements:**
+        *   Added dynamic list of active objects with abbreviated parameters (T, X, Y, H, I, Vx, Vy, A) and legend.
+        *   Implemented object age display (A) based on creation timestamps stored in managers.
+        *   Adjusted panel layout (ActiveObjects at bottom, fixed height, fixed width 360px).
 *   **Milestone M6: PWA Setup (Implemented)**
-    *   `vite-plugin-pwa` configured in `vite.config.ts` for service worker generation (caching assets, configs).
+*   `vite-plugin-pwa` configured in `vite.config.ts` for service worker generation (caching assets, configs).
     *   Service worker registration handled in `src/main.ts` using `workbox-window`.
     *   TypeScript types for PWA plugin added to `src/vite-env.d.ts`.
 *   **Milestone M6: Distinct Enemy Destruction Effects (Initial Implementation)**
@@ -132,7 +138,7 @@
 **What's Left to Build (M7 & Deferred):**
 *   **M7 - Balancing:** Adjust config values, spawn patterns, drop rates based on playtesting.
 *   **M7 - Testing:**
-    *   Implement unit tests for `InputManager`, `WeaponUpgrader`, `WeaponPowerupHandler`, `PlayerPowerupHandler`, `EnemyWaveHandler`, `ConfigLoader`.
+    *   Unit tests for core managers and helpers **COMPLETE**.
     *   Implement end-to-end tests (Playwright).
 *   **M7 - Optimization:** Profile performance, optimize assets/physics, consider object pooling.
 *   **M7 - CI/CD:** Set up GitHub Actions workflow.

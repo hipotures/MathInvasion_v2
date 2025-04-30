@@ -7,7 +7,8 @@ import eventBus from '../../core/events/EventBus'; // Import EventBus
 import * as Events from '../../core/constants/events'; // Import Events
 import * as Assets from '../../core/constants/assets'; // Import Assets
 import { PlayerEventHandler } from './event/PlayerEventHandler';
-import { ProjectileEventHandler } from './event/ProjectileEventHandler';
+// Import ProjectileShape type alias along with the handler
+import { ProjectileEventHandler, ProjectileShape } from './event/ProjectileEventHandler';
 import { EnemyEventHandler } from './event/EnemyEventHandler';
 import { PowerupSpawnedData } from '../../core/managers/PowerupManager'; // Import PowerupSpawnedData
 
@@ -30,6 +31,8 @@ export class GameSceneEventHandler {
   private scene: Phaser.Scene;
   private powerupGroup: Phaser.GameObjects.Group;
   private powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite>;
+  // Add property for the projectile shapes map
+  private projectileShapes: Map<string, ProjectileShape>;
 
   constructor(
     scene: Phaser.Scene,
@@ -38,12 +41,14 @@ export class GameSceneEventHandler {
     enemyGroup: Phaser.GameObjects.Group,
     powerupGroup: Phaser.GameObjects.Group, // Add powerup group param
     enemySprites: Map<string, EnemyEntity>,
-    projectileSprites: Map<string, Phaser.Physics.Arcade.Sprite>,
+    // Update parameter type here
+    projectileShapes: Map<string, ProjectileShape>,
     powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite> // Add powerup sprites map param
   ) {
     this.scene = scene; // Store scene reference
     this.powerupGroup = powerupGroup; // Store powerup group reference
     this.powerupSprites = powerupSprites; // Store powerup sprites map reference
+    this.projectileShapes = projectileShapes; // Store projectile shapes map reference
 
     // Instantiate sub-handlers
     this.playerEventHandler = new PlayerEventHandler(scene, playerSprite);
@@ -51,7 +56,8 @@ export class GameSceneEventHandler {
       scene,
       playerSprite,
       projectileGroup,
-      projectileSprites
+      // Pass the correctly typed map
+      this.projectileShapes
     );
     this.enemyEventHandler = new EnemyEventHandler(scene, enemyGroup, enemySprites);
 

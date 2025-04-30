@@ -55,3 +55,8 @@ export const POWERUP_COLLECTED = 'POWERUP_COLLECTED'; // Emitted by Scene collis
 export const POWERUP_EXPIRED = 'POWERUP_EXPIRED'; // Emitted by PowerupManager when effect duration ends
 export const POWERUP_EFFECT_APPLIED = 'POWERUP_EFFECT_APPLIED'; // Emitted by PowerupManager when effect starts
 export const POWERUP_EFFECT_REMOVED = 'POWERUP_EFFECT_REMOVED'; // Emitted by PowerupManager when effect ends
+
+// Game State Events
+export const TOGGLE_PAUSE = 'TOGGLE_PAUSE'; // Request to toggle pause state
+export const GAME_PAUSED = 'GAME_PAUSED'; // Emitted when the game is paused
+export const GAME_RESUMED = 'GAME_RESUMED'; // Emitted when the game is resumed

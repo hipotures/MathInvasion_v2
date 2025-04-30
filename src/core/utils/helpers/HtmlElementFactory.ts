@@ -46,6 +46,7 @@ export class HtmlElementFactory {
     this.createWeaponStatusElement(canvasLeft, canvasTop, canvasWidth, canvasHeight);
     this.createWeaponUpgradeCostElement(canvasLeft, canvasTop, canvasWidth, canvasHeight);
     this.createWeaponButtons(canvasLeft, canvasTop, canvasWidth, canvasHeight);
+    this.createPauseIndicatorElement(canvasLeft, canvasTop, canvasWidth, canvasHeight); // Add pause indicator
   }
 
   private createCurrencyElement(canvasLeft: number, canvasTop: number): void {
@@ -147,5 +148,22 @@ export class HtmlElementFactory {
       'center',
       '#555555'
     );
+  }
+
+  private createPauseIndicatorElement(
+    canvasLeft: number,
+    canvasTop: number,
+    canvasWidth: number,
+    canvasHeight: number
+  ): void {
+    this.createUIElement(
+      'pauseIndicator',
+      'PAUSED',
+      canvasLeft + canvasWidth / 2,
+      canvasTop + canvasHeight / 2,
+      '#ff0000', // Red color
+      'center'
+    );
+    // Initially hide it - this needs to be done in HtmlUI after creation
   }
 }

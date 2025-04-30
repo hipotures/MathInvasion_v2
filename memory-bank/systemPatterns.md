@@ -18,6 +18,8 @@
 *   **Facade (Implicit):** Core managers (`PlayerManager`, `EnemyManager`, `WeaponManager`, `PowerupManager`, etc.) provide simplified interfaces over more complex internal state and logic. Helper classes (`WeaponUpgrader`, `WeaponPowerupHandler`, `PlayerPowerupHandler`, `EnemyWaveHandler`) further encapsulate specific logic within managers.
 *   **Dependency Injection (Manual):** Dependencies like `EventBus`, `Logger`, `EconomyManager`, and configurations are passed into constructors (e.g., `WeaponManager`, `GameScene` handlers, `PowerupManager`, helper classes). `GameSceneManagerInitializer` centralizes manager instantiation and injection for `GameScene`.
 
+*   **Timestamp Tracking:** Core managers (`PlayerManager`, `EnemyManager`, `ProjectileManager`, `PowerupManager`) store a `creationTime` timestamp when objects/instances are created. This allows tracking object age or other time-based logic.
+*   **Centralized Debug Data Collection:** `DebugPanelUpdater` acts as a dedicated helper to gather state information (including `creationTime`) from various managers and game objects, format it, and pass it to the `HtmlDebugPanel` for display, decoupling the UI rendering from the data sources.
 **Component Relationships:**
 *   **Powerup Flow:**
     1.  `EnemyEventHandler` (`handleEnemyDestroyed`): Checks `powerups.yml` drop chances upon enemy death.

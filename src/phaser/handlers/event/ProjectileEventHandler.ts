@@ -3,41 +3,46 @@ import eventBus from '../../../core/events/EventBus';
 import logger from '../../../core/utils/Logger';
 import debugState from '../../../core/utils/DebugState'; // Import the shared debug state
 import { WeaponConfig } from '../../../core/config/schemas/weaponSchema';
-import { EnemyConfig } from '../../../core/config/schemas/enemySchema';
+import { EnemyShootConfig } from '../../../core/config/schemas/enemySchema'; // Import EnemyShootConfig (Removed unused EnemyConfig)
 import * as Events from '../../../core/constants/events';
-import * as Assets from '../../../core/constants/assets';
+// import * as Assets from '../../../core/constants/assets'; // No longer needed for projectile textures
+// Import the new event data interface
+import {
+  ProjectileCreatedEventData,
+  SpawnProjectileData,
+} from '../../../core/managers/ProjectileManager';
 
-// Re-define necessary interfaces or import if shared
-interface ProjectileCreatedData {
-  id: string;
-  type: string;
-  x: number;
-  y: number;
-  owner: 'player' | 'enemy';
-}
+// Keep this for handleEnemyRequestFire parameter type
 interface EnemyRequestFireData {
-  instanceId: string; // Need this to find the enemy sprite if needed, though not used here
+  instanceId: string;
   x: number;
   y: number;
-  shootConfig: NonNullable<EnemyConfig['shootConfig']>;
+  shootConfig: NonNullable<EnemyShootConfig>; // Use imported type
 }
+
+// Define the type for the map storing projectile shapes
+export type ProjectileShape = Phaser.GameObjects.Shape & { body: Phaser.Physics.Arcade.Body }; // Added export
 
 export class ProjectileEventHandler {
   private physics: Phaser.Physics.Arcade.ArcadePhysics;
-  private playerSprite: Phaser.Physics.Arcade.Sprite; // Needed for player fire request origin
+  private scene: Phaser.Scene; // Store scene reference
+  private playerSprite: Phaser.Physics.Arcade.Sprite;
   private projectileGroup: Phaser.GameObjects.Group;
-  private projectileSprites: Map<string, Phaser.Physics.Arcade.Sprite>;
+  // Update map type to store Shapes with Arcade Bodies
+  private projectileShapes: Map<string, ProjectileShape>;
 
   constructor(
     scene: Phaser.Scene,
     playerSprite: Phaser.Physics.Arcade.Sprite,
     projectileGroup: Phaser.GameObjects.Group,
-    projectileSprites: Map<string, Phaser.Physics.Arcade.Sprite>
+    // Update parameter type for the map
+    projectileShapes: Map<string, ProjectileShape>
   ) {
+    this.scene = scene; // Store scene reference
     this.physics = scene.physics;
     this.playerSprite = playerSprite;
     this.projectileGroup = projectileGroup;
-    this.projectileSprites = projectileSprites;
+    this.projectileShapes = projectileShapes; // Assign the map
 
     // Bind methods
     this.handleProjectileCreated = this.handleProjectileCreated.bind(this);
@@ -54,47 +59,60 @@ export class ProjectileEventHandler {
 
   // --- Event Handlers ---
 
-  public handleProjectileCreated(data: ProjectileCreatedData): void {
-    let textureKey = Assets.BULLET_KEY; // Default to player bullet
+  // Update parameter type to use the new interface
+  public handleProjectileCreated(data: ProjectileCreatedEventData): void {
+    let projectileShape: ProjectileShape;
+    const color = Phaser.Display.Color.HexStringToColor(data.visualColor).color; // Parse hex string
 
-    // Map projectile type to texture key
-    if (data.owner === 'enemy') {
-      switch (data.type) {
-        case 'enemy_bomb':
-          textureKey = Assets.PROJECTILE_DEATH_BOMB_KEY;
-          break;
-        case 'enemy_bullet':
-          textureKey = Assets.PROJECTILE_ENEMY_BULLET_KEY;
-          break;
-        case 'enemy_bullet_fast':
-          textureKey = Assets.PROJECTILE_ENEMY_BULLET_FAST_KEY;
-          break;
-        case 'enemy_laser':
-          textureKey = Assets.PROJECTILE_ENEMY_LASER_KEY;
-          break;
-        default:
-          logger.warn(`Unknown enemy projectile type: ${data.type}. Using default bullet.`);
-          textureKey = Assets.PROJECTILE_ENEMY_BULLET_KEY; // Fallback to standard enemy bullet
-          break;
-      }
+    // Create shape based on config
+    if (data.visualShape === 'ellipse') {
+      projectileShape = this.scene.add.ellipse(
+        data.x,
+        data.y,
+        data.visualWidth,
+        data.visualHeight,
+        color
+      ) as ProjectileShape; // Cast needed as add.ellipse returns base Shape
+    } else {
+      // Default to rectangle
+      projectileShape = this.scene.add.rectangle(
+        data.x,
+        data.y,
+        data.visualWidth,
+        data.visualHeight,
+        color
+      ) as ProjectileShape; // Cast needed as add.rectangle returns base Shape
     }
 
-    const projectileSprite = this.physics.add.sprite(data.x, data.y, textureKey);
-    projectileSprite.setScale(0.05); // Set much smaller scale for projectiles
-    this.projectileGroup.add(projectileSprite);
-    this.projectileSprites.set(data.id, projectileSprite);
+    // Enable physics
+    this.physics.add.existing(projectileShape);
+
+    // Add to group and map
+    this.projectileGroup.add(projectileShape);
+    this.projectileShapes.set(data.id, projectileShape);
 
     // Set initial visibility based on debug mode
-    projectileSprite.setVisible(!debugState.isDebugMode);
+    projectileShape.setVisible(!debugState.isDebugMode);
+
+    // Apply initial velocity - Ensure body exists before setting velocity
+    if (projectileShape.body) {
+      // No need to cast here as physics.add.existing guarantees an Arcade Body
+      projectileShape.body.setVelocity(data.velocityX, data.velocityY);
+    } else {
+      logger.error(`Failed to get physics body for projectile shape: ID ${data.id}`);
+    }
   }
 
   public handleProjectileDestroyed(data: { id: string }): void {
-    const projectileSprite = this.projectileSprites.get(data.id);
-    if (projectileSprite) {
-      this.projectileGroup.remove(projectileSprite, true, true);
-      this.projectileSprites.delete(data.id);
+    // Retrieve shape from the updated map
+    const projectileShape = this.projectileShapes.get(data.id);
+    if (projectileShape) {
+      // Remove from group, destroy the shape, and remove from map
+      this.projectileGroup.remove(projectileShape, true, true);
+      this.projectileShapes.delete(data.id);
     } else {
-      logger.warn(`Could not find projectile sprite to destroy: ID ${data.id}`);
+      // Warning might still be valid if destruction happens rapidly
+      // logger.warn(`Could not find projectile shape to destroy: ID ${data.id}`);
     }
   }
 
@@ -105,18 +123,23 @@ export class ProjectileEventHandler {
     projectileSpeed: number;
   }): void {
     if (!this.playerSprite?.active) return;
-    const { weaponConfig, damage, projectileSpeed } = data; // Destructure all needed data
+    const { weaponConfig, damage, projectileSpeed } = data;
     const spawnPoint = this.playerSprite.getTopCenter();
-    const velocityY = -projectileSpeed; // Use speed from event data
-    eventBus.emit(Events.SPAWN_PROJECTILE, {
-      type: weaponConfig.projectileType,
+    const velocityY = -projectileSpeed;
+
+    // Create the payload for SPAWN_PROJECTILE event
+    const spawnData: SpawnProjectileData = {
+      // Use imported type
+      type: weaponConfig.projectileType, // Keep original type
       x: spawnPoint.x,
       y: spawnPoint.y,
       velocityX: 0,
       velocityY: velocityY,
-      damage: damage, // Use damage from event data
+      damage: damage,
       owner: 'player',
-    });
+      weaponConfig: weaponConfig, // Pass the weapon config
+    };
+    eventBus.emit(Events.SPAWN_PROJECTILE, spawnData);
   }
 
   public handleEnemyRequestFire(data: EnemyRequestFireData): void {
@@ -139,15 +162,19 @@ export class ProjectileEventHandler {
       velocityY = velocity.y;
     }
 
-    eventBus.emit(Events.SPAWN_PROJECTILE, {
-      type: shootConfig.projectileType,
+    // Create the payload for SPAWN_PROJECTILE event
+    const spawnData: SpawnProjectileData = {
+      // Use imported type
+      type: shootConfig.projectileType, // Keep original type
       x: data.x,
       y: data.y,
       velocityX: velocityX,
       velocityY: velocityY,
       damage: shootConfig.damage ?? 0,
       owner: 'enemy',
-    });
+      enemyShootConfig: shootConfig, // Pass the enemy shoot config
+    };
+    eventBus.emit(Events.SPAWN_PROJECTILE, spawnData);
   }
 
   /** Clean up event listeners */

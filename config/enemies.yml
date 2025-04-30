@@ -23,6 +23,11 @@
     cooldownMs: 1500
     damage: 5
     speed: 100
+    # Visuals
+    visualShape: ellipse
+    visualWidth: 6
+    visualHeight: 6
+    visualColor: '0xffa500' # Orange
 - id: pentagon_healer
   shape: pentagon
   baseHealth: 100
@@ -52,6 +57,7 @@
       projectileType: enemy_bomb # Placeholder projectile type
       damage: 30
       radius: 50 # Placeholder for explosion radius if needed
+      # Note: Visuals for death_bomb projectile handled by type in handler for now
 - id: diamond_strafer # New Enemy
   shape: diamond
   baseHealth: 70
@@ -67,6 +73,11 @@
     cooldownMs: 1000
     damage: 8
     speed: 180
+    # Visuals
+    visualShape: rectangle
+    visualWidth: 5
+    visualHeight: 5
+    visualColor: '0xff8c00' # Dark Orange
 - id: circle_boss
   shape: circle
   baseHealth: 2000
@@ -82,6 +93,11 @@
     cooldownMs: 800
     damagePerSec: 10
     range: 300
+    # Visuals
+    visualShape: rectangle
+    visualWidth: 4
+    visualHeight: 30 # Fixed height for now
+    visualColor: '0xff0000' # Red
   abilities:
     - type: spawn_minions
       minionId: triangle_scout

@@ -42,6 +42,8 @@ export default class UIScene extends Phaser.Scene {
     this.handlePlayerStateUpdate = this.handlePlayerStateUpdate.bind(this);
     this.handleScoreUpdate = this.handleScoreUpdate.bind(this);
     this.handleWaveUpdate = this.handleWaveUpdate.bind(this);
+    this.handleGamePaused = this.handleGamePaused.bind(this); // Bind pause handler
+    this.handleGameResumed = this.handleGameResumed.bind(this); // Bind resume handler
 
     // --- Event Listeners ---
     eventBus.on(Events.CURRENCY_UPDATED, this.handleCurrencyUpdate);
@@ -49,6 +51,8 @@ export default class UIScene extends Phaser.Scene {
     eventBus.on(Events.PLAYER_STATE_UPDATED, this.handlePlayerStateUpdate);
     eventBus.on(Events.SCORE_UPDATED, this.handleScoreUpdate);
     eventBus.on(Events.WAVE_UPDATED, this.handleWaveUpdate);
+    eventBus.on(Events.GAME_PAUSED, this.handleGamePaused); // Listen for pause
+    eventBus.on(Events.GAME_RESUMED, this.handleGameResumed); // Listen for resume
 
     // Clean up listeners when the scene is shut down
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -58,7 +62,9 @@ export default class UIScene extends Phaser.Scene {
       eventBus.off(Events.PLAYER_STATE_UPDATED, this.handlePlayerStateUpdate);
       eventBus.off(Events.SCORE_UPDATED, this.handleScoreUpdate);
       eventBus.off(Events.WAVE_UPDATED, this.handleWaveUpdate);
-      
+      eventBus.off(Events.GAME_PAUSED, this.handleGamePaused); // Remove pause listener
+      eventBus.off(Events.GAME_RESUMED, this.handleGameResumed); // Remove resume listener
+
       // Destroy HTML UI
       this.htmlUI.destroy();
     });
@@ -79,7 +85,7 @@ export default class UIScene extends Phaser.Scene {
 
   private handleWeaponStateUpdate(data: WeaponStateUpdateData): void {
     logger.debug(`UIScene received WEAPON_STATE_UPDATED: ${JSON.stringify(data)}`);
-    
+
     // Update weapon status and buttons
     this.htmlUI.updateWeaponStatus(data.weaponId, data.level);
     this.htmlUI.updateWeaponUpgradeCost(data.nextUpgradeCost);
@@ -94,6 +100,16 @@ export default class UIScene extends Phaser.Scene {
   private handleWaveUpdate(data: WaveUpdateData): void {
     logger.debug(`UIScene received WAVE_UPDATED: ${data.waveNumber}`);
     this.htmlUI.updateWave(data.waveNumber);
+  }
+
+  private handleGamePaused(): void {
+    logger.debug('UIScene received GAME_PAUSED');
+    this.htmlUI.showPauseIndicator(); // Call method to show pause text
+  }
+
+  private handleGameResumed(): void {
+    logger.debug('UIScene received GAME_RESUMED');
+    this.htmlUI.hidePauseIndicator(); // Call method to hide pause text
   }
 
   // update(time: number, delta: number): void {

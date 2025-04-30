@@ -36,6 +36,7 @@ interface EnemyInstance {
   id: string; // Unique instance ID
   configId: string; // ID from config (e.g., 'triangle_scout')
   health: number;
+  creationTime: number; // Timestamp when the instance was created
   // Add other relevant state properties like position, velocity etc. later
 }
 
@@ -114,6 +115,7 @@ export class EnemyManager {
       id: instanceId,
       configId: config.id,
       health: scaledHealth,
+      creationTime: Date.now(), // Record creation time
     };
 
     this.enemies.set(instanceId, newEnemy);
@@ -195,6 +197,31 @@ export class EnemyManager {
     this.waveHandler.handleEnemyDestroyedInWave(instanceId);
   }
 
+  // --- Public Accessors ---
+
+  /**
+   * Retrieves the current health of a specific enemy instance.
+   * @param instanceId The unique ID of the enemy instance.
+   * @returns The current health of the enemy, or 0 if the enemy is not found.
+   */
+  public getEnemyHealth(instanceId: string): number {
+    const enemy = this.enemies.get(instanceId);
+    if (!enemy) {
+      // Log a warning if the enemy isn't found, might happen if queried after destruction
+      this.logger.warn(`getEnemyHealth called for unknown or destroyed enemy: ${instanceId}`);
+      return 0;
+    }
+    return enemy.health;
+  }
+
+  /**
+   * Retrieves the creation timestamp of a specific enemy instance.
+   * @param instanceId The unique ID of the enemy instance.
+   * @returns The creation timestamp (milliseconds since epoch), or undefined if not found.
+   */
+  public getEnemyCreationTime(instanceId: string): number | undefined {
+    return this.enemies.get(instanceId)?.creationTime;
+  }
   // --- Event Handlers ---
 
   private handleProjectileHitEnemy(data: ProjectileHitEnemyData): void {

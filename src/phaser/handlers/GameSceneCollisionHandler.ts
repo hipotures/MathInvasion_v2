@@ -6,6 +6,8 @@ import { EnemyManager } from '../../core/managers/EnemyManager'; // Import named
 import { EnemyEntity } from '../entities/EnemyEntity';
 import * as Events from '../../core/constants/events';
 import { PowerupCollectedData } from '../../core/managers/PowerupManager'; // Import PowerupCollectedData
+// Import the ProjectileShape type
+import { ProjectileShape } from './event/ProjectileEventHandler';
 
 // Re-define necessary interfaces or import them if shared
 // Explosion data interface removed, handled by AreaEffectHandler
@@ -28,7 +30,8 @@ export class GameSceneCollisionHandler {
   private projectileManager: ProjectileManager;
   private enemyManager: EnemyManager; // Use the class type directly
   private playerSprite: Phaser.Physics.Arcade.Sprite;
-  private projectileSprites: Map<string, Phaser.Physics.Arcade.Sprite>;
+  // Rename and update type
+  private projectileShapes: Map<string, ProjectileShape>;
   private powerupGroup: Phaser.GameObjects.Group; // Add powerup group
   private powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite>; // Add powerup sprites map
 
@@ -37,7 +40,8 @@ export class GameSceneCollisionHandler {
     projectileManager: ProjectileManager,
     enemyManager: EnemyManager, // Expect an instance now
     playerSprite: Phaser.Physics.Arcade.Sprite,
-    projectileSprites: Map<string, Phaser.Physics.Arcade.Sprite>,
+    // Rename and update type
+    projectileShapes: Map<string, ProjectileShape>,
     powerupGroup: Phaser.GameObjects.Group, // Add powerup group param
     powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite> // Add powerup sprites map param
   ) {
@@ -45,7 +49,8 @@ export class GameSceneCollisionHandler {
     this.projectileManager = projectileManager;
     this.enemyManager = enemyManager;
     this.playerSprite = playerSprite;
-    this.projectileSprites = projectileSprites;
+    // Assign renamed property
+    this.projectileShapes = projectileShapes;
     this.powerupGroup = powerupGroup; // Assign powerup group
     this.powerupSprites = powerupSprites; // Assign powerup sprites map
 
@@ -90,33 +95,51 @@ export class GameSceneCollisionHandler {
   }
 
   public handleProjectileEnemyCollision(object1: unknown, object2: unknown): void {
-    // Determine which object is the projectile and which is the enemy
-    let projectileSprite: Phaser.Physics.Arcade.Sprite | null = null;
+    // Determine which object is the projectile shape and which is the enemy
+    let projectileShape: ProjectileShape | null = null;
     let enemyEntity: EnemyEntity | null = null;
 
-    if (object1 instanceof Phaser.Physics.Arcade.Sprite && object2 instanceof EnemyEntity) {
-      projectileSprite = object1;
-      enemyEntity = object2;
-    } else if (object2 instanceof Phaser.Physics.Arcade.Sprite && object1 instanceof EnemyEntity) {
-      projectileSprite = object2;
-      enemyEntity = object1;
-    } else {
+    // Check if object1 is a Shape and object2 is an EnemyEntity
+    if (object1 instanceof Phaser.GameObjects.Shape && object2 instanceof EnemyEntity) {
+      // Check if the shape exists in our projectile map
+      const foundEntry = [...this.projectileShapes.entries()].find(
+        ([, shape]) => shape === object1
+      );
+      if (foundEntry) {
+        projectileShape = object1 as ProjectileShape;
+        enemyEntity = object2;
+      }
+
+      // Check if object2 is a Shape and object1 is an EnemyEntity
+    } else if (object2 instanceof Phaser.GameObjects.Shape && object1 instanceof EnemyEntity) {
+      const foundEntry = [...this.projectileShapes.entries()].find(
+        ([, shape]) => shape === object2
+      );
+      if (foundEntry) {
+        projectileShape = object2 as ProjectileShape;
+        enemyEntity = object1;
+      }
+    }
+
+    // If neither combination matches, exit
+    if (!projectileShape || !enemyEntity) {
       return; // Not the collision pair we're looking for
     }
 
-    if (!projectileSprite || !enemyEntity || !enemyEntity.instanceId) {
-      logger.warn('Projectile/Enemy collision with invalid objects');
-      if (projectileSprite?.active) projectileSprite.destroy(); // Clean up projectile if possible
+    if (!enemyEntity.instanceId) {
+      logger.warn('Projectile/Enemy collision with invalid enemy entity');
+      if (projectileShape?.active) projectileShape.destroy(); // Clean up projectile if possible
       return;
     }
 
-    const projectileId = [...this.projectileSprites.entries()].find(
-      ([, sprite]) => sprite === projectileSprite
+    // Find the ID by looking up the shape object in the map values
+    const projectileId = [...this.projectileShapes.entries()].find(
+      ([, shape]) => shape === projectileShape
     )?.[0];
 
     if (!projectileId) {
-      // logger.warn('Collision detected but could not map projectile sprite to manager ID.');
-      if (projectileSprite?.active) projectileSprite.destroy();
+      // logger.warn('Collision detected but could not map projectile shape to manager ID.');
+      if (projectileShape?.active) projectileShape.destroy();
       return;
     }
 
@@ -136,32 +159,48 @@ export class GameSceneCollisionHandler {
     };
     eventBus.emit(Events.PROJECTILE_HIT_ENEMY, eventData);
 
-    // Destroy the projectile sprite immediately
-    projectileSprite.destroy();
-    this.projectileSprites.delete(projectileId);
+    // Destroy the projectile shape immediately
+    projectileShape.destroy();
+    this.projectileShapes.delete(projectileId); // Delete from the correct map
   }
 
   public handlePlayerProjectileCollision(object1: unknown, object2: unknown): void {
-    // Determine which object is the player and which is the projectile
-    let projectileSprite: Phaser.Physics.Arcade.Sprite | null = null;
+    // Determine which object is the player and which is the projectile shape
+    let projectileShape: ProjectileShape | null = null;
 
-    if (object1 === this.playerSprite && object2 instanceof Phaser.Physics.Arcade.Sprite) {
-      projectileSprite = object2;
-    } else if (object2 === this.playerSprite && object1 instanceof Phaser.Physics.Arcade.Sprite) {
-      projectileSprite = object1;
-    } else {
+    // Check if object1 is player and object2 is a Shape
+    if (object1 === this.playerSprite && object2 instanceof Phaser.GameObjects.Shape) {
+      // Check if the shape exists in our projectile map
+      const foundEntry = [...this.projectileShapes.entries()].find(
+        ([, shape]) => shape === object2
+      );
+      if (foundEntry) {
+        projectileShape = object2 as ProjectileShape;
+      }
+      // Check if object2 is player and object1 is a Shape
+    } else if (object2 === this.playerSprite && object1 instanceof Phaser.GameObjects.Shape) {
+      // Check if the shape exists in our projectile map
+      const foundEntry = [...this.projectileShapes.entries()].find(
+        ([, shape]) => shape === object1
+      );
+      if (foundEntry) {
+        projectileShape = object1 as ProjectileShape;
+      }
+    }
+
+    // If neither combination matches, exit
+    if (!projectileShape) {
       return; // Not the collision pair we're looking for
     }
 
-    if (!projectileSprite) return; // Should not happen based on above logic
-
-    const projectileId = [...this.projectileSprites.entries()].find(
-      ([, sprite]) => sprite === projectileSprite
+    // Find the ID by looking up the shape object in the map values
+    const projectileId = [...this.projectileShapes.entries()].find(
+      ([, shape]) => shape === projectileShape
     )?.[0];
 
     if (!projectileId) {
-      // logger.warn('Player collision with unknown projectile sprite.');
-      if (projectileSprite?.active) projectileSprite.destroy();
+      // logger.warn('Player collision with unknown projectile shape.');
+      if (projectileShape?.active) projectileShape.destroy();
       return;
     }
 
@@ -180,9 +219,9 @@ export class GameSceneCollisionHandler {
     };
     eventBus.emit(Events.PLAYER_HIT_PROJECTILE, eventData);
 
-    // Destroy the projectile sprite immediately
-    projectileSprite.destroy();
-    this.projectileSprites.delete(projectileId);
+    // Destroy the projectile shape immediately
+    projectileShape.destroy();
+    this.projectileShapes.delete(projectileId); // Delete from the correct map
   }
 
   public handlePlayerPowerupCollision(object1: unknown, object2: unknown): void {

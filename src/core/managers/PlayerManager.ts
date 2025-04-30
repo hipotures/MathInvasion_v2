@@ -46,10 +46,12 @@ export default class PlayerManager {
   // isShieldPowerupActive removed - managed by PlayerPowerupHandler
   private playerPowerupHandler: PlayerPowerupHandler; // Instance of the helper class
 
+  private creationTime: number; // Timestamp of player creation
   constructor(eventBusInstance: EventBusType, playerConfig: PlayerConfig) {
     this.eventBus = eventBusInstance;
     this.playerConfig = playerConfig; // Store config
     this.playerPowerupHandler = new PlayerPowerupHandler(this.eventBus, logger); // Instantiate helper
+    this.creationTime = Date.now(); // Initialize creation timestamp
     logger.log('PlayerManager initialized');
 
     // Initialize state from config

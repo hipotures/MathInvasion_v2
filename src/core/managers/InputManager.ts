@@ -16,6 +16,7 @@ export default class InputManager {
   private moveLeftActive: boolean = false;
   private moveRightActive: boolean = false;
   private fireActive: boolean = false;
+  private isPaused: boolean = false; // Pause state flag
 
   constructor(eventBusInstance: EventBusType) {
     this.eventBus = eventBusInstance;
@@ -23,9 +24,14 @@ export default class InputManager {
     // Bind methods to ensure 'this' context is correct
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handleKeyUp = this.handleKeyUp.bind(this);
+    this.handleGamePaused = this.handleGamePaused.bind(this); // Bind pause handlers
+    this.handleGameResumed = this.handleGameResumed.bind(this); // Bind pause handlers
     // Add global event listeners
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
+    // Listen for pause events
+    this.eventBus.on(Events.GAME_PAUSED, this.handleGamePaused);
+    this.eventBus.on(Events.GAME_RESUMED, this.handleGameResumed);
     // TODO: Add listeners for mouse/touch later
   }
 
@@ -39,6 +45,11 @@ export default class InputManager {
   private handleKeyDown(event: KeyboardEvent): void {
     // Prevent multiple events firing if key is held down
     if (event.repeat) return;
+
+    // If paused, only allow the 'P' key to unpause
+    if (this.isPaused && event.key !== 'p' && event.key !== 'P') {
+      return;
+    }
 
     switch (event.key) {
       case 'a':
@@ -87,6 +98,11 @@ export default class InputManager {
         logger.debug('Debug Toggle Key ; pressed');
         this.eventBus.emit(Events.DEBUG_TOGGLE); // Toggle debug mode
         break;
+      case 'p':
+      case 'P':
+        logger.debug('Pause Toggle Key P pressed');
+        this.eventBus.emit(Events.TOGGLE_PAUSE);
+        break;
     }
   }
 
@@ -123,7 +139,29 @@ export default class InputManager {
   public destroy(): void {
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
+    this.eventBus.off(Events.GAME_PAUSED, this.handleGamePaused);
+    this.eventBus.off(Events.GAME_RESUMED, this.handleGameResumed);
     logger.log('InputManager destroyed and listeners removed');
+  }
+
+  // --- Pause Event Handlers ---
+
+  private handleGamePaused(): void {
+    this.isPaused = true;
+    logger.debug('InputManager paused');
+  }
+
+  private handleGameResumed(): void {
+    this.isPaused = false;
+    logger.debug('InputManager resumed');
+    // Reset movement/fire states on resume to prevent sticky keys
+    this.moveLeftActive = false;
+    this.moveRightActive = false;
+    this.fireActive = false;
+    // Optionally emit STOP events if needed, though GameScene pause should handle entity state
+    // this.eventBus.emit(Events.MOVE_LEFT_STOP);
+    // this.eventBus.emit(Events.MOVE_RIGHT_STOP);
+    // this.eventBus.emit(Events.FIRE_STOP);
   }
 
   // TODO: Add methods for mouse/touch input if required

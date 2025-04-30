@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi, Mocked } from 'vitest';
 import { PowerupManager } from '../../../src/core/managers/PowerupManager'; // Named import
 import { EventBus } from '../../../src/core/events/EventBus';
 import { Logger } from '../../../src/core/utils/Logger'; // Logger is used
-import ConfigLoader from '../../../src/core/config/ConfigLoader';
+// import ConfigLoader from '../../../src/core/config/ConfigLoader'; // Removed unused import
 import { PowerupsConfig, PowerupConfig } from '../../../src/core/config/schemas/powerupSchema';
 import * as Events from '../../../src/core/constants/events';
 // Import PowerupManager event data types
@@ -23,7 +23,7 @@ vi.mock('../../../src/core/config/ConfigLoader', () => ({
 const mockEventBus = new EventBus() as Mocked<EventBus>;
 // Lines 19-25 (duplicate mock and declaration) removed
 const mockLogger = new Logger() as Mocked<Logger>; // Reinstate mockLogger
-const mockConfigLoader = ConfigLoader as Mocked<typeof ConfigLoader>;
+// const mockConfigLoader = ConfigLoader as Mocked<typeof ConfigLoader>; // Removed unused variable
 
 // Mock Config Data - Use 'effect' and 'visual'
 const mockShieldPowerup: PowerupConfig = {
@@ -130,6 +130,7 @@ describe('PowerupManager', () => {
       config: mockRapidFirePowerup,
       x: 100,
       y: 100, // Position doesn't matter for collection logic
+      creationTime: Date.now(), // Add missing property for test
     });
 
     const collectData: PowerupCollectedData = { instanceId: instanceId }; // Use imported type
@@ -170,6 +171,7 @@ describe('PowerupManager', () => {
       config: mockShieldPowerup,
       x: 100,
       y: 100,
+      creationTime: Date.now(), // Add missing property for test
     });
     const collectData: PowerupCollectedData = { instanceId: instanceId }; // Use imported type
     const collectHandler = mockEventBus.on.mock.calls.find(

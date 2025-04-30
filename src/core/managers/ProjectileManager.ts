@@ -4,21 +4,30 @@ import logger from '../utils/Logger';
 // Import class type for annotations
 import { EventBus as EventBusType } from '../events/EventBus';
 import * as Events from '../constants/events'; // Import event constants
-// TODO: Import projectile configuration types/interfaces when defined
-// TODO: Import projectile entity class when defined
+// Import config types
+import { WeaponConfig } from '../config/schemas/weaponSchema';
+import { EnemyShootConfig } from '../config/schemas/enemySchema'; // Import EnemyShootConfig
+
+// Default visual properties
+const DEFAULT_VISUAL_SHAPE = 'rectangle';
+const DEFAULT_VISUAL_WIDTH = 5;
+const DEFAULT_VISUAL_HEIGHT = 5;
+const DEFAULT_VISUAL_COLOR = '0xffffff'; // White
 
 /** Defines the data expected for the SPAWN_PROJECTILE event */
-// Note: This interface might be better placed in a shared types file or events.ts
-export interface SpawnProjectileData { // Added export
+export interface SpawnProjectileData {
   type: string;
   x: number;
   y: number;
   velocityX: number;
   velocityY: number;
   damage?: number; // Added optional damage from weapon
-  owner: 'player' | 'enemy'; // Added owner property
-  radius?: number; // Optional: For area effects like bombs
-  timeToExplodeMs?: number; // Optional: For timed explosives
+  owner: 'player' | 'enemy';
+  radius?: number; // For area effects like bombs
+  timeToExplodeMs?: number; // For timed explosives
+  // Pass the relevant config object directly
+  weaponConfig?: WeaponConfig;
+  enemyShootConfig?: NonNullable<EnemyShootConfig>; // Ensure it's not undefined if passed
 }
 
 /** Defines the data expected for the PROJECTILE_HIT_ENEMY event */
@@ -37,7 +46,40 @@ interface ProjectileExplodeData {
   radius: number;
   damage: number;
   owner: 'player' | 'enemy';
-  type: string; // Add type property to match test expectations
+  type: string;
+}
+
+/** Defines the data payload for the PROJECTILE_CREATED event */
+export interface ProjectileCreatedEventData {
+  // New interface
+  id: string;
+  type: string; // Keep original type for potential use
+  x: number;
+  y: number;
+  owner: 'player' | 'enemy';
+  velocityX: number;
+  velocityY: number;
+  // Visual properties for dynamic generation
+  visualShape: 'rectangle' | 'ellipse';
+  visualWidth: number;
+  visualHeight: number;
+  visualColor: string; // Hex string '0xRRGGBB'
+}
+
+/** Placeholder type until a proper Projectile entity class is created */
+export interface ProjectileLike {
+  id: string;
+  type: string;
+  x: number;
+  y: number;
+  velocityX: number;
+  velocityY: number;
+  damage?: number;
+  owner: 'player' | 'enemy';
+  radius?: number;
+  timeToExplodeMs?: number;
+  creationTime: number; // Timestamp when created
+  update: (dt: number) => void;
 }
 
 /**
@@ -47,7 +89,8 @@ interface ProjectileExplodeData {
 // Removed duplicate SpawnProjectileData and ProjectileHitEnemyData interfaces
 
 // Placeholder type until a proper Projectile entity class is created
-export interface ProjectileLike { // Added export
+export interface ProjectileLike {
+  // Added export
   id: string;
   type: string;
   x: number;
@@ -58,20 +101,19 @@ export interface ProjectileLike { // Added export
   owner: 'player' | 'enemy'; // Added owner property
   radius?: number; // Optional: For area effects
   timeToExplodeMs?: number; // Optional: Countdown timer for explosion
+  creationTime: number; // Timestamp when created
   update: (dt: number) => void;
 }
 
 export default class ProjectileManager {
   private eventBus: EventBusType;
-  private activeProjectiles: Map<string, ProjectileLike>; // Use placeholder type
+  private activeProjectiles: Map<string, ProjectileLike>;
   private nextProjectileId: number = 0;
-  // Store bounds passed from constructor (or default)
   private worldBounds: { top: number; bottom: number; left: number; right: number };
 
-  constructor(eventBusInstance: EventBusType, worldWidth: number = 800, worldHeight: number = 600) { // Add optional bounds
+  constructor(eventBusInstance: EventBusType, worldWidth: number = 800, worldHeight: number = 600) {
     this.eventBus = eventBusInstance;
     this.activeProjectiles = new Map();
-    // Define world bounds (adjust as needed, maybe pass via config/event later)
     this.worldBounds = { top: 0, bottom: worldHeight, left: 0, right: worldWidth };
     logger.log(`ProjectileManager initialized with bounds: ${JSON.stringify(this.worldBounds)}`);
 
@@ -87,6 +129,15 @@ export default class ProjectileManager {
   // --- Event Handlers ---
 
   private handleSpawnProjectile(data: SpawnProjectileData): void {
+    // Basic validation: Ensure either weaponConfig or enemyShootConfig is provided based on owner
+    if (data.owner === 'player' && !data.weaponConfig) {
+      logger.error('Player projectile spawned without weaponConfig!', data);
+      return;
+    }
+    if (data.owner === 'enemy' && !data.enemyShootConfig) {
+      logger.error('Enemy projectile spawned without enemyShootConfig!', data);
+      return;
+    }
     this.spawnProjectile(data);
   }
 
@@ -100,17 +151,14 @@ export default class ProjectileManager {
   // --- Core Logic ---
 
   public update(deltaTime: number): void {
-    // Iterate over a copy of the keys to avoid issues if projectiles are removed during iteration
     const projectileIds = [...this.activeProjectiles.keys()];
 
     for (const id of projectileIds) {
-      const projectile = this.activeProjectiles.get(id); // Remove 'as any' cast
+      const projectile = this.activeProjectiles.get(id);
       if (!projectile) continue;
 
-      // Update projectile position (using placeholder logic)
       projectile.update(deltaTime);
 
-      // Handle explosion timer if present
       if (projectile.timeToExplodeMs !== undefined) {
         projectile.timeToExplodeMs -= deltaTime;
         if (projectile.timeToExplodeMs <= 0) {
@@ -126,9 +174,10 @@ export default class ProjectileManager {
         projectile.x < this.worldBounds.left ||
         projectile.x > this.worldBounds.right
       ) {
-        logger.debug(`Projectile ${id} went off-screen (x=${projectile.x.toFixed(1)}, y=${projectile.y.toFixed(1)})`);
-        this.removeProjectile(id); // Call internal remove method
-        // continue; // Skip further processing if removed (already handled by iterating keys)
+        logger.debug(
+          `Projectile ${id} went off-screen (x=${projectile.x.toFixed(1)}, y=${projectile.y.toFixed(1)})`
+        );
+        this.removeProjectile(id);
       }
     }
   }
@@ -137,39 +186,66 @@ export default class ProjectileManager {
     const newId = `proj_${this.nextProjectileId++}`;
     logger.debug(`Spawning projectile: ${data.type} (ID: ${newId}) at (${data.x}, ${data.y})`);
 
-    // --- Placeholder Logic ---
-    // TODO: Replace with actual projectile entity creation
+    // Determine visual properties from config or defaults
+    let visualShape: 'rectangle' | 'ellipse' = DEFAULT_VISUAL_SHAPE;
+    let visualWidth: number = DEFAULT_VISUAL_WIDTH;
+    let visualHeight: number = DEFAULT_VISUAL_HEIGHT;
+    let visualColor: string = DEFAULT_VISUAL_COLOR;
+
+    if (data.owner === 'player' && data.weaponConfig) {
+      visualShape = data.weaponConfig.visualShape ?? visualShape;
+      visualWidth = data.weaponConfig.visualWidth ?? visualWidth;
+      visualHeight = data.weaponConfig.visualHeight ?? visualHeight;
+      visualColor = data.weaponConfig.visualColor ?? visualColor;
+    } else if (data.owner === 'enemy' && data.enemyShootConfig) {
+      visualShape = data.enemyShootConfig.visualShape ?? visualShape;
+      visualWidth = data.enemyShootConfig.visualWidth ?? visualWidth;
+      visualHeight = data.enemyShootConfig.visualHeight ?? visualHeight;
+      visualColor = data.enemyShootConfig.visualColor ?? visualColor;
+    } else {
+      logger.warn(
+        `Could not determine visual config for projectile ${newId} (type: ${data.type}). Using defaults.`
+      );
+    }
+
+    // --- Placeholder Logic for internal state ---
     const newProjectile: ProjectileLike = {
-      // Ensure object matches interface
       id: newId,
       type: data.type,
       x: data.x,
       y: data.y,
       velocityX: data.velocityX,
       velocityY: data.velocityY,
-      damage: data.damage, // Store damage from spawn data
-      owner: data.owner, // Store owner from spawn data
-      radius: data.radius, // Store radius if provided
-      timeToExplodeMs: data.timeToExplodeMs, // Store explosion timer if provided
+      damage: data.damage,
+      owner: data.owner,
+      radius: data.radius,
+      timeToExplodeMs: data.timeToExplodeMs,
+      creationTime: Date.now(), // Record creation time
       update: (dt: number) => {
-        // Basic movement logic (will be in the entity itself later)
         newProjectile.x += newProjectile.velocityX * (dt / 1000);
         newProjectile.y += newProjectile.velocityY * (dt / 1000);
-        // TODO: Add boundary checks here or in update loop
       },
     };
     this.activeProjectiles.set(newId, newProjectile);
     // --- End Placeholder ---
 
-    // Emit event for the Phaser layer to create the visual sprite
-    this.eventBus.emit(Events.PROJECTILE_CREATED, {
+    // Emit event for the Phaser layer with visual details
+    const eventPayload: ProjectileCreatedEventData = {
+      // Use the new interface
       id: newId,
-      type: data.type,
+      type: data.type, // Pass original type
       x: data.x,
       y: data.y,
-      owner: newProjectile.owner, // Pass owner to the scene
-      // Pass any other necessary visual info (e.g., texture key)
-    });
+      owner: newProjectile.owner,
+      velocityX: newProjectile.velocityX,
+      velocityY: newProjectile.velocityY,
+      // Add visual properties
+      visualShape: visualShape,
+      visualWidth: visualWidth,
+      visualHeight: visualHeight,
+      visualColor: visualColor,
+    };
+    this.eventBus.emit(Events.PROJECTILE_CREATED, eventPayload); // Emit typed payload
   }
 
   private triggerExplosion(projectileId: string): void {
@@ -201,10 +277,7 @@ export default class ProjectileManager {
     if (this.activeProjectiles.has(projectileId)) {
       logger.debug(`Removing projectile: ${projectileId}`);
       this.activeProjectiles.delete(projectileId);
-      // Emit event for the Phaser layer to remove the visual sprite
       this.eventBus.emit(Events.PROJECTILE_DESTROYED, { id: projectileId });
-    } else {
-      // logger.warn(`Attempted to remove non-existent projectile: ${projectileId}`); // Can be noisy if hit happens same frame as boundary check
     }
   }
 
@@ -222,6 +295,14 @@ export default class ProjectileManager {
    * @param projectileId The unique ID of the projectile.
    * @returns The owner, or undefined if the projectile doesn't exist.
    */
+  /**
+   * Retrieves the creation timestamp of a specific projectile instance.
+   * @param projectileId The unique ID of the projectile.
+   * @returns The creation timestamp (milliseconds since epoch), or undefined if not found.
+   */
+  public getProjectileCreationTime(projectileId: string): number | undefined {
+    return this.activeProjectiles.get(projectileId)?.creationTime;
+  }
   public getProjectileOwner(projectileId: string): 'player' | 'enemy' | undefined {
     return this.activeProjectiles.get(projectileId)?.owner;
   }
