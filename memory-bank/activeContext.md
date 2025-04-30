@@ -1,25 +1,87 @@
 # Active Context: Math Invasion v2
 
-**Current Focus:** Milestone M4: Rozbudowa Broni i UI - *Implementing UI display elements.*
+**Current Focus:** Milestone M4: Rozbudowa Broni i UI - *Completing UI and Upgrade Logic.*
 
-**Recent Changes (M4 - In Progress):**
-*   **M4 - UI Enhancements (Partial):**
-    *   Made weapon selection buttons interactive in `UIScene.ts`, emitting `WEAPON_SWITCH` event on click.
-    *   Added `WEAPON_STATE_UPDATED` event constant to `src/core/constants/events.ts`.
+**Recent Changes (M4 - Completed):**
+*   **M4 - Wave Number Display:**
+    *   Added `WAVE_UPDATED` event constant to `src/core/constants/events.ts`.
+    *   Updated `EnemyManager.ts`:
+        *   Added `currentWave` property, initialized to 0.
+        *   Added `advanceWave` method to increment wave and emit `WAVE_UPDATED`. Called initially in constructor.
+        *   Added `emitWaveUpdate` helper method.
+        *   Added `WaveUpdateData` interface.
+    *   Updated `UIScene.ts`:
+        *   Added `waveText` game object.
+        *   Added `WaveUpdateData` interface definition.
+        *   Added `handleWaveUpdate` method to update `waveText`.
+        *   Added listener for `WAVE_UPDATED` in `create()` and removal in `shutdown`.
+*   **M4 - Apply Weapon Upgrades (Damage & Speed):**
     *   Updated `WeaponManager.ts`:
-        *   Added `WeaponStateUpdateData` interface.
-        *   Added `currentWeaponLevel` property (init 1).
-        *   Added `emitStateUpdate` method, called in constructor and `handleWeaponSwitch`.
-    *   Updated `UIScene.ts`:
-        *   Added `WeaponStateUpdateData` interface.
-        *   Added `weaponStatusText` and `weaponButtons` array properties.
-        *   Added `handleWeaponStateUpdate` method to update status text and highlight active button.
-        *   Added listener for `WEAPON_STATE_UPDATED`.
-    *   Updated `PlayerState` type in `src/core/types/PlayerState.ts` to include `health` and `isInvulnerable`.
-    *   Updated `UIScene.ts`:
-        *   Added `PlayerState` import and `healthText` property.
-        *   Added `handlePlayerStateUpdate` method to display health and change color based on value.
-        *   Added listener for `PLAYER_STATE_UPDATED`.
+        *   Added `currentDamage` and `currentProjectileSpeed` state variables.
+        *   Initialized these variables in the constructor and `handleWeaponSwitch` based on `baseDamage` and `projectileSpeed` from `WeaponConfig` (using defaults if undefined).
+        *   Updated `handleWeaponUpgradeRequest` to calculate and apply damage and speed upgrades based on `damageMultiplier` and `projectileSpeedMultiplier` from the `upgrade` config.
+        *   Added `RequestFireWeaponData` interface to include calculated `damage` and `projectileSpeed`.
+        *   Updated `attemptFire` to emit `REQUEST_FIRE_WEAPON` with the calculated `damage` and `projectileSpeed`.
+    *   Updated `src/core/config/schemas/weaponSchema.ts`:
+        *   Added optional `projectileSpeedMultiplier` to `weaponUpgradeSchema`.
+    *   Updated `config/weapons.yml`:
+        *   Added `projectileSpeedMultiplier: 1.05` to the `bullet` weapon's upgrade section.
+    *   Updated `src/phaser/handlers/event/ProjectileEventHandler.ts`:
+        *   Updated `handleRequestFireWeapon` method signature to accept `damage` and `projectileSpeed` in the event data.
+        *   Updated `handleRequestFireWeapon` implementation to use the `damage` and `projectileSpeed` from the event data when emitting `SPAWN_PROJECTILE`, instead of reading from `weaponConfig`.
+*   **M4 - Refactor GameSceneEventHandler (Line Limit):**
+    *   Identified `src/phaser/handlers/GameSceneEventHandler.ts` (364 lines) exceeded the 300-line limit.
+    *   Created new sub-handlers in `src/phaser/handlers/event/`:
+        *   `PlayerEventHandler.ts`: Handles player state, death, and invulnerability events.
+        *   `ProjectileEventHandler.ts`: Handles projectile creation/destruction and firing requests.
+        *   `EnemyEventHandler.ts`: Handles enemy spawning, destruction, health updates, and death bombs.
+    *   Refactored `GameSceneEventHandler.ts` to instantiate and delegate to these sub-handlers.
+    *   Removed event listener registration/cleanup from `GameScene.ts` as sub-handlers now manage their own listeners.
+*   **M4 - Weapon Upgrades & Score Display (Previous):**
+    *   **Weapon Upgrade UI:**
+        *   Updated `WeaponManager.ts`:
+            *   Modified `WeaponStateUpdateData` interface to include `nextUpgradeCost`.
+            *   Updated `emitStateUpdate` to calculate `nextUpgradeCost` based on `baseCost` and `costMultiplier` from `weaponConfig`.
+        *   Updated `UIScene.ts`:
+            *   Added `weaponUpgradeCostText` game object.
+            *   Updated `handleWeaponStateUpdate` to display the `nextUpgradeCost` or "Max Level".
+    *   **Weapon Upgrade Input & Logic:**
+        *   Added `REQUEST_WEAPON_UPGRADE` event constant to `src/core/constants/events.ts`.
+        *   Updated `InputManager.ts` (`handleKeyDown`) to listen for 'U' key and emit `REQUEST_WEAPON_UPGRADE`.
+        *   Updated `WeaponManager.ts`:
+            *   Added `EconomyManager` dependency to constructor.
+            *   Added listener for `REQUEST_WEAPON_UPGRADE`.
+            *   Implemented `handleWeaponUpgradeRequest` method:
+                *   Calculates upgrade cost.
+                *   Checks currency using `economyManager.getCurrentCurrency()`.
+                *   Spends currency using `economyManager.spendCurrency()`.
+                *   Increments `currentWeaponLevel`.
+                *   Applies cooldown upgrade (using `cooldownMultiplier`).
+                *   Emits `WEAPON_STATE_UPDATED`.
+        *   Updated `GameScene.ts` (`initializeManagers`) to pass `EconomyManager` instance to `WeaponManager` constructor.
+    *   **Score System:**
+        *   Added `SCORE_UPDATED` event constant to `src/core/constants/events.ts`.
+        *   Updated `src/core/config/schemas/enemySchema.ts` to include `scoreValue` field in `enemySchema`.
+        *   Updated `config/enemies.yml` to add `scoreValue` to all enemy definitions.
+        *   Updated `EconomyManager.ts`:
+            *   Added `currentScore` property and `initialScore` constructor parameter.
+            *   Added `addScore` and `emitScoreUpdate` methods.
+            *   Updated internal `EnemyDestroyedData` interface to include `scoreValue`.
+            *   Updated `handleEnemyDestroyed` to call `addScore`.
+            *   Added `emitScoreUpdate()` call in constructor.
+        *   Updated `EnemyManager.ts`:
+            *   Updated internal `EnemyDestroyedData` interface definition.
+            *   Modified `destroyEnemy` to retrieve `scoreValue` from config and include it in the `ENEMY_DESTROYED` event payload.
+        *   Updated `UIScene.ts`:
+            *   Added `scoreText` game object.
+            *   Added `handleScoreUpdate` method.
+            *   Added listener for `SCORE_UPDATED` event.
+            *   Added unsubscription for `SCORE_UPDATED` on shutdown.
+*   **M4 - UI Enhancements (Previous):**
+    *   Made weapon selection buttons interactive in `UIScene.ts`, emitting `WEAPON_SWITCH` event on click.
+    *   Updated `WeaponManager.ts` to emit initial weapon state.
+    *   Updated `UIScene.ts` to display weapon name/level and highlight active button via `WEAPON_STATE_UPDATED`.
+    *   Updated `UIScene.ts` to display player health and color based on value via `PLAYER_STATE_UPDATED`.
 
 **Recent Changes (End of M3):**
 *   **M3 - Add Diamond Strafer Enemy:**
@@ -229,21 +291,22 @@
 
 **Next Steps (Milestone M4 - Rozbudowa Broni i UI):**
 *   **Weapon Upgrades:**
-    *   Implement UI elements for displaying current weapon level and upgrade cost.
-    *   Add input handling (e.g., key press or UI button click) to trigger weapon upgrades.
-    *   Update `WeaponManager` to handle upgrade requests:
-        *   Check if player has enough currency (via `EconomyManager`).
-        *   If affordable, deduct cost and apply upgrades based on `weaponConfig.upgrade` properties (damage, cooldown, range, etc.).
-        *   Emit events to update UI (e.g., `WEAPON_UPGRADED`, `CURRENCY_UPDATED`).
+    *   ~~Implement UI elements for displaying current weapon level and upgrade cost.~~ *(Done)*
+    *   ~~Add input handling (e.g., key press or UI button click) to trigger weapon upgrades.~~ *(Done - 'U' key)*
+    *   ~~Update `WeaponManager` to handle upgrade requests:~~ *(Done)*
+        *   ~~Check if player has enough currency (via `EconomyManager`).~~ *(Done)*
+        *   ~~If affordable, deduct cost and apply upgrades based on `weaponConfig.upgrade` properties (damage, cooldown, range, etc.).~~ *(Done - Cooldown applied, TODO: Apply other stats)*
+        *   ~~Emit events to update UI (e.g., `WEAPON_UPGRADED`, `CURRENCY_UPDATED`).~~ *(Done - `WEAPON_STATE_UPDATED` emitted)*
 *   **UI Enhancements:**
     *   ~~Make weapon selection buttons functional (emit `WEAPON_SWITCH` event).~~ *(Done)*
     *   ~~Display current weapon name/level.~~ *(Done)*
     *   ~~Display player health (e.g., health bar).~~ *(Done)*
-    *   Display current wave number/score.
-    *   Implement UI elements for displaying current weapon level and upgrade cost.
-    *   Add input handling (e.g., key press or UI button click) to trigger weapon upgrades.
+    *   ~~Display current wave number/score.~~ *(Done - Score & Wave implemented)*
+    *   ~~Display current wave number.~~ *(Done)*
+    *   ~~Apply other weapon upgrades (damage, range, etc.) in `WeaponManager.handleWeaponUpgradeRequest`.~~ *(Done - Damage & Speed)*
 
 *(Deferred M3 Tasks: Add more enemy types/assets, implement difficulty scaling, consider enemy invulnerability)*
+*(Deferred M4 Tasks: Apply range upgrades - requires changes in ProjectileManager/EventHandler)*
 
 **Important Patterns & Preferences:**
     *   ~~Refine movement patterns: Implement actual `boss_weaving` (e.g., sine wave)~~ *(Done)*, ~~implement `bomber_dive`~~ *(Done)*, potentially add `'homing'` or other patterns from config. Update `EnemyEntity.preUpdate`.

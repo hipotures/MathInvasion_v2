@@ -3,6 +3,7 @@
   baseHealth: 50
   baseSpeed: 40
   baseReward: 5
+  scoreValue: 10 # Added
   collisionDamage: 10 # Added
   movementPattern: invader_standard
   collisionRadius: 15
@@ -12,6 +13,7 @@
   baseHealth: 150
   baseSpeed: 25
   baseReward: 15
+  scoreValue: 30 # Added
   collisionDamage: 20 # Added
   movementPattern: invader_standard
   collisionRadius: 25
@@ -26,6 +28,7 @@
   baseHealth: 100
   baseSpeed: 30
   baseReward: 20
+  scoreValue: 40 # Added
   collisionDamage: 5 # Added (lower for support?)
   movementPattern: invader_support
   collisionRadius: 20
@@ -39,6 +42,7 @@
   baseHealth: 80
   baseSpeed: 60 # Faster dive
   baseReward: 25
+  scoreValue: 50 # Added
   collisionDamage: 15
   movementPattern: bomber_dive # New pattern
   collisionRadius: 22
@@ -53,6 +57,7 @@
   baseHealth: 70
   baseSpeed: 150 # Fast horizontal speed
   baseReward: 30
+  scoreValue: 60 # Added
   collisionDamage: 15
   movementPattern: strafe_horizontal # New pattern
   collisionRadius: 18
@@ -67,6 +72,7 @@
   baseHealth: 2000
   baseSpeed: 20
   baseReward: 100
+  scoreValue: 200 # Added
   collisionDamage: 50 # Added (higher for boss)
   movementPattern: boss_weaving
   collisionRadius: 50

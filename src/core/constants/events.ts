@@ -30,13 +30,17 @@ export const ENEMY_DESTROYED = 'ENEMY_DESTROYED'; // Emitted by EnemyManager for
 export const ENEMY_HEALTH_UPDATED = 'ENEMY_HEALTH_UPDATED'; // Emitted by EnemyManager for Scene
 export const ENEMY_REQUEST_FIRE = 'ENEMY_REQUEST_FIRE'; // Emitted by EnemyEntity for Scene to handle spawn
 
-// Economy Events
+// Economy & Score Events
 export const CURRENCY_UPDATED = 'CURRENCY_UPDATED'; // Emitted by EconomyManager for UI
+export const SCORE_UPDATED = 'SCORE_UPDATED'; // Emitted by EconomyManager for UI
+export const WAVE_UPDATED = 'WAVE_UPDATED'; // Emitted when the wave number changes
 // export const INSUFFICIENT_FUNDS = 'INSUFFICIENT_FUNDS'; // Future event
 
 // Weapon Events
 export const REQUEST_FIRE_WEAPON = 'REQUEST_FIRE_WEAPON'; // Emitted by WeaponManager for Scene to handle spawn location
-export const WEAPON_STATE_UPDATED = 'WEAPON_STATE_UPDATED'; // Emitted by WeaponManager for UI updates (current weapon, level)
+export const WEAPON_STATE_UPDATED = 'WEAPON_STATE_UPDATED'; // Emitted by WeaponManager for UI updates (current weapon, level, cost)
+export const REQUEST_WEAPON_UPGRADE = 'REQUEST_WEAPON_UPGRADE'; // Emitted by InputManager to request upgrading the current weapon
+// export const WEAPON_UPGRADED = 'WEAPON_UPGRADED'; // Future event from WeaponManager after successful upgrade
 // export const WEAPON_COOLDOWN_START = 'WEAPON_COOLDOWN_START'; // Future event
 // export const WEAPON_COOLDOWN_FINISH = 'WEAPON_COOLDOWN_FINISH'; // Future event
 // export const WEAPON_READY = 'WEAPON_READY'; // Future event

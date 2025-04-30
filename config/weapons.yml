@@ -10,6 +10,7 @@
     costMultiplier: 1.4
     damageMultiplier: 1.15
     cooldownMultiplier: 0.95
+    projectileSpeedMultiplier: 1.05 # Increase speed slightly per level
     rangeAdd: 10
 - id: laser
   name: Continuous Laser

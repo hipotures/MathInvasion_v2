@@ -5,6 +5,7 @@ const weaponUpgradeSchema = z.object({
   costMultiplier: z.number().positive(),
   damageMultiplier: z.number().positive().optional(), // e.g., slow field has no damage
   cooldownMultiplier: z.number().positive().optional(), // e.g., laser has no cooldown
+  projectileSpeedMultiplier: z.number().positive().optional(), // Multiplier for projectile speed
   rangeAdd: z.number().nonnegative(),
   slowFactorMultiplier: z.number().positive().optional(), // Only for slow field
   durationAddMs: z.number().positive().optional(), // Only for slow field

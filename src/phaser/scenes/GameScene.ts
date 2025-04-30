@@ -115,7 +115,7 @@ export default class GameScene extends Phaser.Scene {
     this.economyManager = new EconomyManager(eventBus, 0);
     this.playerManager = new PlayerManager(eventBus, playerConfig);
     this.inputManager = new InputManager(eventBus);
-    this.weaponManager = new WeaponManager(eventBus);
+    this.weaponManager = new WeaponManager(eventBus, this.economyManager); // Pass EconomyManager instance
     this.projectileManager = new ProjectileManager(eventBus);
     this.enemyManager = new EnemyManager(eventBus); // Instantiate here
   }
@@ -135,16 +135,17 @@ export default class GameScene extends Phaser.Scene {
   // private bindEventHandlers(): void { ... } // Removed
 
   private setupEventListeners(): void {
-    // Use methods from the event handler instance
-    eventBus.on(Events.PLAYER_STATE_UPDATED, this.eventHandler.handlePlayerStateUpdate);
-    eventBus.on(Events.PROJECTILE_CREATED, this.eventHandler.handleProjectileCreated);
-    eventBus.on(Events.PROJECTILE_DESTROYED, this.eventHandler.handleProjectileDestroyed);
-    eventBus.on(Events.ENEMY_SPAWNED, this.eventHandler.handleEnemySpawned);
-    eventBus.on(Events.ENEMY_DESTROYED, this.eventHandler.handleEnemyDestroyed);
-    eventBus.on(Events.ENEMY_HEALTH_UPDATED, this.eventHandler.handleEnemyHealthUpdate);
-    eventBus.on(Events.REQUEST_FIRE_WEAPON, this.eventHandler.handleRequestFireWeapon);
-    eventBus.on(Events.ENEMY_REQUEST_FIRE, this.eventHandler.handleEnemyRequestFire);
-    eventBus.on(Events.PLAYER_DIED, this.eventHandler.handlePlayerDied);
+    // No longer needed here - Sub-handlers register their own listeners
+    // eventBus.on(Events.PLAYER_STATE_UPDATED, this.eventHandler.handlePlayerStateUpdate);
+    // eventBus.on(Events.PROJECTILE_CREATED, this.eventHandler.handleProjectileCreated);
+    // eventBus.on(Events.PROJECTILE_DESTROYED, this.eventHandler.handleProjectileDestroyed);
+    // eventBus.on(Events.ENEMY_SPAWNED, this.eventHandler.handleEnemySpawned);
+    // eventBus.on(Events.ENEMY_DESTROYED, this.eventHandler.handleEnemyDestroyed);
+    // eventBus.on(Events.ENEMY_HEALTH_UPDATED, this.eventHandler.handleEnemyHealthUpdate);
+    // eventBus.on(Events.REQUEST_FIRE_WEAPON, this.eventHandler.handleRequestFireWeapon);
+    // eventBus.on(Events.ENEMY_REQUEST_FIRE, this.eventHandler.handleEnemyRequestFire);
+    // eventBus.on(Events.PLAYER_DIED, this.eventHandler.handlePlayerDied);
+    logger.debug('GameScene: Event listeners are now managed by sub-handlers.');
   }
 
   private setupCollisions(): void {
@@ -201,16 +202,17 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private cleanupEventListeners(): void {
-    // Use methods from the event handler instance
-    eventBus.off(Events.PLAYER_STATE_UPDATED, this.eventHandler.handlePlayerStateUpdate);
-    eventBus.off(Events.PROJECTILE_CREATED, this.eventHandler.handleProjectileCreated);
-    eventBus.off(Events.PROJECTILE_DESTROYED, this.eventHandler.handleProjectileDestroyed);
-    eventBus.off(Events.ENEMY_SPAWNED, this.eventHandler.handleEnemySpawned);
-    eventBus.off(Events.ENEMY_DESTROYED, this.eventHandler.handleEnemyDestroyed);
-    eventBus.off(Events.ENEMY_HEALTH_UPDATED, this.eventHandler.handleEnemyHealthUpdate);
-    eventBus.off(Events.REQUEST_FIRE_WEAPON, this.eventHandler.handleRequestFireWeapon);
-    eventBus.off(Events.ENEMY_REQUEST_FIRE, this.eventHandler.handleEnemyRequestFire);
-    eventBus.off(Events.PLAYER_DIED, this.eventHandler.handlePlayerDied);
+    // No longer needed here - Sub-handlers clean up their own listeners via their destroy() method
+    // eventBus.off(Events.PLAYER_STATE_UPDATED, this.eventHandler.handlePlayerStateUpdate);
+    // eventBus.off(Events.PROJECTILE_CREATED, this.eventHandler.handleProjectileCreated);
+    // eventBus.off(Events.PROJECTILE_DESTROYED, this.eventHandler.handleProjectileDestroyed);
+    // eventBus.off(Events.ENEMY_SPAWNED, this.eventHandler.handleEnemySpawned);
+    // eventBus.off(Events.ENEMY_DESTROYED, this.eventHandler.handleEnemyDestroyed);
+    // eventBus.off(Events.ENEMY_HEALTH_UPDATED, this.eventHandler.handleEnemyHealthUpdate);
+    // eventBus.off(Events.REQUEST_FIRE_WEAPON, this.eventHandler.handleRequestFireWeapon);
+    // eventBus.off(Events.ENEMY_REQUEST_FIRE, this.eventHandler.handleEnemyRequestFire);
+    // eventBus.off(Events.PLAYER_DIED, this.eventHandler.handlePlayerDied);
+    logger.debug('GameScene: Event listener cleanup is now managed by sub-handlers.');
   }
 
   // --- Event Handlers ---

@@ -48,7 +48,8 @@ const enemySchema = z.object({
   shape: z.string().min(1), // Could be an enum later: z.enum(['triangle', 'square', ...])
   baseHealth: z.number().positive(),
   baseSpeed: z.number().positive(),
-  baseReward: z.number().nonnegative(),
+  baseReward: z.number().nonnegative().describe('Currency awarded on destruction.'),
+  scoreValue: z.number().nonnegative().describe('Score awarded on destruction.'), // Added score value
   collisionDamage: z.number().nonnegative().describe('Damage dealt to the player on collision.'), // Added collision damage
   movementPattern: z.enum([
     'invader_standard',

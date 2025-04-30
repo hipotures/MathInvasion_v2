@@ -9,8 +9,8 @@ import { ENEMY_SPAWNED } from '../constants/events';
 import { ENEMY_DESTROYED } from '../constants/events';
 
 import { ENEMY_HEALTH_UPDATED } from '../constants/events';
-
 import { PROJECTILE_HIT_ENEMY } from '../constants/events';
+import { WAVE_UPDATED } from '../constants/events'; // Import WAVE_UPDATED
 
 /** Defines the data expected for the PROJECTILE_HIT_ENEMY event */
 // Note: This interface might be better placed in a shared types file or events.ts
@@ -21,11 +21,13 @@ interface ProjectileHitEnemyData {
 }
 
 /** Defines the data expected for the ENEMY_DESTROYED event */
+// Note: This interface should match the payload structure emitted below.
 interface EnemyDestroyedData {
   instanceId: string;
   configId: string;
   reward: number;
-  config: EnemyConfig; // Include the full config for ability checks etc.
+  scoreValue: number; // Explicitly include score value
+  config: EnemyConfig; // Keep full config for other listeners (e.g., ability checks)
 }
 
 // TODO: Define a proper EnemyInstance type/interface
@@ -36,10 +38,16 @@ interface EnemyInstance {
   // Add other relevant state properties like position, velocity etc. later
 }
 
+/** Data for the WAVE_UPDATED event */
+interface WaveUpdateData {
+  waveNumber: number;
+}
+
 export class EnemyManager {
   private enemies: Map<string, EnemyInstance> = new Map();
   private nextInstanceId = 0;
   private enemyConfigs: Map<string, EnemyConfig> = new Map();
+  private currentWave = 0; // Start at wave 0, advance to 1 initially
 
   constructor(
     private eventBus: EventBusType = EventBus, // Use type alias for annotation, default instance for default value
@@ -48,6 +56,7 @@ export class EnemyManager {
     this.loadConfigs();
     this.registerEventListeners(); // Call listener registration
     this.logger.log('EnemyManager initialized'); // Changed info to log
+    this.advanceWave(); // Start the first wave immediately after init
   }
 
   private loadConfigs(): void {
@@ -127,17 +136,20 @@ export class EnemyManager {
 
     const config = this.enemyConfigs.get(enemy.configId);
     const reward = config?.baseReward ?? 0;
+    const scoreValue = config?.scoreValue ?? 0; // Get score value from config
 
     this.enemies.delete(instanceId);
     this.logger.log(`Destroyed enemy: ${enemy.configId} (Instance ID: ${instanceId})`); // Changed info to log
 
     // Emit event for GameScene to remove sprite/body and handle abilities
-    this.eventBus.emit(ENEMY_DESTROYED, {
+    const eventData: EnemyDestroyedData = {
       instanceId: instanceId,
       configId: enemy.configId,
       reward: reward, // Send reward info for EconomyManager
-      config: config, // Send the full config
-    } as EnemyDestroyedData); // Cast to ensure type safety
+      scoreValue: scoreValue, // Send score value for EconomyManager
+      config: config as EnemyConfig, // Send the full config (cast needed as config could be undefined)
+    };
+    this.eventBus.emit(ENEMY_DESTROYED, eventData);
   }
 
   // --- Event Handlers ---
@@ -174,6 +186,27 @@ export class EnemyManager {
     this.enemies.clear(); // Clear any remaining enemies
     this.enemyConfigs.clear();
     this.logger.log('EnemyManager destroyed and listeners removed');
+  }
+
+  // --- Wave Management ---
+
+  /** Advances the wave number and emits an update event */
+  public advanceWave(): void {
+    this.currentWave++;
+    this.logger.log(`Advanced to Wave ${this.currentWave}`);
+    this.emitWaveUpdate();
+    // TODO: Add logic here to spawn enemies for the new wave based on difficulty/wave number
+  }
+
+  /** Emits the current wave number */
+  private emitWaveUpdate(): void {
+    const eventData: WaveUpdateData = { waveNumber: this.currentWave };
+    this.eventBus.emit(WAVE_UPDATED, eventData);
+  }
+
+  /** Gets the current wave number */
+  public getCurrentWave(): number {
+    return this.currentWave;
   }
 }
 

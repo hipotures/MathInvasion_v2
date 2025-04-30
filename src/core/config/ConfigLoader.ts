@@ -9,7 +9,8 @@ import { playerSchema, type PlayerConfig } from './schemas/playerSchema'; // Add
 // Use Vite's import.meta.glob to import YAML files as raw strings
 // Note: The path is relative to the current file (ConfigLoader.ts)
 const yamlFiles = import.meta.glob('../../../config/*.yml', {
-  as: 'raw',
+  query: '?raw', // Use recommended query syntax
+  import: 'default', // Specify default import for raw content
   eager: true, // Load immediately
 });
 

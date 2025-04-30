@@ -6,13 +6,14 @@ import { EventBus as EventBusType } from '../events/EventBus';
 import * as Events from '../constants/events'; // Import event constants
 import configLoader from '../config/ConfigLoader'; // Import config loader instance
 import { type WeaponsConfig, type WeaponConfig } from '../config/schemas/weaponSchema'; // Import weapon config types
+import EconomyManager from './EconomyManager'; // Import EconomyManager type
 // import { PlayerState } from '../types/PlayerState'; // Assuming a type definition exists or will be created - Not used here
 
 /** Defines the data expected for the WEAPON_STATE_UPDATED event */
 interface WeaponStateUpdateData {
   weaponId: string;
   level: number;
-  // Add other relevant state later, e.g., upgrade cost, max level
+  nextUpgradeCost: number | null; // Cost for the next level, null if maxed or no upgrades
 }
 
 /** Defines the data expected for the PLAYER_STATE_UPDATED event */
@@ -26,23 +27,36 @@ interface PlayerStateData {
   health: number;
 }
 
+/** Defines the data expected for the REQUEST_FIRE_WEAPON event */
+// Ensure this matches the payload emitted in attemptFire
+interface RequestFireWeaponData {
+  weaponConfig: WeaponConfig;
+  damage: number; // Add calculated damage
+  projectileSpeed: number; // Add calculated speed
+  // Add range etc. later if needed
+}
+
 /**
  * Manages the player's weapons, including selection, firing, cooldowns,
  * and potentially upgrades or modifications based on game state.
  */
 export default class WeaponManager {
   private eventBus: EventBusType;
+  private economyManager: EconomyManager; // Add EconomyManager instance
   private weaponsConfig: WeaponsConfig; // Store all weapon configs
   private currentWeaponConfig: WeaponConfig | null = null; // Store config for the active weapon
   private currentWeaponId: string = 'bullet'; // Default initial weapon ID
   private currentWeaponLevel: number = 1; // Start at level 1
-  private weaponCooldown: number = 500; // ms - Default, will be overwritten by config
+  private weaponCooldown: number = 500; // ms - Current cooldown, updated by upgrades
+  private currentDamage: number = 10; // Current damage, updated by upgrades
+  private currentProjectileSpeed: number = 400; // Current speed, updated by upgrades
   private cooldownTimer: number = 0; // ms
   private isFiring: boolean = false; // Is the fire button currently held?
   // Removed playerPosition tracking
 
-  constructor(eventBusInstance: EventBusType) {
+  constructor(eventBusInstance: EventBusType, economyManagerInstance: EconomyManager) {
     this.eventBus = eventBusInstance;
+    this.economyManager = economyManagerInstance; // Store EconomyManager
     this.weaponsConfig = configLoader.getWeaponsConfig(); // Load all weapon configs
     logger.log('WeaponManager initialized');
 
@@ -50,12 +64,17 @@ export default class WeaponManager {
     this.currentWeaponConfig =
       this.weaponsConfig.find((w) => w.id === this.currentWeaponId) ?? null;
     if (this.currentWeaponConfig) {
+      // Initialize all stats from the base config
       this.weaponCooldown = this.currentWeaponConfig.baseCooldownMs;
+      this.currentDamage = this.currentWeaponConfig.baseDamage ?? 0; // Use 0 if baseDamage is undefined
+      // Use nullish coalescing operator for projectileSpeed default
+      this.currentProjectileSpeed = this.currentWeaponConfig.projectileSpeed ?? 400;
       logger.log(
-        `Initial weapon set to ${this.currentWeaponId}, Cooldown: ${this.weaponCooldown}ms`
+        `Initial weapon set to ${this.currentWeaponId}, Lvl: ${this.currentWeaponLevel}, Cooldown: ${this.weaponCooldown}ms, Damage: ${this.currentDamage}, Speed: ${this.currentProjectileSpeed}`
       );
     } else {
       logger.error(`Initial weapon config not found for ID: ${this.currentWeaponId}`);
+      // Fallback values (already set in property declarations)
       // Handle error appropriately - maybe default to a failsafe weapon or throw
       this.weaponCooldown = 500; // Fallback cooldown
     }
@@ -63,6 +82,7 @@ export default class WeaponManager {
     // Bind methods
     this.handleFireStart = this.handleFireStart.bind(this);
     this.handleWeaponSwitch = this.handleWeaponSwitch.bind(this); // Bind switch handler
+    this.handleWeaponUpgradeRequest = this.handleWeaponUpgradeRequest.bind(this); // Bind upgrade handler
     this.emitStateUpdate = this.emitStateUpdate.bind(this); // Bind state update emitter
     // Removed handlePlayerStateUpdate binding
     // Note: handleFireStop might not be needed if firing is triggered on press
@@ -70,6 +90,7 @@ export default class WeaponManager {
     // Subscribe to events
     this.eventBus.on(Events.FIRE_START, this.handleFireStart);
     this.eventBus.on(Events.WEAPON_SWITCH, this.handleWeaponSwitch); // Subscribe to switch event
+    this.eventBus.on(Events.REQUEST_WEAPON_UPGRADE, this.handleWeaponUpgradeRequest); // Subscribe to upgrade request
     // Removed PLAYER_STATE_UPDATED subscription
 
     // Config loaded and initial weapon set above
@@ -99,11 +120,15 @@ export default class WeaponManager {
     if (newWeaponConfig) {
       this.currentWeaponId = newWeaponId;
       this.currentWeaponConfig = newWeaponConfig;
+      // Reset all stats to the base values of the new weapon
+      this.currentWeaponLevel = 1;
       this.weaponCooldown = newWeaponConfig.baseCooldownMs;
-      this.cooldownTimer = 0; // Reset cooldown when switching
-      this.currentWeaponLevel = 1; // Reset level when switching weapons (or load saved level later)
+      this.currentDamage = newWeaponConfig.baseDamage ?? 0; // Use 0 if baseDamage is undefined
+      // Use nullish coalescing operator for projectileSpeed default
+      this.currentProjectileSpeed = newWeaponConfig.projectileSpeed ?? 400;
+      this.cooldownTimer = 0; // Reset cooldown timer
       logger.log(
-        `Switched weapon to ${this.currentWeaponId}, Level: ${this.currentWeaponLevel}, Cooldown: ${this.weaponCooldown}ms`
+        `Switched weapon to ${this.currentWeaponId}, Lvl: ${this.currentWeaponLevel}, Cooldown: ${this.weaponCooldown}ms, Damage: ${this.currentDamage}, Speed: ${this.currentProjectileSpeed}`
       );
       this.emitStateUpdate(); // Emit state change
     } else {
@@ -112,6 +137,78 @@ export default class WeaponManager {
   }
 
   // Removed handlePlayerStateUpdate method
+
+  private handleWeaponUpgradeRequest(): void {
+    logger.debug(`Received REQUEST_WEAPON_UPGRADE for ${this.currentWeaponId}`);
+
+    if (!this.currentWeaponConfig || !this.currentWeaponConfig.upgrade) {
+      logger.warn(`Weapon ${this.currentWeaponId} has no upgrade configuration.`);
+      return;
+    }
+
+    // Calculate the cost for the *next* level
+    const baseCost = this.currentWeaponConfig.baseCost;
+    const costMultiplier = this.currentWeaponConfig.upgrade.costMultiplier;
+    const upgradeCost = Math.round(baseCost * Math.pow(costMultiplier, this.currentWeaponLevel));
+
+    // Check currency
+    const currentCurrency = this.economyManager.getCurrentCurrency();
+    if (currentCurrency >= upgradeCost) {
+      // Spend currency
+      if (this.economyManager.spendCurrency(upgradeCost)) {
+        // Increment level
+        this.currentWeaponLevel++;
+        logger.log(
+          `Upgraded ${this.currentWeaponId} to Level ${this.currentWeaponLevel}. Cost: ${upgradeCost}`
+        );
+
+        // Apply upgrades based on multipliers
+        const upgradeConfig = this.currentWeaponConfig.upgrade;
+        const levelFactor = this.currentWeaponLevel - 1; // Apply multiplier starting from level 2
+
+        if (upgradeConfig.cooldownMultiplier) {
+          this.weaponCooldown = Math.round(
+            this.currentWeaponConfig.baseCooldownMs *
+              Math.pow(upgradeConfig.cooldownMultiplier, levelFactor)
+          );
+          logger.debug(`New cooldown: ${this.weaponCooldown}ms`);
+        }
+        // Apply damage upgrade only if baseDamage exists and multiplier exists
+        if (
+          typeof this.currentWeaponConfig.baseDamage === 'number' &&
+          upgradeConfig.damageMultiplier
+        ) {
+          this.currentDamage = Math.round(
+            this.currentWeaponConfig.baseDamage *
+              Math.pow(upgradeConfig.damageMultiplier, levelFactor)
+          );
+          logger.debug(`New damage: ${this.currentDamage}`);
+        }
+        // Apply speed upgrade only if multiplier exists
+        if (upgradeConfig.projectileSpeedMultiplier) {
+          // Use the base speed from the config, or the default if base speed wasn't defined
+          const baseSpeed = this.currentWeaponConfig.projectileSpeed ?? 400;
+          this.currentProjectileSpeed = Math.round(
+            baseSpeed * Math.pow(upgradeConfig.projectileSpeedMultiplier, levelFactor)
+          );
+          logger.debug(`New projectile speed: ${this.currentProjectileSpeed}`);
+        }
+        // TODO: Apply range upgrade if needed (requires changes elsewhere)
+
+        // Emit state update to refresh UI
+        this.emitStateUpdate();
+        // Optionally emit WEAPON_UPGRADED event here
+      } else {
+        // Should not happen if getCurrentCurrency check passed, but log just in case
+        logger.error(`Failed to spend currency ${upgradeCost} despite having ${currentCurrency}.`);
+      }
+    } else {
+      logger.log(
+        `Insufficient currency to upgrade ${this.currentWeaponId}. Need: ${upgradeCost}, Have: ${currentCurrency}`
+      );
+      // Optionally emit INSUFFICIENT_FUNDS event
+    }
+  }
 
   // --- Core Logic ---
 
@@ -132,9 +229,31 @@ export default class WeaponManager {
   }
 
   private emitStateUpdate(): void {
+    let nextUpgradeCost: number | null = null;
+
+    // Calculate next upgrade cost if applicable
+    if (this.currentWeaponConfig?.upgrade && this.currentWeaponConfig.baseCost >= 0) {
+      const baseCost = this.currentWeaponConfig.baseCost;
+      const costMultiplier = this.currentWeaponConfig.upgrade.costMultiplier;
+      // Cost to upgrade TO level (currentWeaponLevel + 1)
+      // Cost(L) = baseCost * multiplier^(L-1)
+      // Next cost = Cost(currentLevel + 1) = baseCost * multiplier^((currentLevel + 1) - 1)
+      // Next cost = baseCost * multiplier^(currentLevel)
+      // We assume level 1 cost is baseCost (handled by purchase, not upgrade)
+      // Cost to upgrade *from* level 1 *to* level 2 is baseCost * multiplier^1
+      // Cost to upgrade *from* level L *to* level L+1 is baseCost * multiplier^L
+      // Note: Need to decide on a max level eventually. For now, calculate indefinitely.
+      // Use Math.pow for exponentiation. Round cost to integer.
+      nextUpgradeCost = Math.round(baseCost * Math.pow(costMultiplier, this.currentWeaponLevel));
+    } else {
+      // No upgrade info or base cost, so no upgrade cost
+      nextUpgradeCost = null;
+    }
+
     const stateData: WeaponStateUpdateData = {
       weaponId: this.currentWeaponId,
       level: this.currentWeaponLevel,
+      nextUpgradeCost: nextUpgradeCost,
     };
     this.eventBus.emit(Events.WEAPON_STATE_UPDATED, stateData);
     logger.debug(`Emitted WEAPON_STATE_UPDATED: ${JSON.stringify(stateData)}`);
@@ -151,10 +270,13 @@ export default class WeaponManager {
         return;
       }
 
-      // Emit request for GameScene to handle spawn details
-      this.eventBus.emit(Events.REQUEST_FIRE_WEAPON, {
+      // Emit request for GameScene to handle spawn details, including current stats
+      const fireData: RequestFireWeaponData = {
         weaponConfig: this.currentWeaponConfig,
-      });
+        damage: this.currentDamage, // Use current calculated damage
+        projectileSpeed: this.currentProjectileSpeed, // Use current calculated speed
+      };
+      this.eventBus.emit(Events.REQUEST_FIRE_WEAPON, fireData);
 
       this.cooldownTimer = this.weaponCooldown; // Start cooldown
     } else {
@@ -168,6 +290,7 @@ export default class WeaponManager {
   public destroy(): void {
     this.eventBus.off(Events.FIRE_START, this.handleFireStart);
     this.eventBus.off(Events.WEAPON_SWITCH, this.handleWeaponSwitch); // Unsubscribe switch event
+    this.eventBus.off(Events.REQUEST_WEAPON_UPGRADE, this.handleWeaponUpgradeRequest); // Unsubscribe upgrade request
     // Removed PLAYER_STATE_UPDATED unsubscription
     logger.log('WeaponManager destroyed and listeners removed');
   }

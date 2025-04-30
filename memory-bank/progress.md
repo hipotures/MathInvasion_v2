@@ -1,16 +1,27 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Milestone M4: Rozbudowa Broni i UI - **IN PROGRESS**
+**Current Status:** Milestone M4: Rozbudowa Broni i UI - **COMPLETE**
 
 **What Works:**
-*   **Milestone M4: Rozbudowa Broni i UI (Partial)**
+*   **Milestone M4: Rozbudowa Broni i UI (Complete)**
+    *   **Wave Number Display:** Wave number is tracked by `EnemyManager`, emitted via `WAVE_UPDATED` event, and displayed in `UIScene`.
+    *   **Weapon Upgrades (Cooldown, Damage, Speed):**
+        *   UI displays current weapon level and calculated cost for the next upgrade.
+        *   Input handling ('U' key) triggers upgrade requests.
+        *   `WeaponManager` handles upgrade requests: checks/spends currency, increments level, calculates and applies cooldown, damage, and projectile speed upgrades based on config multipliers.
+        *   `WeaponManager` emits updated weapon state (`WEAPON_STATE_UPDATED`).
+        *   `WeaponManager` emits calculated damage and speed in `REQUEST_FIRE_WEAPON` event.
+        *   `ProjectileEventHandler` uses damage and speed from `REQUEST_FIRE_WEAPON` event when spawning projectiles.
+        *   `weaponSchema` and `weapons.yml` updated to support `projectileSpeedMultiplier`.
+    *   **Score System:** Score is tracked and displayed. Enemies grant score on destruction.
     *   **UI Display:**
-        *   Weapon selection buttons are interactive (emit `WEAPON_SWITCH`).
-        *   Current weapon name and level are displayed (`UIScene` listens to `WEAPON_STATE_UPDATED` from `WeaponManager`).
-        *   Active weapon button is highlighted.
-        *   Player health is displayed and color-coded (`UIScene` listens to `PLAYER_STATE_UPDATED` from `PlayerManager`).
-        *   `PlayerState` type updated to include `health` and `isInvulnerable`.
-*   **Refactor GameScene (Line Limit):** Extracted collision logic to `GameSceneCollisionHandler` and event logic to `GameSceneEventHandler`, bringing `GameScene.ts` under the 300-line limit.
+        *   Weapon selection buttons are interactive.
+        *   Current weapon name/level/upgrade cost displayed.
+        *   Active weapon button highlighted.
+        *   Player health displayed and color-coded.
+        *   Score displayed.
+        *   Wave number displayed.
+    *   **Refactor GameSceneEventHandler (Line Limit):** Event logic extracted into sub-handlers (`PlayerEventHandler`, `ProjectileEventHandler`, `EnemyEventHandler`).
 *   **Milestone M3: Wrogowie i Kolizje (Complete)**
     *   **Enemy Variety (Hexagon Bomber, Diamond Strafer):**
         *   Added `hexagon_bomber` config, schema update (discriminated union for abilities), asset key, asset loading, enemy-to-asset mapping (`GameSceneEventHandler`), and included in random spawner.
@@ -78,8 +89,8 @@
 *   **M1: Konfiguracja i Zdarzenia** - **COMPLETE**
 *   **M2: Podstawowa Rozgrywka (Ruch i Strzelanie)** - **COMPLETE**
 *   **M3: Wrogowie i Kolizje** - **COMPLETE** (Core features implemented, remaining tasks deferred)
-*   **M4: Rozbudowa Broni i UI** - **IN PROGRESS**
-*   **M5: Power-upy i Zaawansowani Wrogowie**
+*   **M4: Rozbudowa Broni i UI** - **COMPLETE**
+*   **M5: Power-upy i Zaawansowani Wrogowie** - **NEXT**
 *   **M6: Pełny Cykl Gry i PWA**
 *   **M7: Balans, Testy, Optymalizacja i CI/CD**
 

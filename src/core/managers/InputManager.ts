@@ -75,7 +75,14 @@ export default class InputManager {
         break;
       case '3':
         logger.debug('Weapon Switch Key 3 pressed');
-        this.eventBus.emit(Events.WEAPON_SWITCH, { weaponId: 'slow_field' });
+        // Note: WeaponManager expects just the ID string now, not an object
+        this.eventBus.emit(Events.WEAPON_SWITCH, 'slow_field');
+        break;
+      // Weapon Upgrade Key
+      case 'u':
+      case 'U':
+        logger.debug('Weapon Upgrade Key U pressed');
+        this.eventBus.emit(Events.REQUEST_WEAPON_UPGRADE); // No payload needed
         break;
     }
   }
