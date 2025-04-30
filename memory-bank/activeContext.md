@@ -37,6 +37,11 @@
         *   Updated `destroyEnemy` to remove enemies from the set and check if the wave is clear (`enemiesInCurrentWave.size === 0`).
         *   If wave is clear, schedule `advanceWave` after `timeBetweenWavesSec` using `waveClearTimer`.
         *   Modified `advanceWave` to spawn the wave directly and clear any pending `waveClearTimer`.
+*   **Refactor EnemyManager (Line Limit):**
+    *   Identified `src/core/managers/EnemyManager.ts` exceeded 300 lines after M6 implementations.
+    *   Created helper class `src/core/managers/helpers/EnemyWaveHandler.ts`.
+    *   Moved wave management logic (wave progression, enemy scaling, spawn patterns, wave clearing) from `EnemyManager` to `EnemyWaveHandler`.
+    *   Updated `EnemyManager` to instantiate and delegate wave/scaling tasks to `EnemyWaveHandler`.
 *   **EnemyEventHandler Update (`src/phaser/handlers/event/EnemyEventHandler.ts`):**
     *   Defined `EnemySpawnedData` interface matching the event payload (including `maxHealth`, `speedMultiplier`).
     *   Updated `handleEnemySpawned` to accept `EnemySpawnedData` and pass `maxHealth` and `speedMultiplier` to the `EnemyEntity` constructor.
