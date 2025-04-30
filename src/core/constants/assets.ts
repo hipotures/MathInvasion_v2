@@ -7,8 +7,11 @@
 export const PLAYER_KEY = 'playerShip';
 
 // Projectile Assets
-export const BULLET_KEY = 'bullet';
+export const BULLET_KEY = 'bullet'; // Player bullet
 export const PROJECTILE_DEATH_BOMB_KEY = 'deathBomb'; // Key for the hexagon bomber's death bomb
+export const PROJECTILE_ENEMY_BULLET_KEY = 'enemyBullet'; // Standard enemy bullet (can reuse BULLET_KEY or have distinct)
+export const PROJECTILE_ENEMY_BULLET_FAST_KEY = 'enemyBulletFast'; // Faster bullet for strafer
+export const PROJECTILE_ENEMY_LASER_KEY = 'enemyLaser'; // Laser for boss
 
 // Enemy Assets
 export const ENEMY_SMALL_ALIEN_KEY = 'enemySmallAlien'; // triangle_scout

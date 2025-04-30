@@ -58,7 +58,12 @@ export default class GameScene extends Phaser.Scene {
     this.load.image(Assets.ENEMY_LARGE_METEOR_KEY, 'assets/images/meteor_large.png'); // Placeholder for pentagon
     this.load.image(Assets.ENEMY_HEXAGON_BOMBER_KEY, 'assets/images/hexagon_enemy.png');
     this.load.image(Assets.ENEMY_DIAMOND_STRAFER_KEY, 'assets/images/diamond_strafer.png'); // Load Diamond Strafer asset
+    // Projectile Assets
     this.load.image(Assets.PROJECTILE_DEATH_BOMB_KEY, 'assets/images/death_bomb.png'); // Load Death Bomb asset
+    this.load.image(Assets.PROJECTILE_ENEMY_BULLET_KEY, 'assets/images/enemy_bullet.png'); // Load Enemy Bullet asset
+    this.load.image(Assets.PROJECTILE_ENEMY_BULLET_FAST_KEY, 'assets/images/enemy_bullet_fast.png'); // Load Fast Enemy Bullet asset
+    this.load.image(Assets.PROJECTILE_ENEMY_LASER_KEY, 'assets/images/enemy_laser.png'); // Load Enemy Laser asset
+    // Audio Assets
     this.load.audio(Assets.AUDIO_EXPLOSION_SMALL_KEY, 'assets/audio/explosion_small.ogg');
   }
 

@@ -104,24 +104,33 @@ export class GameSceneEventHandler {
         case 'enemy_bomb':
           textureKey = Assets.PROJECTILE_DEATH_BOMB_KEY;
           break;
-        // Add cases for other enemy projectile types (e.g., 'enemy_laser', 'enemy_bullet_fast')
         case 'enemy_bullet':
-        case 'enemy_bullet_fast': // Use same graphic for now
+          textureKey = Assets.PROJECTILE_ENEMY_BULLET_KEY;
+          break;
+        case 'enemy_bullet_fast':
+          textureKey = Assets.PROJECTILE_ENEMY_BULLET_FAST_KEY;
+          break;
+        case 'enemy_laser':
+          textureKey = Assets.PROJECTILE_ENEMY_LASER_KEY;
+          break;
         default:
-          textureKey = Assets.BULLET_KEY; // Fallback to standard bullet graphic for enemies too
+          logger.warn(`Unknown enemy projectile type: ${data.type}. Using default bullet.`);
+          textureKey = Assets.PROJECTILE_ENEMY_BULLET_KEY; // Fallback to standard enemy bullet
           break;
       }
     }
 
     const projectileSprite = this.physics.add.sprite(data.x, data.y, textureKey);
 
-    // Apply tint only if it's a standard enemy bullet, not the bomb
-    if (data.owner === 'enemy' && textureKey === Assets.BULLET_KEY) {
-      projectileSprite.setTint(0xff8888); // Tint standard enemy bullets red
-    }
+    // No longer tinting enemy bullets by default, rely on distinct graphics
+    // if (data.owner === 'enemy' && textureKey === Assets.BULLET_KEY) {
+    //   projectileSprite.setTint(0xff8888);
+    // } // Closing brace for commented if
     this.projectileGroup.add(projectileSprite);
     this.projectileSprites.set(data.id, projectileSprite);
-  }
+  } // This closing brace belongs to handleProjectileCreated
+
+  // Removed the extra closing brace that was here
 
   public handleProjectileDestroyed(data: { id: string }): void {
     const projectileSprite = this.projectileSprites.get(data.id);

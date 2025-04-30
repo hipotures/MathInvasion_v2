@@ -192,6 +192,11 @@
         *   Added listener for `PROJECTILE_EXPLODE` event.
         *   Implemented `handleProjectileExplode` method to find overlapping enemies and player within the explosion radius using `physics.overlapCirc` and emit `PROJECTILE_HIT_ENEMY` or `PLAYER_HIT_PROJECTILE` events respectively. Added a simple tweening circle visual effect for the explosion.
         *   Added `destroy` method to clean up listener.
+*   **M3 - Add Distinct Enemy Projectile Graphics:**
+    *   Added constants for `PROJECTILE_ENEMY_BULLET_KEY`, `PROJECTILE_ENEMY_BULLET_FAST_KEY`, `PROJECTILE_ENEMY_LASER_KEY` to `src/core/constants/assets.ts`.
+    *   Updated `GameScene.preload` to load corresponding placeholder assets (`enemy_bullet.png`, `enemy_bullet_fast.png`, `enemy_laser.png`).
+    *   Updated `GameSceneEventHandler.handleProjectileCreated` to use the correct asset key based on the projectile type (`enemy_bullet`, `enemy_bullet_fast`, `enemy_laser`) specified in the `SPAWN_PROJECTILE` event data. Removed default tinting for enemy projectiles.
+    *   Fixed syntax error in `GameSceneEventHandler.ts` caused by misplaced closing brace.
 
 **Next Steps (Milestone M3 - Wrogowie i Kolizje):**
 *   **Enemy Variety & Behavior (Refinement):**
@@ -199,7 +204,7 @@
     *   ~~Implement enemy aiming logic (e.g., fire towards player) in `GameScene.handleEnemyRequestFire`~~ *(Done)*.
     *   ~~Add `hexagon_bomber` enemy type~~ *(Done)*. Add *more* enemy types to `config/enemies.yml` and corresponding assets (`assets/images`, `constants/assets.ts`). Update `GameSceneEventHandler.handleEnemySpawned` mapping.
     *   ~~Implement `death_bomb` projectile logic (visuals, collision)~~ *(Done - Core logic implemented)*.
-    *   Add distinct projectile graphics/types for enemies (e.g., `enemy_laser`, `enemy_bullet_fast`). Update `GameSceneEventHandler.handleProjectileCreated`. *(Partially done for bomb)*
+    *   ~~Add distinct projectile graphics/types for enemies (e.g., `enemy_laser`, `enemy_bullet_fast`)~~ *(Done - Graphics loaded and mapped)*.
 *   **Difficulty Scaling:**
     *   Implement logic based on `config/difficulty.yml` to control enemy spawn rates, health multipliers, speed multipliers, etc., possibly based on score or time. Update `EnemyManager` and potentially `GameScene` spawner.
 *   **Collision Refinement:**
