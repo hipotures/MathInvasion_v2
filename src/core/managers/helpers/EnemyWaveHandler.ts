@@ -28,7 +28,12 @@ export class EnemyWaveHandler {
     // Initialize currentWave based on config
     this.currentWave = this.difficultyConfig.initialWaveNumber - 1;
     this.logger.log('EnemyWaveHandler initialized');
-    // Start the first wave sequence immediately
+    // DO NOT start the wave sequence immediately from constructor
+  }
+
+  /** Starts the wave progression */
+  public start(): void {
+    this.logger.log('EnemyWaveHandler starting wave progression...');
     this.advanceWave();
   }
 

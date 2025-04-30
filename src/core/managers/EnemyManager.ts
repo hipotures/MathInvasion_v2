@@ -72,7 +72,8 @@ export class EnemyManager {
 
     this.registerEventListeners();
     this.logger.log('EnemyManager initialized');
-    // Wave starting is now handled by the EnemyWaveHandler constructor
+    // Start the wave handler *after* it's assigned
+    this.waveHandler.start();
   }
 
   private loadEnemyConfigs(): Map<string, EnemyConfig> {
