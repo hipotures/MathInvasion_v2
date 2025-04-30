@@ -22,6 +22,7 @@
         *   Score displayed.
         *   Wave number displayed.
     *   **Refactor GameSceneEventHandler (Line Limit):** Event logic extracted into sub-handlers (`PlayerEventHandler`, `ProjectileEventHandler`, `EnemyEventHandler`).
+    *   **Refactor WeaponManager (Line Limit):** Weapon upgrade logic extracted into helper class `WeaponUpgrader`.
 *   **Milestone M3: Wrogowie i Kolizje (Complete)**
     *   **Enemy Variety (Hexagon Bomber, Diamond Strafer):**
         *   Added `hexagon_bomber` config, schema update (discriminated union for abilities), asset key, asset loading, enemy-to-asset mapping (`GameSceneEventHandler`), and included in random spawner.

@@ -7,7 +7,7 @@ import * as Events from '../constants/events'; // Import event constants
 import configLoader from '../config/ConfigLoader'; // Import config loader instance
 import { type WeaponsConfig, type WeaponConfig } from '../config/schemas/weaponSchema'; // Import weapon config types
 import EconomyManager from './EconomyManager'; // Import EconomyManager type
-// import { PlayerState } from '../types/PlayerState'; // Assuming a type definition exists or will be created - Not used here
+import { WeaponUpgrader } from './helpers/WeaponUpgrader'; // Import the helper class
 
 /** Defines the data expected for the WEAPON_STATE_UPDATED event */
 interface WeaponStateUpdateData {
@@ -43,6 +43,7 @@ interface RequestFireWeaponData {
 export default class WeaponManager {
   private eventBus: EventBusType;
   private economyManager: EconomyManager; // Add EconomyManager instance
+  private weaponUpgrader: WeaponUpgrader; // Instance of the helper class
   private weaponsConfig: WeaponsConfig; // Store all weapon configs
   private currentWeaponConfig: WeaponConfig | null = null; // Store config for the active weapon
   private currentWeaponId: string = 'bullet'; // Default initial weapon ID
@@ -57,6 +58,7 @@ export default class WeaponManager {
   constructor(eventBusInstance: EventBusType, economyManagerInstance: EconomyManager) {
     this.eventBus = eventBusInstance;
     this.economyManager = economyManagerInstance; // Store EconomyManager
+    this.weaponUpgrader = new WeaponUpgrader(this.economyManager); // Instantiate the helper
     this.weaponsConfig = configLoader.getWeaponsConfig(); // Load all weapon configs
     logger.log('WeaponManager initialized');
 
@@ -141,72 +143,44 @@ export default class WeaponManager {
   private handleWeaponUpgradeRequest(): void {
     logger.debug(`Received REQUEST_WEAPON_UPGRADE for ${this.currentWeaponId}`);
 
-    if (!this.currentWeaponConfig || !this.currentWeaponConfig.upgrade) {
-      logger.warn(`Weapon ${this.currentWeaponId} has no upgrade configuration.`);
+    if (!this.currentWeaponConfig) {
+      logger.warn(`Cannot upgrade, no current weapon config found for ID: ${this.currentWeaponId}`);
       return;
     }
 
-    // Calculate the cost for the *next* level
-    const baseCost = this.currentWeaponConfig.baseCost;
-    const costMultiplier = this.currentWeaponConfig.upgrade.costMultiplier;
-    const upgradeCost = Math.round(baseCost * Math.pow(costMultiplier, this.currentWeaponLevel));
+    // Delegate upgrade attempt to the helper class
+    const result = this.weaponUpgrader.attemptUpgrade(
+      this.currentWeaponConfig,
+      this.currentWeaponLevel
+    );
 
-    // Check currency
-    const currentCurrency = this.economyManager.getCurrentCurrency();
-    if (currentCurrency >= upgradeCost) {
-      // Spend currency
-      if (this.economyManager.spendCurrency(upgradeCost)) {
-        // Increment level
-        this.currentWeaponLevel++;
-        logger.log(
-          `Upgraded ${this.currentWeaponId} to Level ${this.currentWeaponLevel}. Cost: ${upgradeCost}`
-        );
-
-        // Apply upgrades based on multipliers
-        const upgradeConfig = this.currentWeaponConfig.upgrade;
-        const levelFactor = this.currentWeaponLevel - 1; // Apply multiplier starting from level 2
-
-        if (upgradeConfig.cooldownMultiplier) {
-          this.weaponCooldown = Math.round(
-            this.currentWeaponConfig.baseCooldownMs *
-              Math.pow(upgradeConfig.cooldownMultiplier, levelFactor)
-          );
-          logger.debug(`New cooldown: ${this.weaponCooldown}ms`);
-        }
-        // Apply damage upgrade only if baseDamage exists and multiplier exists
-        if (
-          typeof this.currentWeaponConfig.baseDamage === 'number' &&
-          upgradeConfig.damageMultiplier
-        ) {
-          this.currentDamage = Math.round(
-            this.currentWeaponConfig.baseDamage *
-              Math.pow(upgradeConfig.damageMultiplier, levelFactor)
-          );
-          logger.debug(`New damage: ${this.currentDamage}`);
-        }
-        // Apply speed upgrade only if multiplier exists
-        if (upgradeConfig.projectileSpeedMultiplier) {
-          // Use the base speed from the config, or the default if base speed wasn't defined
-          const baseSpeed = this.currentWeaponConfig.projectileSpeed ?? 400;
-          this.currentProjectileSpeed = Math.round(
-            baseSpeed * Math.pow(upgradeConfig.projectileSpeedMultiplier, levelFactor)
-          );
-          logger.debug(`New projectile speed: ${this.currentProjectileSpeed}`);
-        }
-        // TODO: Apply range upgrade if needed (requires changes elsewhere)
-
-        // Emit state update to refresh UI
-        this.emitStateUpdate();
-        // Optionally emit WEAPON_UPGRADED event here
-      } else {
-        // Should not happen if getCurrentCurrency check passed, but log just in case
-        logger.error(`Failed to spend currency ${upgradeCost} despite having ${currentCurrency}.`);
+    if (result.success) {
+      // Apply the new stats from the result
+      this.currentWeaponLevel = result.newLevel!; // Non-null assertion ok due to success check
+      if (result.newCooldown !== undefined) {
+        this.weaponCooldown = result.newCooldown;
       }
-    } else {
+      if (result.newDamage !== undefined) {
+        this.currentDamage = result.newDamage;
+      }
+      if (result.newProjectileSpeed !== undefined) {
+        this.currentProjectileSpeed = result.newProjectileSpeed;
+      }
+
       logger.log(
-        `Insufficient currency to upgrade ${this.currentWeaponId}. Need: ${upgradeCost}, Have: ${currentCurrency}`
+        `Successfully upgraded ${this.currentWeaponId} to Level ${this.currentWeaponLevel}.`
       );
-      // Optionally emit INSUFFICIENT_FUNDS event
+      logger.debug(
+        `Applied Stats - Cooldown: ${this.weaponCooldown}, Damage: ${this.currentDamage}, Speed: ${this.currentProjectileSpeed}`
+      );
+
+      // Emit state update to refresh UI
+      this.emitStateUpdate();
+      // Optionally emit WEAPON_UPGRADED event here
+    } else {
+      // Log the reason for failure (already logged by the upgrader, but can add more context here if needed)
+      logger.log(`Upgrade failed for ${this.currentWeaponId}: ${result.message}`);
+      // Optionally emit INSUFFICIENT_FUNDS or UPGRADE_FAILED event
     }
   }
 
@@ -232,21 +206,12 @@ export default class WeaponManager {
     let nextUpgradeCost: number | null = null;
 
     // Calculate next upgrade cost if applicable
+    // Use the helper logic (or duplicate it here if preferred)
     if (this.currentWeaponConfig?.upgrade && this.currentWeaponConfig.baseCost >= 0) {
       const baseCost = this.currentWeaponConfig.baseCost;
       const costMultiplier = this.currentWeaponConfig.upgrade.costMultiplier;
-      // Cost to upgrade TO level (currentWeaponLevel + 1)
-      // Cost(L) = baseCost * multiplier^(L-1)
-      // Next cost = Cost(currentLevel + 1) = baseCost * multiplier^((currentLevel + 1) - 1)
-      // Next cost = baseCost * multiplier^(currentLevel)
-      // We assume level 1 cost is baseCost (handled by purchase, not upgrade)
-      // Cost to upgrade *from* level 1 *to* level 2 is baseCost * multiplier^1
-      // Cost to upgrade *from* level L *to* level L+1 is baseCost * multiplier^L
-      // Note: Need to decide on a max level eventually. For now, calculate indefinitely.
-      // Use Math.pow for exponentiation. Round cost to integer.
       nextUpgradeCost = Math.round(baseCost * Math.pow(costMultiplier, this.currentWeaponLevel));
     } else {
-      // No upgrade info or base cost, so no upgrade cost
       nextUpgradeCost = null;
     }
 

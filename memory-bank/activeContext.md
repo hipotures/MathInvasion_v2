@@ -1,6 +1,13 @@
 # Active Context: Math Invasion v2
 
-**Current Focus:** Milestone M4: Rozbudowa Broni i UI - *Completing UI and Upgrade Logic.*
+**Current Focus:** Refactoring Complete - Ready for M5.
+
+**Recent Changes (Refactoring):**
+*   **Refactor WeaponManager (Line Limit):**
+    *   Identified `src/core/managers/WeaponManager.ts` (297 lines) was approaching the 300-line limit.
+    *   Created helper class `src/core/managers/helpers/WeaponUpgrader.ts`.
+    *   Moved weapon upgrade calculation and application logic from `WeaponManager.handleWeaponUpgradeRequest` to `WeaponUpgrader.attemptUpgrade`.
+    *   Updated `WeaponManager` to instantiate and delegate to `WeaponUpgrader`.
 
 **Recent Changes (M4 - Completed):**
 *   **M4 - Wave Number Display:**
