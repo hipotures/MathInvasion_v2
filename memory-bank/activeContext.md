@@ -72,6 +72,11 @@
     *   Created helper class `src/core/managers/helpers/WeaponUpgrader.ts`.
     *   Moved weapon upgrade calculation and application logic from `WeaponManager.handleWeaponUpgradeRequest` to `WeaponUpgrader.attemptUpgrade`.
     *   Updated `WeaponManager` to instantiate and delegate to `WeaponUpgrader`.
+*   **Refactor GameSceneCollisionHandler (Line Limit):**
+    *   Identified `src/phaser/handlers/GameSceneCollisionHandler.ts` exceeded 300 lines after M5 powerup implementation.
+    *   Created `src/phaser/handlers/GameSceneAreaEffectHandler.ts`.
+    *   Moved projectile explosion logic (`handleProjectileExplode`) from `GameSceneCollisionHandler` to `GameSceneAreaEffectHandler`.
+    *   Updated `GameScene.ts` to instantiate and manage `GameSceneAreaEffectHandler`.
 
 **Recent Changes (M4 - Completed):**
 *   **M4 - Wave Number Display:**

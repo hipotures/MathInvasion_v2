@@ -30,6 +30,14 @@
     8.  `PowerupManager` (`update`): Decrements timer for active effects.
     9.  `PowerupManager` (`removeEffect`): When timer expires, emits `POWERUP_EFFECT_REMOVED`.
     10. Relevant Managers: Listen for `POWERUP_EFFECT_REMOVED`, revert state modifications.
+*   **Death Bomb Flow:**
+    1.  `EnemyEventHandler` (`handleEnemyDestroyed`): Checks enemy config for `death_bomb` ability.
+    2.  If found, emits `SPAWN_PROJECTILE` with bomb details (type, damage, radius, time).
+    3.  `ProjectileEventHandler` (`handleProjectileCreated`): Creates bomb sprite.
+    4.  `ProjectileManager` (`update`): Decrements `timeToExplodeMs`.
+    5.  `ProjectileManager` (`triggerExplosion`): When timer expires, emits `PROJECTILE_EXPLODE` with details.
+    6.  `GameSceneAreaEffectHandler` (`handleProjectileExplode`): Listens for event, creates visual effect, uses `physics.overlapCirc` to find affected enemies/player, emits `PROJECTILE_HIT_ENEMY` or `PLAYER_HIT_PROJECTILE` for each.
+    7.  `EnemyManager`/`PlayerManager`: Handle damage events as usual.
 *   *(To be documented, potentially with diagrams)*
 
 **Critical Implementation Paths:**

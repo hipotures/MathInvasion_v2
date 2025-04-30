@@ -1,0 +1,120 @@
+import Phaser from 'phaser';
+import eventBus from '../../core/events/EventBus';
+import logger from '../../core/utils/Logger';
+import { EnemyEntity } from '../entities/EnemyEntity';
+import * as Events from '../../core/constants/events';
+
+// Define the structure for the PROJECTILE_EXPLODE event data
+// TODO: Centralize this interface if used elsewhere
+interface ProjectileExplodeData {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  damage: number;
+  owner: 'player' | 'enemy';
+}
+
+// Re-define necessary interfaces or import them if shared
+// TODO: Centralize these interfaces
+interface PlayerHitProjectileData {
+  projectileId: string;
+  damage: number;
+}
+interface ProjectileHitEnemyData {
+  projectileId: string;
+  enemyInstanceId: string;
+  damage: number;
+}
+
+/**
+ * Handles area effects within the game scene, specifically projectile explosions.
+ */
+export class GameSceneAreaEffectHandler {
+  private scene: Phaser.Scene;
+  private playerSprite: Phaser.Physics.Arcade.Sprite;
+  // We don't need the enemy group directly, physics.overlapCirc finds bodies
+
+  constructor(scene: Phaser.Scene, playerSprite: Phaser.Physics.Arcade.Sprite) {
+    this.scene = scene;
+    this.playerSprite = playerSprite;
+
+    this.handleProjectileExplode = this.handleProjectileExplode.bind(this);
+    eventBus.on(Events.PROJECTILE_EXPLODE, this.handleProjectileExplode);
+
+    logger.log('GameSceneAreaEffectHandler initialized.');
+  }
+
+  private handleProjectileExplode(data: ProjectileExplodeData): void {
+    logger.debug(
+      `Handling explosion for projectile ${data.id} at (${data.x}, ${data.y}) with radius ${data.radius}`
+    );
+
+    // Add visual effect for explosion
+    const explosionCircle = this.scene.add.circle(data.x, data.y, 5, 0xff8800, 0.5); // Start smaller
+    this.scene.tweens.add({
+      targets: explosionCircle,
+      radius: data.radius, // Expand to full radius
+      alpha: 0,
+      duration: 150, // Short duration
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        explosionCircle.destroy();
+      },
+    });
+
+    // Damage enemies within radius
+    // Note: physics.overlapCirc might be less performant than expected. Consider alternatives if issues arise.
+    this.scene.physics
+      .overlapCirc(
+        data.x,
+        data.y,
+        data.radius,
+        true, // Check overlap with bodies' centers
+        false // Don't include touching bodies (optional, default is true)
+      )
+      .forEach((body) => {
+        const gameObject = body.gameObject;
+        // Check if it's an enemy and not already destroyed
+        if (gameObject instanceof EnemyEntity && gameObject.active && gameObject.instanceId) {
+          // TODO: Add check for bomb owner if friendly fire needs prevention
+          // if (data.owner === 'enemy') { ... }
+          logger.debug(
+            `Explosion ${data.id} hit enemy ${gameObject.instanceId} within radius ${data.radius}`
+          );
+          // Emit event for EnemyManager to handle damage
+          const hitData: ProjectileHitEnemyData = {
+            projectileId: data.id, // Use explosion ID as source
+            enemyInstanceId: gameObject.instanceId,
+            damage: data.damage,
+          };
+          eventBus.emit(Events.PROJECTILE_HIT_ENEMY, hitData);
+        }
+      });
+
+    // Damage player if within radius and bomb owner is 'enemy'
+    if (data.owner === 'enemy' && this.playerSprite.active) {
+      const distanceToPlayer = Phaser.Math.Distance.Between(
+        data.x,
+        data.y,
+        this.playerSprite.x,
+        this.playerSprite.y
+      );
+      if (distanceToPlayer <= data.radius) {
+        logger.debug(`Explosion ${data.id} hit player within radius ${data.radius}`);
+        // Emit event for PlayerManager to handle damage
+        const hitData: PlayerHitProjectileData = {
+          projectileId: data.id, // Use explosion ID as source
+          damage: data.damage,
+        };
+        eventBus.emit(Events.PLAYER_HIT_PROJECTILE, hitData);
+      }
+    }
+  }
+
+  /** Clean up event listeners */
+  public destroy(): void {
+    eventBus.off(Events.PROJECTILE_EXPLODE, this.handleProjectileExplode);
+    logger.log('GameSceneAreaEffectHandler destroyed and listeners removed');
+  }
+}

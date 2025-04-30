@@ -5,10 +5,10 @@ import ProjectileManager from '../../core/managers/ProjectileManager';
 import { EnemyManager } from '../../core/managers/EnemyManager'; // Import named export
 import { EnemyEntity } from '../entities/EnemyEntity';
 import * as Events from '../../core/constants/events';
-import * as Assets from '../../core/constants/assets'; // Import Assets
 import { PowerupCollectedData } from '../../core/managers/PowerupManager'; // Import PowerupCollectedData
 
 // Re-define necessary interfaces or import them if shared
+// Explosion data interface removed, handled by AreaEffectHandler
 interface PlayerHitEnemyData {
   enemyInstanceId: string;
   damage: number;
@@ -21,15 +21,6 @@ interface ProjectileHitEnemyData {
   projectileId: string;
   enemyInstanceId: string;
   damage: number;
-}
-// Define the structure for the PROJECTILE_EXPLODE event data
-interface ProjectileExplodeData {
-  id: string;
-  x: number;
-  y: number;
-  radius: number;
-  damage: number;
-  owner: 'player' | 'enemy';
 }
 
 export class GameSceneCollisionHandler {
@@ -63,10 +54,7 @@ export class GameSceneCollisionHandler {
     this.handleProjectileEnemyCollision = this.handleProjectileEnemyCollision.bind(this);
     this.handlePlayerProjectileCollision = this.handlePlayerProjectileCollision.bind(this);
     this.handlePlayerPowerupCollision = this.handlePlayerPowerupCollision.bind(this); // Bind new handler
-    this.handleProjectileExplode = this.handleProjectileExplode.bind(this); // Bind explosion handler
-
-    // Listen for explosion events
-    eventBus.on(Events.PROJECTILE_EXPLODE, this.handleProjectileExplode);
+    // Explosion listener and handler removed
   }
 
   // --- Collision Handlers ---
@@ -241,80 +229,16 @@ export class GameSceneCollisionHandler {
     powerupSprite.destroy();
     this.powerupSprites.delete(instanceId);
     // Play collection sound
-    this.scene.sound.play(Assets.AUDIO_POWERUP_GET_KEY);
+    // Play collection sound - Need to import Assets or pass sound manager
+    // For now, let's remove the sound play from here, it might fit better in the scene event handler
+    // this.scene.sound.play(Assets.AUDIO_POWERUP_GET_KEY);
   }
 
-  // --- Explosion Handler ---
-
-  private handleProjectileExplode(data: ProjectileExplodeData): void {
-    logger.debug(
-      `Handling explosion for projectile ${data.id} at (${data.x}, ${data.y}) with radius ${data.radius}`
-    );
-
-    // Add visual effect for explosion
-    const explosionCircle = this.scene.add.circle(data.x, data.y, data.radius, 0xff8800, 0.5);
-    this.scene.tweens.add({
-      targets: explosionCircle,
-      radius: data.radius * 1.5, // Expand slightly
-      alpha: 0,
-      duration: 150, // Short duration
-      ease: 'Quad.easeOut',
-      onComplete: () => {
-        explosionCircle.destroy();
-      },
-    });
-
-    // Damage enemies within radius
-    this.scene.physics
-      .overlapCirc(
-        data.x,
-        data.y,
-        data.radius,
-        true, // Check overlap with bodies
-        false // Don't include touching bodies (optional)
-      )
-      .forEach((body) => {
-        const gameObject = body.gameObject;
-        // Check if it's an enemy and not already destroyed
-        if (gameObject instanceof EnemyEntity && gameObject.active && gameObject.instanceId) {
-          // Ensure we don't hit enemies with friendly fire (if needed)
-          // if (data.owner === 'enemy') { // Only enemy bombs hit enemies? Or player bombs too? Assume enemy bombs hit enemies for now.
-          logger.debug(
-            `Explosion ${data.id} hit enemy ${gameObject.instanceId} within radius ${data.radius}`
-          );
-          // Emit event or call manager directly
-          const hitData: ProjectileHitEnemyData = {
-            projectileId: data.id, // Use explosion ID as source
-            enemyInstanceId: gameObject.instanceId,
-            damage: data.damage,
-          };
-          eventBus.emit(Events.PROJECTILE_HIT_ENEMY, hitData);
-          // }
-        }
-      });
-
-    // Damage player if within radius and bomb owner is 'enemy'
-    if (data.owner === 'enemy' && this.playerSprite.active) {
-      const distanceToPlayer = Phaser.Math.Distance.Between(
-        data.x,
-        data.y,
-        this.playerSprite.x,
-        this.playerSprite.y
-      );
-      if (distanceToPlayer <= data.radius) {
-        logger.debug(`Explosion ${data.id} hit player within radius ${data.radius}`);
-        const hitData: PlayerHitProjectileData = {
-          projectileId: data.id, // Use explosion ID as source
-          damage: data.damage,
-        };
-        eventBus.emit(Events.PLAYER_HIT_PROJECTILE, hitData);
-      }
-    }
-  }
+  // --- Explosion Handler Removed ---
 
   /** Clean up event listeners */
   public destroy(): void {
-    eventBus.off(Events.PROJECTILE_EXPLODE, this.handleProjectileExplode);
-    logger.log('GameSceneCollisionHandler destroyed and listeners removed');
+    // No listeners owned by this class anymore
+    logger.log('GameSceneCollisionHandler destroyed.');
   }
 }

@@ -15,6 +15,7 @@ import { EnemyEntity } from '../entities/EnemyEntity';
 // import { EnemyConfig } from '../../core/config/schemas/enemySchema'; // Unused import
 import { GameSceneCollisionHandler } from '../handlers/GameSceneCollisionHandler';
 import { GameSceneEventHandler } from '../handlers/GameSceneEventHandler'; // Import the event handler
+import { GameSceneAreaEffectHandler } from '../handlers/GameSceneAreaEffectHandler'; // Import the area effect handler
 // Event constants
 import * as Events from '../../core/constants/events';
 // Asset constants
@@ -38,6 +39,7 @@ export default class GameScene extends Phaser.Scene {
   private powerupManager!: PowerupManager; // Add PowerupManager instance
   private collisionHandler!: GameSceneCollisionHandler;
   private eventHandler!: GameSceneEventHandler; // Add property for the event handler
+  private areaEffectHandler!: GameSceneAreaEffectHandler; // Add property for the area effect handler
 
   // Game Objects
   private playerSprite!: Phaser.Physics.Arcade.Sprite;
@@ -105,6 +107,8 @@ export default class GameScene extends Phaser.Scene {
       this.projectileSprites,
       this.powerupSprites // Pass powerup sprites map
     );
+    // Instantiate the area effect handler
+    this.areaEffectHandler = new GameSceneAreaEffectHandler(this, this.playerSprite);
     // this.bindEventHandlers(); // No longer needed as handlers are bound in their own class
     this.setupEventListeners(); // Will now use eventHandler methods
     this.setupCollisions();
@@ -222,6 +226,9 @@ export default class GameScene extends Phaser.Scene {
       this.weaponManager.destroy();
       this.projectileManager.destroy();
       this.powerupManager.destroy(); // Destroy PowerupManager
+      this.collisionHandler.destroy(); // Destroy CollisionHandler
+      this.eventHandler.destroy(); // Destroy EventHandler
+      this.areaEffectHandler.destroy(); // Destroy AreaEffectHandler
       // this.enemyManager.destroy(); // Singleton, might not need destroy
       // this.economyManager.destroy(); // Add if needed
       this.projectileSprites.clear();
