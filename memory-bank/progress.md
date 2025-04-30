@@ -15,7 +15,7 @@
         *   `GameSceneEventHandler` uses correct texture for bomb projectile on `PROJECTILE_CREATED`.
         *   `GameScene` preloads bomb asset.
         *   `ProjectileManager` handles timed explosion (`timeToExplodeMs`) and emits `PROJECTILE_EXPLODE` event.
-        *   `GameSceneCollisionHandler` listens for `PROJECTILE_EXPLODE` and applies area damage to enemies and player within radius.
+        *   `GameSceneCollisionHandler` listens for `PROJECTILE_EXPLODE`, applies area damage to enemies/player, and displays a simple visual effect (tweening circle).
     *   **Enemy Aiming:** Enemies now fire projectiles towards the player's current position (`GameSceneEventHandler.handleEnemyRequestFire` updated).
     *   **Enemy Firing (Basic):** Enemies with `canShoot: true` and `shootConfig` in `enemies.yml` fire projectiles periodically (now aimed).
         *   Added `ENEMY_REQUEST_FIRE` event emitted by `EnemyEntity`.
@@ -60,7 +60,7 @@
 **What's Left to Build (Milestone M3):**
 *   **Enemy Variety & Behavior (Refinement):** ~~Refine movement patterns (implement `boss_weaving`, `bomber_dive`)~~ *(Done)*, add `homing`? ~~Implement aiming logic~~ *(Done)*. ~~Add `hexagon_bomber`~~ *(Done)*. Add *more* enemy types/assets. ~~Implement `death_bomb` projectile logic (visuals, collision)~~ *(Core logic Done)*. Add distinct enemy projectiles (graphics, types).
 *   **Difficulty Scaling:** Implement logic based on `difficulty.yml` (spawn rates, multipliers).
-*   **Visual Polish:** Add visual effect for death bomb explosion.
+*   **Visual Polish:** ~~Add visual effect for death bomb explosion~~ *(Done - Basic effect)*.
 
 **Overall Project Roadmap:**
 *   **M0: Szkielet Projektu (Setup)** - **COMPLETE**

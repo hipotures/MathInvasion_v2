@@ -195,9 +195,18 @@ export class GameSceneCollisionHandler {
       `Handling explosion for projectile ${data.id} at (${data.x}, ${data.y}) with radius ${data.radius}`
     );
 
-    // Optional: Add visual effect for explosion (e.g., circle graphic, particle effect)
-    // const explosionCircle = this.scene.add.circle(data.x, data.y, data.radius, 0xff8800, 0.5);
-    // this.scene.time.delayedCall(100, () => explosionCircle.destroy());
+    // Add visual effect for explosion
+    const explosionCircle = this.scene.add.circle(data.x, data.y, data.radius, 0xff8800, 0.5);
+    this.scene.tweens.add({
+      targets: explosionCircle,
+      radius: data.radius * 1.5, // Expand slightly
+      alpha: 0,
+      duration: 150, // Short duration
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        explosionCircle.destroy();
+      },
+    });
 
     // Damage enemies within radius
     this.scene.physics

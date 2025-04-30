@@ -190,7 +190,7 @@
     *   Updated `GameSceneCollisionHandler`:
         *   Added `ProjectileExplodeData` interface definition.
         *   Added listener for `PROJECTILE_EXPLODE` event.
-        *   Implemented `handleProjectileExplode` method to find overlapping enemies and player within the explosion radius using `physics.overlapCirc` and emit `PROJECTILE_HIT_ENEMY` or `PLAYER_HIT_PROJECTILE` events respectively.
+        *   Implemented `handleProjectileExplode` method to find overlapping enemies and player within the explosion radius using `physics.overlapCirc` and emit `PROJECTILE_HIT_ENEMY` or `PLAYER_HIT_PROJECTILE` events respectively. Added a simple tweening circle visual effect for the explosion.
         *   Added `destroy` method to clean up listener.
 
 **Next Steps (Milestone M3 - Wrogowie i Kolizje):**
