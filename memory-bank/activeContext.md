@@ -1,6 +1,45 @@
 # Active Context: Math Invasion v2
 
-**Current Focus:** Milestone M5 - Power-ups Implemented.
+**Current Focus:** Milestone M6 - Difficulty & Polish (Implementing Difficulty Scaling)
+
+**Recent Changes (M6 - Difficulty Scaling):**
+*   **Difficulty Configuration Loading:**
+    *   Verified `ConfigLoader.ts` already loads `config/difficulty.yml` and `difficultySchema.ts`.
+*   **EnemyManager Difficulty Integration (`src/core/managers/EnemyManager.ts`):**
+    *   Imported `DifficultyConfig`.
+    *   Added `difficultyConfig` property and loaded it in the constructor.
+    *   Initialized `currentWave` based on `difficultyConfig.initialWaveNumber`.
+    *   Added scaling helper methods: `getWaveMultiplier`, `getScaledHealth`, `getScaledSpeedMultiplier`, `getScaledReward`, `getScaledEnemyCount`.
+    *   Updated `spawnEnemy` to:
+        *   Calculate and store scaled health (`newEnemy.health`).
+        *   Calculate speed multiplier.
+        *   Emit `ENEMY_SPAWNED` event with scaled `initialHealth`, `maxHealth`, and `speedMultiplier`.
+    *   Updated `destroyEnemy` to calculate and emit scaled reward in `ENEMY_DESTROYED` event.
+    *   Updated `handleDamage` to emit scaled max health in `ENEMY_HEALTH_UPDATED` event.
+    *   Added `waveTimer` property for scheduling wave spawns.
+    *   Added `availableEnemyTypes` property and `updateAvailableEnemyTypes` method to manage enemy unlocks based on `difficultyConfig.waveEnemyTypeUnlock`.
+    *   Updated `advanceWave` to:
+        *   Increment `currentWave`.
+        *   Call `updateAvailableEnemyTypes`.
+        *   Emit `WAVE_UPDATED`.
+        *   Schedule the next `spawnWave` call using `setTimeout` based on `difficultyConfig.timeBetweenWavesSec`.
+        *   Clear previous timer if exists.
+    *   Added `spawnWave` method (placeholder logic):
+        *   Calculates scaled enemy count.
+        *   Checks for boss wave based on `difficultyConfig.bossWaveFrequency`.
+        *   Spawns boss (`difficultyConfig.bossId`) or regular enemies (randomly chosen from `availableEnemyTypes`) using placeholder positions.
+        *   Includes TODOs for implementing actual spawn patterns and wave clear conditions.
+    *   Updated `destroy` method to clear the `waveTimer`.
+*   **EnemyEventHandler Update (`src/phaser/handlers/event/EnemyEventHandler.ts`):**
+    *   Defined `EnemySpawnedData` interface matching the event payload (including `maxHealth`, `speedMultiplier`).
+    *   Updated `handleEnemySpawned` to accept `EnemySpawnedData` and pass `maxHealth` and `speedMultiplier` to the `EnemyEntity` constructor.
+    *   Updated `handleEnemyHealthUpdate` signature to expect `maxHealth` in the payload and pass it to `enemyEntity.takeDamage`.
+*   **EnemyEntity Update (`src/phaser/entities/EnemyEntity.ts`):**
+    *   Added `maxHealth` and `speedMultiplier` properties.
+    *   Updated constructor to accept and store `maxHealth` and `speedMultiplier`.
+    *   Applied `speedMultiplier` to initial velocity calculation in constructor.
+    *   Updated `takeDamage` method to accept optional `maxHealth` parameter for UI updates.
+    *   Updated `handleMovement` method to apply the stored `speedMultiplier` to the `baseSpeed` for all movement pattern calculations.
 
 **Recent Changes (M5 - Power-ups):**
 *   **Powerup System Core:**
@@ -402,10 +441,11 @@
     *   ~~Add `hexagon_bomber` enemy type~~ *(Done)*. Add *more* enemy types to `config/enemies.yml` and corresponding assets (`assets/images`, `constants/assets.ts`). Update `GameSceneEventHandler.handleEnemySpawned` mapping.
     *   ~~Implement `death_bomb` projectile logic (visuals, collision)~~ *(Done - Core logic implemented)*.
     *   ~~Add distinct projectile graphics/types for enemies (e.g., `enemy_laser`, `enemy_bullet_fast`)~~ *(Done - Graphics loaded and mapped)*.
-*   **Difficulty Scaling:**
-    *   Implement logic based on `config/difficulty.yml` to control enemy spawn rates, health multipliers, speed multipliers, etc., possibly based on score or time. Update `EnemyManager` and potentially `GameScene` spawner.
+*   **Difficulty Scaling:** *(Core logic implemented in EnemyManager)*
+    *   Implement actual spawn pattern logic (e.g., `standard_grid`) in `EnemyManager.spawnWave` or a dedicated spawner, replacing placeholder random spawning.
+    *   Implement wave clearing condition (e.g., check `this.enemies.size === 0` before calling `advanceWave` again, instead of relying solely on timer). Requires adding logic to track when a wave *starts* spawning vs. when it *ends*.
 *   **Collision Refinement:**
-    *   Review and refine collision layers/groups if needed for more complex interactions (e.g., different projectile types vs. enemy types).
+    *   Review and refine collision layers/groups if needed.
     *   ~~Consider adding brief invulnerability periods after hits (player and/or enemies). Update `PlayerManager` / `EnemyManager`.~~ *(Done for Player)*. Consider for enemies?
 *   **Visual Polish:**
     *   Add more distinct visual effects for different enemy destructions.

@@ -38,7 +38,37 @@
     5.  `ProjectileManager` (`triggerExplosion`): When timer expires, emits `PROJECTILE_EXPLODE` with details.
     6.  `GameSceneAreaEffectHandler` (`handleProjectileExplode`): Listens for event, creates visual effect, uses `physics.overlapCirc` to find affected enemies/player, emits `PROJECTILE_HIT_ENEMY` or `PLAYER_HIT_PROJECTILE` for each.
     7.  `EnemyManager`/`PlayerManager`: Handle damage events as usual.
-*   *(To be documented, potentially with diagrams)*
+*   **Difficulty Scaling & Wave Flow:**
+    1.  `EnemyManager` (Constructor): Loads `difficulty.yml` via `ConfigLoader`. Initializes `currentWave` based on `initialWaveNumber`. Calls `advanceWave`.
+    2.  `EnemyManager` (`advanceWave`):
+        *   Increments `currentWave`.
+        *   Updates `availableEnemyTypes` based on `waveEnemyTypeUnlock` config.
+        *   Emits `WAVE_UPDATED` event (for `UIScene`).
+        *   Uses `setTimeout` to schedule `spawnWave` based on `timeBetweenWavesSec`.
+    3.  `EnemyManager` (`spawnWave` - *Timer Callback*):
+        *   Calculates scaled enemy count using `getScaledEnemyCount` (applies `enemyCountMultiplierPerWave`).
+        *   Checks if it's a boss wave (`currentWave % bossWaveFrequency === 0`).
+        *   If boss wave, calls `spawnEnemy` with `bossId`.
+        *   If regular wave, loops `scaledEnemyCount` times:
+            *   Selects a random enemy type from `availableEnemyTypes`.
+            *   Determines spawn position (currently random placeholder, TODO: use `spawnPattern` config).
+            *   Calls `spawnEnemy` with selected type and position.
+        *   *(TODO: Implement wave clear check before next `advanceWave`)*
+    4.  `EnemyManager` (`spawnEnemy`):
+        *   Retrieves base `EnemyConfig`.
+        *   Calculates scaled health using `getScaledHealth` (applies `enemyHealthMultiplierPerWave`).
+        *   Calculates speed multiplier using `getScaledSpeedMultiplier` (applies `enemySpeedMultiplierPerWave`).
+        *   Emits `ENEMY_SPAWNED` with scaled `initialHealth`, `maxHealth`, and `speedMultiplier`.
+    5.  `EnemyEventHandler` (`handleEnemySpawned`):
+        *   Receives `ENEMY_SPAWNED` event data.
+        *   Creates `EnemyEntity`, passing scaled `maxHealth` and `speedMultiplier` to its constructor.
+    6.  `EnemyEntity` (Constructor): Stores `maxHealth` and `speedMultiplier`. Applies `speedMultiplier` to initial velocity.
+    7.  `EnemyEntity` (`handleMovement`): Uses stored `speedMultiplier` when calculating movement velocity based on `baseSpeed`.
+    8.  `EnemyManager` (`destroyEnemy`):
+        *   Calculates scaled reward using `getScaledReward` (applies `enemyRewardMultiplierPerWave`).
+        *   Emits `ENEMY_DESTROYED` with scaled `reward`.
+    9.  `EconomyManager` (`handleEnemyDestroyed`): Receives `ENEMY_DESTROYED` event and adds the (scaled) `reward` to currency.
+    10. `EnemyManager` (`handleDamage`): When emitting `ENEMY_HEALTH_UPDATED`, calculates and includes scaled `maxHealth` for UI consistency.
 
 **Critical Implementation Paths:**
 *   Ensuring accurate physics/graphics synchronization.

@@ -8,21 +8,27 @@ import { ENEMY_REQUEST_FIRE } from '../../core/constants/events'; // Import the 
 export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
   public instanceId: string;
   public configId: string;
-  public enemyConfig: EnemyConfig; // Store the config for reference (Made public)
-  private shootCooldownTimer: number = 0; // Timer for shooting cooldown
+  public enemyConfig: EnemyConfig;
+  private shootCooldownTimer: number = 0;
+  private maxHealth: number; // Store scaled max health
+  private speedMultiplier: number; // Store speed multiplier
 
   constructor(
     scene: Phaser.Scene,
     x: number,
     y: number,
-    texture: string, // Placeholder texture key (e.g., 'vite' or a specific enemy key later)
+    texture: string,
     instanceId: string,
-    config: EnemyConfig
+    config: EnemyConfig,
+    maxHealth: number, // Add maxHealth parameter
+    speedMultiplier: number // Add speedMultiplier parameter
   ) {
     super(scene, x, y, texture);
     this.instanceId = instanceId;
     this.configId = config.id;
     this.enemyConfig = config;
+    this.maxHealth = maxHealth; // Store maxHealth
+    this.speedMultiplier = speedMultiplier; // Store speedMultiplier
 
     // Initialize cooldown if the enemy can shoot
     if (this.enemyConfig.canShoot && this.enemyConfig.shootConfig) {
@@ -34,20 +40,26 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // Basic physics properties (adjust as needed based on config later)
-    this.setCollideWorldBounds(true); // Prevent going off-screen initially
-    this.setCircle(config.collisionRadius); // Use collision radius from config
-    this.setVelocityX(config.baseSpeed * (Math.random() < 0.5 ? -1 : 1)); // Simple initial horizontal movement
+    // Basic physics properties
+    this.setCollideWorldBounds(true);
+    this.setCircle(config.collisionRadius);
+    // Apply speed multiplier to initial velocity
+    const initialSpeed = config.baseSpeed * this.speedMultiplier;
+    this.setVelocityX(initialSpeed * (Math.random() < 0.5 ? -1 : 1));
 
-    // Set interactive if needed later for clicks, etc.
+    // Set interactive if needed later
     // this.setInteractive();
 
     Logger.debug(`EnemyEntity created: ${this.configId} (Instance: ${this.instanceId})`);
   }
 
-  // Placeholder method for taking damage (could update tint, play animation, etc.)
-  public takeDamage(amount: number): void {
-    Logger.debug(`Enemy ${this.instanceId} took ${amount} damage (visual placeholder)`);
+  // Updated to accept optional maxHealth for UI updates
+  public takeDamage(amount: number, maxHealth?: number): void {
+    // Use the stored maxHealth if not provided by the event
+    const currentMaxHealth = maxHealth ?? this.maxHealth;
+    Logger.debug(
+      `Enemy ${this.instanceId} took ${amount} damage (visual placeholder). Max Health: ${currentMaxHealth}`
+    );
     // Example: Flash red
     this.setTint(0xff0000);
     this.scene.time.delayedCall(100, () => {
@@ -104,7 +116,8 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
     if (!this.body) {
       return;
     }
-    const speed = this.enemyConfig.baseSpeed;
+    // Apply speed multiplier to base speed for movement calculations
+    const speed = this.enemyConfig.baseSpeed * this.speedMultiplier;
 
     switch (this.enemyConfig.movementPattern) {
       case 'invader_standard':

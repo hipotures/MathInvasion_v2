@@ -17,6 +17,16 @@ interface EnemyDestroyedData {
   config: EnemyConfig; // The full config is now included
 }
 
+// Define the structure for the ENEMY_SPAWNED event data (including new fields)
+interface EnemySpawnedData {
+  instanceId: string;
+  config: EnemyConfig;
+  position: { x: number; y: number };
+  initialHealth: number; // Now represents scaled health
+  maxHealth: number; // Scaled max health
+  speedMultiplier: number; // Scaled speed multiplier
+}
+
 export class EnemyEventHandler {
   private scene: Phaser.Scene;
   private sound: Phaser.Sound.BaseSoundManager;
@@ -46,11 +56,7 @@ export class EnemyEventHandler {
 
   // --- Event Handlers ---
 
-  public handleEnemySpawned(data: {
-    instanceId: string;
-    config: EnemyConfig;
-    position: { x: number; y: number };
-  }): void {
+  public handleEnemySpawned(data: EnemySpawnedData): void {
     let enemyAssetKey: string;
     switch (data.config.id) {
       case 'triangle_scout':
@@ -79,7 +85,9 @@ export class EnemyEventHandler {
       data.position.y,
       enemyAssetKey,
       data.instanceId,
-      data.config
+      data.config,
+      data.maxHealth, // Pass scaled max health
+      data.speedMultiplier // Pass speed multiplier
     );
     this.enemyGroup.add(enemyEntity);
     this.enemySprites.set(data.instanceId, enemyEntity);
@@ -122,9 +130,15 @@ export class EnemyEventHandler {
     }
   }
 
-  public handleEnemyHealthUpdate(data: { instanceId: string }): void {
+  // Updated to expect maxHealth in the payload
+  public handleEnemyHealthUpdate(data: {
+    instanceId: string;
+    currentHealth: number;
+    maxHealth: number;
+  }): void {
     const enemyEntity = this.enemySprites.get(data.instanceId);
-    enemyEntity?.takeDamage(0); // Trigger visual effect
+    // Pass maxHealth to takeDamage if needed for visual effects (e.g., health bar update)
+    enemyEntity?.takeDamage(0, data.maxHealth); // Trigger visual effect, pass max health
   }
 
   // --- Helper Methods ---

@@ -1,9 +1,9 @@
-import EventBus, { EventBus as EventBusType } from '../events/EventBus'; // Import default instance and type separately
-import Logger, { Logger as LoggerType } from '../utils/Logger'; // Import default instance and type separately
-import { EnemyConfig, EnemiesConfig } from '../config/schemas/enemySchema'; // Keep EnemyConfig named, add EnemiesConfig
-import ConfigLoader from '../config/ConfigLoader'; // Import default instance
+import EventBus, { EventBus as EventBusType } from '../events/EventBus';
+import Logger, { Logger as LoggerType } from '../utils/Logger';
+import { EnemyConfig, EnemiesConfig } from '../config/schemas/enemySchema';
+import { DifficultyConfig } from '../config/schemas/difficultySchema'; // Import DifficultyConfig
+import ConfigLoader from '../config/ConfigLoader';
 // Event constants
-
 import { ENEMY_SPAWNED } from '../constants/events';
 
 import { ENEMY_DESTROYED } from '../constants/events';
@@ -46,33 +46,114 @@ interface WaveUpdateData {
 export class EnemyManager {
   private enemies: Map<string, EnemyInstance> = new Map();
   private nextInstanceId = 0;
-  private enemyConfigs: Map<string, EnemyConfig> = new Map();
-  private currentWave = 0; // Start at wave 0, advance to 1 initially
+  private enemyConfigs: Map<string, EnemyConfig>; // Initialize in constructor
+  private difficultyConfig: DifficultyConfig; // Store difficulty config
+  private currentWave: number;
+  private waveTimer: number | null = null; // Timer ID for setTimeout/setInterval
+  private availableEnemyTypes: string[] = []; // Types available for the current wave
 
   constructor(
-    private eventBus: EventBusType = EventBus, // Use type alias for annotation, default instance for default value
-    private logger: LoggerType = Logger // Use type alias for annotation, default instance for default value
+    private eventBus: EventBusType = EventBus,
+    private logger: LoggerType = Logger
   ) {
-    this.loadConfigs();
-    this.registerEventListeners(); // Call listener registration
-    this.logger.log('EnemyManager initialized'); // Changed info to log
-    this.advanceWave(); // Start the first wave immediately after init
+    // Load configs immediately in constructor
+    this.enemyConfigs = this.loadEnemyConfigs();
+    this.difficultyConfig = this.loadDifficultyConfig();
+    // Initialize currentWave based on config, ensuring it starts before the first wave number for advanceWave logic
+    this.currentWave = this.difficultyConfig.initialWaveNumber - 1;
+
+    this.registerEventListeners();
+    this.logger.log('EnemyManager initialized');
+    this.advanceWave(); // Start the first wave sequence
   }
 
-  private loadConfigs(): void {
+  private loadEnemyConfigs(): Map<string, EnemyConfig> {
     try {
-      // Assuming ConfigLoader default instance has the method
       const configs: EnemiesConfig = ConfigLoader.getEnemiesConfig();
+      const map = new Map<string, EnemyConfig>();
       configs.forEach((config: EnemyConfig) => {
-        // Add explicit type annotation for config
-        this.enemyConfigs.set(config.id, config);
+        map.set(config.id, config);
       });
-      this.logger.log(`Loaded ${this.enemyConfigs.size} enemy configurations.`); // Changed info to log
+      this.logger.log(`Loaded ${map.size} enemy configurations.`);
+      return map;
     } catch (error) {
       this.logger.error('Failed to load enemy configurations:', error);
-      // Handle error appropriately, maybe prevent game start
+      throw new Error('Enemy configuration loading failed.');
     }
   }
+
+  private loadDifficultyConfig(): DifficultyConfig {
+    try {
+      const config = ConfigLoader.getDifficultyConfig();
+      this.logger.log('Loaded difficulty configuration.');
+      return config;
+    } catch (error) {
+      this.logger.error('Failed to load difficulty configuration:', error);
+      // Provide a default or throw error to prevent game start
+      throw new Error('Difficulty configuration is essential and failed to load.');
+    }
+  }
+
+  // --- Scaling Calculations ---
+
+  private getWaveMultiplier(baseMultiplier: number): number {
+    // Apply multiplier cumulatively for each wave past the first
+    // Ensure the exponent is non-negative
+    return Math.pow(
+      baseMultiplier,
+      Math.max(0, this.currentWave - this.difficultyConfig.initialWaveNumber)
+    );
+  }
+
+  private getScaledHealth(baseHealth: number): number {
+    const multiplier = this.getWaveMultiplier(this.difficultyConfig.enemyHealthMultiplierPerWave);
+    return Math.round(baseHealth * multiplier); // Round to nearest integer
+  }
+
+  // Note: Speed scaling needs to be applied where velocity is set (likely EnemyEntity or spawn event)
+  // This method provides the multiplier for the entity/handler to use.
+  private getScaledSpeedMultiplier(): number {
+    return this.getWaveMultiplier(this.difficultyConfig.enemySpeedMultiplierPerWave);
+  }
+
+  private getScaledReward(baseReward: number): number {
+    const multiplier = this.getWaveMultiplier(this.difficultyConfig.enemyRewardMultiplierPerWave);
+    return Math.round(baseReward * multiplier);
+  }
+
+  private getScaledEnemyCount(): number {
+    // For simplicity, let's assume a base count and apply multiplier.
+    // A more complex approach might use difficultyConfig directly or a base count per wave.
+    const baseCount = 10; // Example base count, maybe move to config later
+    const multiplier = this.getWaveMultiplier(this.difficultyConfig.enemyCountMultiplierPerWave);
+    return Math.round(baseCount * multiplier);
+  }
+
+  private updateAvailableEnemyTypes(): void {
+    const available = [...this.difficultyConfig.initialEnemyTypes];
+    const unlocks = this.difficultyConfig.waveEnemyTypeUnlock;
+    // Ensure unlocks are sorted numerically by wave number (key)
+    const sortedUnlockWaves = Object.keys(unlocks)
+      .map(Number)
+      .sort((a, b) => a - b);
+
+    for (const waveNum of sortedUnlockWaves) {
+      if (this.currentWave >= waveNum) {
+        const typeToAdd = unlocks[waveNum.toString()]; // Access using string key
+        if (!available.includes(typeToAdd)) {
+          available.push(typeToAdd);
+        }
+      } else {
+        break; // Stop checking once we pass the current wave
+      }
+    }
+    this.availableEnemyTypes = available;
+    this.logger.debug(
+      `Available enemy types for wave ${this.currentWave}: ${available.join(', ')}`
+    );
+  }
+
+  // --- Spawning Logic ---
 
   public spawnEnemy(configId: string, position: { x: number; y: number }): void {
     const config = this.enemyConfigs.get(configId);
@@ -81,25 +162,31 @@ export class EnemyManager {
       return;
     }
 
+    const scaledHealth = this.getScaledHealth(config.baseHealth);
+    const speedMultiplier = this.getScaledSpeedMultiplier(); // Get speed multiplier
     const instanceId = `enemy-${this.nextInstanceId++}`;
     const newEnemy: EnemyInstance = {
       id: instanceId,
       configId: config.id,
-      health: config.baseHealth,
-      // Initialize other state properties based on config and position
+      health: scaledHealth, // Use scaled health
+      // TODO: Initialize other state properties based on config and position
     };
 
     this.enemies.set(instanceId, newEnemy);
     this.logger.debug(
-      `Spawning enemy: ${configId} (Instance ID: ${instanceId}) at (${position.x}, ${position.y})`
+      `Spawning enemy: ${configId} (Instance ID: ${instanceId}) at (${position.x}, ${position.y}) with ${scaledHealth} health (Speed x${speedMultiplier.toFixed(2)})`
     );
 
     // Emit an event for the GameScene to create the actual Phaser sprite/body
+    // Include scaled health as both initial and max for UI consistency
+    // Pass speed multiplier for EnemyEntity to use
     this.eventBus.emit(ENEMY_SPAWNED, {
       instanceId: newEnemy.id,
       config: config,
       position: position,
-      initialHealth: newEnemy.health,
+      initialHealth: scaledHealth, // Send scaled health
+      maxHealth: scaledHealth, // Send scaled health as max
+      speedMultiplier: speedMultiplier, // Pass scaled speed multiplier
     });
   }
 
@@ -118,10 +205,12 @@ export class EnemyManager {
       this.destroyEnemy(instanceId);
     } else {
       // Emit event for health update if needed by UI or effects
+      const baseMaxHealth = this.enemyConfigs.get(enemy.configId)?.baseHealth;
+      const scaledMaxHealth = baseMaxHealth ? this.getScaledHealth(baseMaxHealth) : enemy.health; // Calculate scaled max health
       this.eventBus.emit(ENEMY_HEALTH_UPDATED, {
         instanceId: enemy.id,
         currentHealth: enemy.health,
-        maxHealth: this.enemyConfigs.get(enemy.configId)?.baseHealth || enemy.health, // Provide max health for UI
+        maxHealth: scaledMaxHealth, // Provide scaled max health for UI
       });
     }
   }
@@ -135,19 +224,20 @@ export class EnemyManager {
     }
 
     const config = this.enemyConfigs.get(enemy.configId);
-    const reward = config?.baseReward ?? 0;
-    const scoreValue = config?.scoreValue ?? 0; // Get score value from config
+    const baseReward = config?.baseReward ?? 0;
+    const scaledReward = this.getScaledReward(baseReward); // Calculate scaled reward
+    const scoreValue = config?.scoreValue ?? 0;
 
     this.enemies.delete(instanceId);
-    this.logger.log(`Destroyed enemy: ${enemy.configId} (Instance ID: ${instanceId})`); // Changed info to log
+    this.logger.log(`Destroyed enemy: ${enemy.configId} (Instance ID: ${instanceId})`);
 
     // Emit event for GameScene to remove sprite/body and handle abilities
     const eventData: EnemyDestroyedData = {
       instanceId: instanceId,
       configId: enemy.configId,
-      reward: reward, // Send reward info for EconomyManager
-      scoreValue: scoreValue, // Send score value for EconomyManager
-      config: config as EnemyConfig, // Send the full config (cast needed as config could be undefined)
+      reward: scaledReward, // Send SCALED reward info
+      scoreValue: scoreValue,
+      config: config as EnemyConfig, // Send the full config
     };
     this.eventBus.emit(ENEMY_DESTROYED, eventData);
   }
@@ -180,22 +270,78 @@ export class EnemyManager {
     // Currently, enemy movement is basic velocity set on spawn in EnemyEntity
   }
 
-  /** Clean up event listeners when the manager is destroyed */
+  /** Clean up event listeners and timers when the manager is destroyed */
   public destroy(): void {
     this.eventBus.off(PROJECTILE_HIT_ENEMY, this.handleProjectileHitEnemy);
+    if (this.waveTimer !== null) {
+      clearTimeout(this.waveTimer); // Use clearTimeout for setTimeout ID
+      this.waveTimer = null;
+    }
     this.enemies.clear(); // Clear any remaining enemies
     this.enemyConfigs.clear();
-    this.logger.log('EnemyManager destroyed and listeners removed');
+    this.logger.log('EnemyManager destroyed, listeners and timers removed');
   }
 
   // --- Wave Management ---
 
-  /** Advances the wave number and emits an update event */
+  /** Advances the wave number, updates available enemies, emits event, and schedules next spawn */
   public advanceWave(): void {
+    // Clear any existing timer
+    if (this.waveTimer !== null) {
+      clearTimeout(this.waveTimer);
+      this.waveTimer = null;
+    }
+
     this.currentWave++;
     this.logger.log(`Advanced to Wave ${this.currentWave}`);
+    this.updateAvailableEnemyTypes(); // Update available types for the new wave
     this.emitWaveUpdate();
-    // TODO: Add logic here to spawn enemies for the new wave based on difficulty/wave number
+
+    // Schedule the actual spawning of the wave
+    const delayMs = this.difficultyConfig.timeBetweenWavesSec * 1000;
+    this.logger.log(`Scheduling wave ${this.currentWave} spawn in ${delayMs}ms`);
+    this.waveTimer = setTimeout(() => {
+      this.spawnWave();
+      this.waveTimer = null; // Clear timer ID after execution
+    }, delayMs);
+  }
+
+  /** Spawns enemies for the current wave based on difficulty settings */
+  private spawnWave(): void {
+    this.logger.log(`Spawning Wave ${this.currentWave}`);
+    const enemyCount = this.getScaledEnemyCount();
+    const isBossWave = this.currentWave % this.difficultyConfig.bossWaveFrequency === 0;
+
+    if (isBossWave) {
+      this.logger.log(
+        `Spawning Boss Wave ${this.currentWave} with boss: ${this.difficultyConfig.bossId}`
+      );
+      // TODO: Implement specific boss spawning logic (position, maybe unique pattern trigger)
+      // For now, just spawn the boss enemy type at a default position
+      this.spawnEnemy(this.difficultyConfig.bossId, { x: 400, y: 100 }); // Example position
+    } else {
+      this.logger.log(`Spawning ${enemyCount} enemies for regular wave ${this.currentWave}`);
+      // TODO: Implement spawn pattern logic (e.g., standard_grid)
+      // This likely needs coordination with GameScene or a dedicated Spawner class
+      // For now, spawn randomly selected available types at random positions (placeholder)
+      for (let i = 0; i < enemyCount; i++) {
+        if (this.availableEnemyTypes.length === 0) {
+          this.logger.warn('No available enemy types to spawn!');
+          break;
+        }
+        const randomTypeIndex = Math.floor(Math.random() * this.availableEnemyTypes.length);
+        const randomConfigId = this.availableEnemyTypes[randomTypeIndex];
+        // Placeholder random position - replace with pattern logic
+        const randomX = Math.random() * 700 + 50; // Example range
+        const randomY = Math.random() * 200 + 50; // Example range
+        this.spawnEnemy(randomConfigId, { x: randomX, y: randomY });
+      }
+    }
+
+    // TODO: Consider adding logic to trigger the *next* advanceWave only when
+    // the current wave is cleared (e.g., all enemies destroyed).
+    // This requires tracking active enemies per wave.
+    // For now, waves advance purely on timer.
   }
 
   /** Emits the current wave number */

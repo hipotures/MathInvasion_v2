@@ -1,8 +1,18 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Milestone M5: Power-upy i Zaawansowani Wrogowie - **IN PROGRESS**
+**Current Status:** Milestone M6: Pełny Cykl Gry i PWA - **IN PROGRESS** (Difficulty Scaling Implemented)
 
 **What Works:**
+*   **Milestone M6: Difficulty Scaling (Core Implemented)**
+    *   `EnemyManager` now loads `difficulty.yml` configuration.
+    *   Enemy health, speed, reward, and wave enemy count are scaled based on the current wave number and multipliers defined in `difficulty.yml`.
+    *   Enemy types available per wave are determined by `waveEnemyTypeUnlock` in `difficulty.yml`.
+    *   Wave progression is timed based on `timeBetweenWavesSec` from `difficulty.yml`.
+    *   Boss waves are triggered based on `bossWaveFrequency` and spawn the configured `bossId`.
+    *   Scaled health and speed multiplier are passed via `ENEMY_SPAWNED` event to `EnemyEventHandler` and then to `EnemyEntity`.
+    *   `EnemyEntity` uses the scaled speed multiplier for movement calculations.
+    *   Scaled reward is passed via `ENEMY_DESTROYED` event.
+    *   Scaled max health is passed via `ENEMY_HEALTH_UPDATED` event for UI consistency.
 *   **Milestone M5: Power-upy (Complete)**
     *   Created `PowerupManager` to handle powerup state, timers, and effects.
     *   Added powerup event constants.
@@ -94,7 +104,7 @@
 **What's Left to Build (Deferred from M3):**
 *   Add more enemy types/assets.
 *   Implement 'homing' movement pattern?
-*   Implement difficulty scaling logic (`difficulty.yml`).
+*   Implement difficulty scaling logic (`difficulty.yml`). *(Core logic done, needs spawn pattern/wave clear)*
 *   Consider enemy invulnerability after hits.
 
 **Overall Project Roadmap:**
@@ -103,8 +113,8 @@
 *   **M2: Podstawowa Rozgrywka (Ruch i Strzelanie)** - **COMPLETE**
 *   **M3: Wrogowie i Kolizje** - **COMPLETE** (Core features implemented, remaining tasks deferred)
 *   **M4: Rozbudowa Broni i UI** - **COMPLETE**
-*   **M5: Power-upy i Zaawansowani Wrogowie** - **IN PROGRESS** (Power-ups done, Advanced Enemies next)
-*   **M6: Pełny Cykl Gry i PWA**
+*   **M5: Power-upy i Zaawansowani Wrogowie** - **COMPLETE**
+*   **M6: Pełny Cykl Gry i PWA** - **IN PROGRESS** (Difficulty Scaling done, next: Spawn Patterns, Wave Clear, Polish)
 *   **M7: Balans, Testy, Optymalizacja i CI/CD**
 
 **Known Issues:**
