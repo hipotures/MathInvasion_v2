@@ -1,6 +1,6 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Milestone M3: Wrogowie i Kolizje - **IN PROGRESS** (Enemy behavior refinement ongoing).
+**Current Status:** Milestone M4: Rozbudowa Broni i UI - **STARTING**
 
 **What Works:**
 *   **Refactor GameScene (Line Limit):** Extracted collision logic to `GameSceneCollisionHandler` and event logic to `GameSceneEventHandler`, bringing `GameScene.ts` under the 300-line limit.
@@ -58,19 +58,20 @@
     *   Initial commit pushed to GitHub.
 *   **Fix Config Loading Order:** (Runtime Fix)
     *   Modified `src/main.ts` to use `async/await` to ensure `configLoader.loadAllConfigs()` completes before `new Phaser.Game()` is called.
+*   **Fix Config Loading/Validation Errors:** Fixed EnemyManager singleton instantiation and optional projectileSpeed in weapon schema.
 
-**What's Left to Build (Milestone M3):**
-*   **Enemy Variety & Behavior (Refinement):** ~~Refine movement patterns (implement `boss_weaving`, `bomber_dive`)~~ *(Done)*, add `homing`? ~~Implement aiming logic~~ *(Done)*. ~~Add `hexagon_bomber`~~ *(Done)*. Add *more* enemy types/assets. ~~Implement `death_bomb` projectile logic (visuals, collision)~~ *(Core logic Done)*. ~~Add distinct enemy projectiles (graphics, types)~~ *(Done - Mapped)*.
-*   **Difficulty Scaling:** Implement logic based on `difficulty.yml` (spawn rates, multipliers).
-*   **Collision Refinement:** Consider adding invulnerability for enemies?
-*   **Visual Polish:** ~~Add visual effect for death bomb explosion~~ *(Done - Basic effect)*.
+**What's Left to Build (Deferred from M3):**
+*   Add more enemy types/assets.
+*   Implement 'homing' movement pattern?
+*   Implement difficulty scaling logic (`difficulty.yml`).
+*   Consider enemy invulnerability after hits.
 
 **Overall Project Roadmap:**
 *   **M0: Szkielet Projektu (Setup)** - **COMPLETE**
 *   **M1: Konfiguracja i Zdarzenia** - **COMPLETE**
 *   **M2: Podstawowa Rozgrywka (Ruch i Strzelanie)** - **COMPLETE**
-*   **M3: Wrogowie i Kolizje** - **IN PROGRESS**
-*   **M4: Rozbudowa Broni i UI**
+*   **M3: Wrogowie i Kolizje** - **COMPLETE** (Core features implemented, remaining tasks deferred)
+*   **M4: Rozbudowa Broni i UI** - **STARTING**
 *   **M5: Power-upy i Zaawansowani Wrogowie**
 *   **M6: Pełny Cykl Gry i PWA**
 *   **M7: Balans, Testy, Optymalizacja i CI/CD**

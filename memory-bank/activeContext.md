@@ -1,8 +1,8 @@
 # Active Context: Math Invasion v2
 
-**Current Focus:** Milestone M3: Wrogowie i Kolizje - *Refining enemy behavior & adding variety.*
+**Current Focus:** Milestone M4: Rozbudowa Broni i UI - *Starting implementation.*
 
-**Recent Changes:**
+**Recent Changes (End of M3):**
 *   **M3 - Add Diamond Strafer Enemy:**
     *   Added `diamond_strafer` configuration to `config/enemies.yml` with `strafe_horizontal` movement pattern and shooting capabilities.
     *   Updated `src/core/config/schemas/enemySchema.ts` to add `strafe_horizontal` to the `movementPattern` enum.
@@ -208,8 +208,23 @@
     *   Updated `PlayerManager.emitStateUpdate` to include `isInvulnerable` state.
     *   Updated `GameSceneEventHandler` to listen for invulnerability events and apply/remove a blinking tween effect on the player sprite. Added `playerInvulnerabilityTween` property and updated `destroy` method.
 
-**Next Steps (Milestone M3 - Wrogowie i Kolizje):**
-*   **Enemy Variety & Behavior (Refinement):**
+**Next Steps (Milestone M4 - Rozbudowa Broni i UI):**
+*   **Weapon Upgrades:**
+    *   Implement UI elements for displaying current weapon level and upgrade cost.
+    *   Add input handling (e.g., key press or UI button click) to trigger weapon upgrades.
+    *   Update `WeaponManager` to handle upgrade requests:
+        *   Check if player has enough currency (via `EconomyManager`).
+        *   If affordable, deduct cost and apply upgrades based on `weaponConfig.upgrade` properties (damage, cooldown, range, etc.).
+        *   Emit events to update UI (e.g., `WEAPON_UPGRADED`, `CURRENCY_UPDATED`).
+*   **UI Enhancements:**
+    *   Make weapon selection buttons functional (emit `WEAPON_SWITCH` event).
+    *   Display current weapon name/level.
+    *   Display player health (e.g., health bar).
+    *   Display current wave number/score.
+
+*(Deferred M3 Tasks: Add more enemy types/assets, implement difficulty scaling, consider enemy invulnerability)*
+
+**Important Patterns & Preferences:**
     *   ~~Refine movement patterns: Implement actual `boss_weaving` (e.g., sine wave)~~ *(Done)*, ~~implement `bomber_dive`~~ *(Done)*, potentially add `'homing'` or other patterns from config. Update `EnemyEntity.preUpdate`.
     *   ~~Implement enemy aiming logic (e.g., fire towards player) in `GameScene.handleEnemyRequestFire`~~ *(Done)*.
     *   ~~Add `hexagon_bomber` enemy type~~ *(Done)*. Add *more* enemy types to `config/enemies.yml` and corresponding assets (`assets/images`, `constants/assets.ts`). Update `GameSceneEventHandler.handleEnemySpawned` mapping.
