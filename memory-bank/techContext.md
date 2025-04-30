@@ -8,7 +8,7 @@
 *   **Linting:** ESLint (with TypeScript, Prettier, Import plugins)
 *   **Formatting:** Prettier
 *   **Git Hooks:** Husky + lint-staged
-*   **Testing:** Vitest/Jest (Unit - planned), Playwright (E2E - planned)
+*   **Testing:** Vitest (Unit - in progress), Playwright (E2E - planned)
 *   **CI/CD:** GitHub Actions (planned)
 *   **Configuration:** YAML
 
@@ -19,7 +19,7 @@
 *   Run `npm run dev` to start the development server.
 *   Run `npm run build` to create a production build.
 *   Run `npm run lint` to check code style.
-*   Run `npm test` to run unit tests (when implemented).
+*   Run `npm test` to run unit tests.
 
 **Technical Constraints:**
 *   Targeting modern web browsers supporting Canvas/WebGL.

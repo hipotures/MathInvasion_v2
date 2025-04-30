@@ -1,14 +1,17 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Milestone M7 In Progress (Initial Balancing).
+**Current Status:** Milestone M7 In Progress (Unit Testing).
 
 **What Works:**
 *   **Milestone M7: Balans, Testy, Optymalizacja i CI/CD (In Progress)**
-    *   **Testing Setup (Initial):**
+    *   **Testing Setup:**
         *   Installed `vitest` dev dependency.
         *   Added `test` script to `package.json`.
         *   Created `tests/core/managers/EconomyManager.test.ts`.
         *   Implemented and passed initial unit tests for `EconomyManager` (initialization, currency/score add/spend, listener registration/cleanup).
+        *   Created `tests/core/managers/PlayerManager.test.ts`.
+        *   Added `invulnerabilityDurationMs` to `playerSchema.ts` and `player.yml`.
+        *   Implemented and passed unit tests for `PlayerManager` (initialization, state updates, invulnerability, death, movement event handling, interaction with mocked `PlayerPowerupHandler`).
     *   **Initial Balancing:**
         *   Reviewed `difficulty.yml`, `enemies.yml`, `weapons.yml`, `powerups.yml`.
         *   Adjusted `difficulty.yml`: Reduced health scaling (`enemyHealthMultiplierPerWave: 1.06`), added `diamond_strafer` (wave 10) and `hexagon_bomber` (wave 12) to unlock schedule.
@@ -157,3 +160,4 @@
 *   Confirmed separation of concerns: Core managers for logic/state, Phaser scenes for presentation/integration.
 *   Moved projectile boundary checks from `GameScene` to `ProjectileManager`.
 *   Adopted using `any` type for Phaser physics callback parameters due to type complexity, with casting inside handlers.
+*   Vitest mocking requires careful setup, especially for class instances and their methods. Using `vi.fn()` for methods within the `vi.mock` factory and referencing those mocks correctly is crucial. Assertions need to match exact event payloads or use `expect.objectContaining` carefully.

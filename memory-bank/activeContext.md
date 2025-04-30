@@ -6,8 +6,11 @@
 *   Installed `vitest` as a dev dependency (`npm install --save-dev vitest`).
 *   Added `test` script (`"test": "vitest"`) to `package.json`.
 *   Created initial unit test file `tests/core/managers/EconomyManager.test.ts`.
-*   Implemented basic tests for `EconomyManager` covering initialization, currency/score addition and spending, and listener registration/cleanup.
-*   Fixed issues with mock call assertions related to initial constructor calls. All initial tests for `EconomyManager` are passing.
+*   Implemented and passed basic tests for `EconomyManager` covering initialization, currency/score addition and spending, and listener registration/cleanup.
+*   Created unit test file `tests/core/managers/PlayerManager.test.ts`.
+*   Added `invulnerabilityDurationMs` to `playerSchema.ts` and `player.yml` to support testing.
+*   Implemented tests for `PlayerManager` covering initialization, state updates (health, movement via events), invulnerability logic, death event, and interaction with mocked `PlayerPowerupHandler`.
+*   Fixed various issues in `PlayerManager.test.ts` related to imports (default vs. named), Vitest mock setup (`vi.mock`, `vi.fn`, `mockReturnValue`), event payload assertions, and test matchers (`toBeLessThanOrEqual`). All tests for `PlayerManager` are now passing.
 
 **Recent Changes (M7 - Initial Balancing):**
 *   Reviewed `config/difficulty.yml`, `config/enemies.yml`, `config/weapons.yml`, `config/powerups.yml`.
@@ -470,29 +473,13 @@
     *   Updated `PlayerManager.emitStateUpdate` to include `isInvulnerable` state.
     *   Updated `GameSceneEventHandler` to listen for invulnerability events and apply/remove a blinking tween effect on the player sprite. Added `playerInvulnerabilityTween` property and updated `destroy` method.
 
-**Next Steps (Milestone M4 - Rozbudowa Broni i UI):**
-*   **Weapon Upgrades:**
-    *   ~~Implement UI elements for displaying current weapon level and upgrade cost.~~ *(Done)*
-    *   ~~Add input handling (e.g., key press or UI button click) to trigger weapon upgrades.~~ *(Done - 'U' key)*
-    *   ~~Update `WeaponManager` to handle upgrade requests:~~ *(Done)*
-        *   ~~Check if player has enough currency (via `EconomyManager`).~~ *(Done)*
-        *   ~~If affordable, deduct cost and apply upgrades based on `weaponConfig.upgrade` properties (damage, cooldown, range, etc.).~~ *(Done - Cooldown applied, TODO: Apply other stats)*
-        *   ~~Emit events to update UI (e.g., `WEAPON_UPGRADED`, `CURRENCY_UPDATED`).~~ *(Done - `WEAPON_STATE_UPDATED` emitted)*
-*   **UI Enhancements:**
-    *   ~~Make weapon selection buttons functional (emit `WEAPON_SWITCH` event).~~ *(Done)*
-    *   ~~Display current weapon name/level.~~ *(Done)*
-    *   ~~Display player health (e.g., health bar).~~ *(Done)*
-    *   ~~Display current wave number/score.~~ *(Done - Score & Wave implemented)*
-    *   ~~Display current wave number.~~ *(Done)*
-    *   ~~Apply other weapon upgrades (damage, range, etc.) in `WeaponManager.handleWeaponUpgradeRequest`.~~ *(Done - Damage & Speed)*
-
 **Next Steps (Milestone M7 - Balans, Testy, Optymalizacja i CI/CD):**
 *   **Balancing:**
     *   Review and adjust values in `config/*.yml` (enemy health/speed/reward/score, weapon damage/cooldown/cost, powerup duration/effects, difficulty scaling) based on playtesting.
     *   Fine-tune enemy spawn patterns and wave composition.
     *   Adjust powerup drop rates.
 *   **Testing:**
-    *   Implement unit tests (Vitest/Jest) for core managers and utility functions.
+    *   Implement unit tests (Vitest/Jest) for core managers and utility functions. *(EconomyManager, PlayerManager done)* -> Next: `WeaponManager`.
     *   Implement end-to-end tests (Playwright) for key gameplay flows (movement, shooting, upgrades, powerups, game over).
 *   **Optimization:**
     *   Profile game performance (FPS, memory usage) and identify bottlenecks.
@@ -550,6 +537,7 @@
 *   Phaser's `physics.overlap` callback parameter types can be tricky; using `any` and casting internally is a viable workaround.
 *   Passing damage information through multiple managers/scenes can be complex. Chosen approach: `WeaponManager` adds damage to `SPAWN_PROJECTILE` -> `ProjectileManager` stores damage -> `GameScene` retrieves damage via `getProjectileDamage` -> `GameScene` adds damage to `PROJECTILE_HIT_ENEMY` -> `EnemyManager` uses damage from event.
 *   Refactored projectile spawning: `WeaponManager` requests fire -> `GameScene` calculates spawn point & emits spawn details -> `ProjectileManager` creates state -> `GameScene` creates sprite. This keeps scene-specific calculations (spawn point) in the scene.
+*   Vitest mocking requires careful setup, especially for class instances and their methods. Using `vi.fn()` for methods within the `vi.mock` factory and referencing those mocks correctly is crucial. Assertions need to match exact event payloads or use `expect.objectContaining` carefully.
 
 **Active Decisions & Considerations:**
 *   Repository name: `MathInvasion_v2` (Public).
