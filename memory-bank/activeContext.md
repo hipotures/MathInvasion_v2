@@ -37,6 +37,10 @@
     *   Replaced generic `Function` type with specific function signatures in event listener type assertions.
     *   Removed unused `ListenerFn` type definition.
 *   Ran `npm test` and confirmed all tests (including `EconomyManager`, `PlayerManager`, and `WeaponManager`) are passing (35 tests total).
+*   Created unit test file `tests/core/managers/ProjectileManager.test.ts`.
+*   Refactored `ProjectileManager.test.ts` to correctly mock dependencies (`ConfigLoader` removed as it's not used by the manager), fix constructor call (`EventBus`, `worldWidth`, `worldHeight`), import necessary types (`SpawnProjectileData`, `ProjectileLike`), adjust assertions based on actual manager behavior (no config storage, no range check, correct event payload structure), and remove unused `@ts-expect-error` directives.
+*   Implemented and passed tests (8 tests) for `ProjectileManager` covering initialization, projectile spawning/destruction (via hit, bounds, explosion), owner/damage retrieval, and listener cleanup.
+*   Ran `npm test` and confirmed all tests (including `EconomyManager`, `PlayerManager`, `WeaponManager`, and `ProjectileManager`) are passing (71 tests total).
 
 **Recent Changes (M7 - Initial Balancing):**
 *   Reviewed `config/difficulty.yml`, `config/enemies.yml`, `config/weapons.yml`, `config/powerups.yml`.
