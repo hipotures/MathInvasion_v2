@@ -1,6 +1,6 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Milestone M6: Pełny Cykl Gry i PWA - **COMPLETE** (PWA Setup, Destruction Effects, Difficulty Scaling, Spawn Patterns, Wave Clear, Visual Polish Implemented)
+**Current Status:** Milestone M6 Complete. Preparing for M7.
 
 **What Works:**
 *   **Milestone M6: PWA Setup (Implemented)**
@@ -124,6 +124,8 @@
 *   Implement 'homing' movement pattern?
 *   Consider enemy invulnerability after hits.
 *   Refine distinct visual effects for different enemy destructions (e.g., particle effects, specific sounds).
+
+*(Note: These deferred/polish tasks are now tracked under M7 in activeContext.md)*
 
 **Overall Project Roadmap:**
 *   **M0: Szkielet Projektu (Setup)** - **COMPLETE**

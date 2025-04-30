@@ -1,6 +1,6 @@
 # Active Context: Math Invasion v2
 
-**Current Focus:** Milestone M6 - Pełny Cykl Gry i PWA (Completed PWA Setup & Destruction Effects)
+**Current Focus:** Milestone M7 - Balans, Testy, Optymalizacja i CI/CD
 
 **Recent Changes (M6 - PWA Setup & Destruction Effects):**
 *   **PWA Setup:**
@@ -471,8 +471,30 @@
     *   ~~Display current wave number.~~ *(Done)*
     *   ~~Apply other weapon upgrades (damage, range, etc.) in `WeaponManager.handleWeaponUpgradeRequest`.~~ *(Done - Damage & Speed)*
 
-*(Deferred M3 Tasks: Add more enemy types/assets, implement difficulty scaling, consider enemy invulnerability)*
-*(Deferred M4 Tasks: Apply range upgrades - requires changes in ProjectileManager/EventHandler)*
+**Next Steps (Milestone M7 - Balans, Testy, Optymalizacja i CI/CD):**
+*   **Balancing:**
+    *   Review and adjust values in `config/*.yml` (enemy health/speed/reward/score, weapon damage/cooldown/cost, powerup duration/effects, difficulty scaling) based on playtesting.
+    *   Fine-tune enemy spawn patterns and wave composition.
+    *   Adjust powerup drop rates.
+*   **Testing:**
+    *   Implement unit tests (Vitest/Jest) for core managers and utility functions.
+    *   Implement end-to-end tests (Playwright) for key gameplay flows (movement, shooting, upgrades, powerups, game over).
+*   **Optimization:**
+    *   Profile game performance (FPS, memory usage) and identify bottlenecks.
+    *   Optimize asset loading and management.
+    *   Review physics interactions and collision checks for efficiency.
+    *   Consider object pooling for projectiles and enemies if needed.
+*   **CI/CD:**
+    *   Set up GitHub Actions workflow to:
+        *   Run linting and tests on push/pull request.
+        *   Build the project.
+        *   Deploy the build (e.g., to GitHub Pages or another hosting provider).
+*   **Deferred Tasks & Polish:**
+    *   Add more enemy types/assets (Deferred from M3).
+    *   Implement 'homing' movement pattern? (Deferred from M3).
+    *   Consider enemy invulnerability after hits (Deferred from M3).
+    *   Refine distinct visual effects for different enemy destructions (Deferred from M6).
+    *   Apply range upgrades for weapons (Deferred from M4 - requires changes in ProjectileManager/EventHandler).
 
 **Recent Changes (M6 - Visual Polish):**
 *   **Death Bomb Explosion:** Enhanced visual effect in `GameSceneAreaEffectHandler.handleProjectileExplode` using expanding/fading core (white) and ring (orange) tweens.
