@@ -208,12 +208,12 @@ export default class WeaponManager {
   private emitStateUpdate(): void {
     let nextUpgradeCost: number | null = null;
 
-    // Calculate next upgrade cost if applicable
-    // Use the helper logic (or duplicate it here if preferred)
-    if (this.currentWeaponConfig?.upgrade && this.currentWeaponConfig.baseCost >= 0) {
-      const baseCost = this.currentWeaponConfig.baseCost;
-      const costMultiplier = this.currentWeaponConfig.upgrade.costMultiplier;
-      nextUpgradeCost = Math.round(baseCost * Math.pow(costMultiplier, this.currentWeaponLevel));
+    // Calculate next upgrade cost using the helper
+    if (this.currentWeaponConfig) {
+      nextUpgradeCost = this.weaponUpgrader.calculateNextUpgradeCost(
+        this.currentWeaponConfig,
+        this.currentWeaponLevel
+      );
     } else {
       nextUpgradeCost = null;
     }

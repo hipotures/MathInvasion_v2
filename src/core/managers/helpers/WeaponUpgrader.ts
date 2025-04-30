@@ -97,4 +97,28 @@ export class WeaponUpgrader {
       newProjectileSpeed: newProjectileSpeed, // Will be undefined if no multiplier
     };
   }
+  /**
+   * Calculates the cost to upgrade to the next level.
+   * @param currentWeaponConfig The configuration of the weapon.
+   * @param currentLevel The current level of the weapon.
+   * @returns The cost for the next upgrade, or null if not upgradeable.
+   */
+  public calculateNextUpgradeCost(
+    currentWeaponConfig: WeaponConfig,
+    currentLevel: number
+  ): number | null {
+    if (
+      !currentWeaponConfig.upgrade ||
+      typeof currentWeaponConfig.baseCost !== 'number' ||
+      currentWeaponConfig.baseCost < 0
+    ) {
+      return null; // No upgrades defined or invalid base cost
+    }
+
+    const baseCost = currentWeaponConfig.baseCost;
+    const costMultiplier = currentWeaponConfig.upgrade.costMultiplier;
+    // Cost to upgrade *from* currentLevel *to* currentLevel + 1
+    const upgradeCost = Math.round(baseCost * Math.pow(costMultiplier, currentLevel));
+    return upgradeCost;
+  }
 }

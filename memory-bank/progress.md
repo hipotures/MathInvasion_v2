@@ -1,19 +1,18 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Milestone M7 In Progress (Unit Testing).
+**Current Status:** Milestone M7 In Progress (Refactoring & Unit Testing).
 
 **What Works:**
 *   **Milestone M7: Balans, Testy, Optymalizacja i CI/CD (In Progress)**
-    *   **Testing Setup:**
+    *   **Code Modularity Refactoring:**
+        *   Refactored `HtmlDebugUI`, `GameSceneDebugHandler`, `HtmlUI` by extracting element creation/update logic into helper classes (`HtmlDebugElementFactory`, `DebugPanelUpdater`, `HtmlElementFactory`).
+        *   Refactored `WeaponManager` to use `WeaponUpgrader` for cost calculation (DRY).
+        *   Restructured test files (`WeaponManager.test.ts`, `EnemyManager.test.ts`, `PlayerManager.test.ts`, `ProjectileManager.test.ts`) using nested `describe` blocks for better organization.
+        *   All refactored files are now under the 300-line limit.
+    *   **Testing Setup & Initial Tests:**
         *   Installed `vitest` dev dependency.
         *   Added `test` script to `package.json`.
-        *   Created `tests/core/managers/EconomyManager.test.ts`.
-        *   Implemented and passed initial unit tests for `EconomyManager` (initialization, currency/score add/spend, listener registration/cleanup).
-        *   Created `tests/core/managers/PlayerManager.test.ts`.
-        *   Added `invulnerabilityDurationMs` to `playerSchema.ts` and `player.yml`.
-        *   Implemented and passed unit tests for `PlayerManager` (initialization, state updates, invulnerability, death, movement event handling, interaction with mocked `PlayerPowerupHandler`).
-        *   Reviewed existing unit tests for `WeaponManager` (`tests/core/managers/WeaponManager.test.ts`).
-        *   Ran `npm test` and confirmed all tests for `EconomyManager`, `PlayerManager`, and `WeaponManager` pass (35 total).
+        *   Created and passed unit tests for `EconomyManager`, `PlayerManager`, `WeaponManager`, `ProjectileManager`, `PowerupManager`, `EnemyManager`. *(Note: EnemyManager tests were fixed/completed during refactoring)*.
     *   **Initial Balancing:**
         *   Reviewed `difficulty.yml`, `enemies.yml`, `weapons.yml`, `powerups.yml`.
         *   Adjusted `difficulty.yml`: Reduced health scaling (`enemyHealthMultiplierPerWave: 1.06`), added `diamond_strafer` (wave 10) and `hexagon_bomber` (wave 12) to unlock schedule.
@@ -130,31 +129,26 @@
     *   Modified `src/main.ts` to use `async/await` to ensure `configLoader.loadAllConfigs()` completes before `new Phaser.Game()` is called.
 *   **Fix Config Loading/Validation Errors:** Fixed EnemyManager singleton instantiation and optional projectileSpeed in weapon schema.
 
-**What's Left to Build (Deferred from M3 / Remaining M6):**
-*   Add more enemy types/assets.
-*   Implement 'homing' movement pattern?
-*   Consider enemy invulnerability after hits.
-*   Add more enemy types/assets.
-*   Implement 'homing' movement pattern?
-*   Consider enemy invulnerability after hits.
-*   Refine distinct visual effects for different enemy destructions (e.g., particle effects, specific sounds).
-
-*(Note: These deferred/polish tasks are now tracked under M7 in activeContext.md)*
+**What's Left to Build (M7 & Deferred):**
+*   **M7 - Balancing:** Adjust config values, spawn patterns, drop rates based on playtesting.
+*   **M7 - Testing:**
+    *   Implement unit tests for `InputManager`, `WeaponUpgrader`, `WeaponPowerupHandler`, `PlayerPowerupHandler`, `EnemyWaveHandler`, `ConfigLoader`.
+    *   Implement end-to-end tests (Playwright).
+*   **M7 - Optimization:** Profile performance, optimize assets/physics, consider object pooling.
+*   **M7 - CI/CD:** Set up GitHub Actions workflow.
+*   **Deferred Tasks:** Add more enemy types/assets, 'homing' pattern, enemy invulnerability, refine destruction effects, implement weapon range upgrades.
 
 **Overall Project Roadmap:**
 *   **M0: Szkielet Projektu (Setup)** - **COMPLETE**
 *   **M1: Konfiguracja i Zdarzenia** - **COMPLETE**
 *   **M2: Podstawowa Rozgrywka (Ruch i Strzelanie)** - **COMPLETE**
-*   **M3: Wrogowie i Kolizje** - **COMPLETE** (Core features implemented, remaining tasks deferred)
+*   **M3: Wrogowie i Kolizje** - **COMPLETE**
 *   **M4: Rozbudowa Broni i UI** - **COMPLETE**
 *   **M5: Power-upy i Zaawansowani Wrogowie** - **COMPLETE**
 *   **M6: Pełny Cykl Gry i PWA** - **COMPLETE**
 *   **M7: Balans, Testy, Optymalizacja i CI/CD** - **IN PROGRESS**
 
 **Known Issues:**
-*   ~~Using placeholder graphics (Vite logo) for player, bullets, and enemies.~~ (Fixed)
-*   ~~Projectile spawn position is a fixed offset from player center.~~ (Fixed - calculated by `GameScene`)
-*   ~~Movement speed, cooldowns, projectile speeds, player health, enemy health, damage values are hardcoded placeholders.~~ (Fixed - loaded from config)
 *   Player vs Enemy collision instantly destroys the enemy (placeholder - uses 9999 damage in `GameScene`).
 
 **Evolution of Project Decisions:**
@@ -163,3 +157,5 @@
 *   Moved projectile boundary checks from `GameScene` to `ProjectileManager`.
 *   Adopted using `any` type for Phaser physics callback parameters due to type complexity, with casting inside handlers.
 *   Vitest mocking requires careful setup, especially for class instances and their methods. Using `vi.fn()` for methods within the `vi.mock` factory and referencing those mocks correctly is crucial. Assertions need to match exact event payloads or use `expect.objectContaining` carefully.
+*   Refactored large classes (`HtmlDebugUI`, `GameSceneDebugHandler`, `HtmlUI`) into smaller, focused helpers to improve modularity and adhere to line limits.
+*   Restructured large test files using nested `describe` blocks for better organization.

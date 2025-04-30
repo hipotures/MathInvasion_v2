@@ -1,270 +1,381 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { EnemyManager } from '../../../src/core/managers/EnemyManager';
+import { describe, it, expect, beforeEach, vi, Mocked } from 'vitest';
+import { EnemyManager } from '../../../src/core/managers/EnemyManager'; // Correct: Named import
 import { EventBus } from '../../../src/core/events/EventBus';
 import { Logger } from '../../../src/core/utils/Logger';
 import ConfigLoader from '../../../src/core/config/ConfigLoader';
-import { EnemyWaveHandler } from '../../../src/core/managers/helpers/EnemyWaveHandler';
 import { EnemiesConfig, EnemyConfig } from '../../../src/core/config/schemas/enemySchema';
 import { DifficultyConfig } from '../../../src/core/config/schemas/difficultySchema';
+import { EnemyWaveHandler } from '../../../src/core/managers/helpers/EnemyWaveHandler'; // Correct: Named import
 import * as Events from '../../../src/core/constants/events';
 
-// Mock dependencies
+// Mocks
 vi.mock('../../../src/core/events/EventBus');
 vi.mock('../../../src/core/utils/Logger');
-vi.mock('../../../src/core/config/ConfigLoader');
-vi.mock('../../../src/core/managers/helpers/EnemyWaveHandler');
+vi.mock('../../../src/core/config/ConfigLoader', () => ({
+  default: {
+    getEnemiesConfig: vi.fn(),
+    getDifficultyConfig: vi.fn(),
+  },
+}));
+
+// Mock the helper class
+let MockEnemyWaveHandlerFn: ReturnType<typeof vi.fn>;
+vi.mock('../../../src/core/managers/helpers/EnemyWaveHandler', () => {
+  const MockConstructor = vi.fn();
+  MockConstructor.prototype.getScaledHealth = vi.fn();
+  MockConstructor.prototype.getScaledSpeedMultiplier = vi.fn();
+  MockConstructor.prototype.getScaledReward = vi.fn();
+  MockConstructor.prototype.trackEnemyInWave = vi.fn();
+  MockConstructor.prototype.handleEnemyDestroyedInWave = vi.fn();
+  MockConstructor.prototype.start = vi.fn();
+  MockConstructor.prototype.destroy = vi.fn();
+  MockConstructor.prototype.getCurrentWave = vi.fn().mockReturnValue(1);
+  MockEnemyWaveHandlerFn = MockConstructor;
+  return { EnemyWaveHandler: MockConstructor };
+});
+
+const mockEventBus = new EventBus() as Mocked<EventBus>;
+const mockLogger = new Logger() as Mocked<Logger>;
+const mockConfigLoader = ConfigLoader as Mocked<typeof ConfigLoader>;
 
 // Mock Config Data
-const mockEnemyConfig1: EnemyConfig = {
-    id: 'triangle_scout',
-    // name: 'Triangle Scout', // Removed name, not in schema
-    shape: 'triangle', // Added shape based on schema
-    // visual: 'enemy_small_alien', // Removed visual, not in schema
-    baseHealth: 50,
-    baseReward: 10,
-    scoreValue: 100,
-    collisionDamage: 20,
-    movementPattern: 'invader_standard',
-    baseSpeed: 50,
-    collisionRadius: 15, // Added required property
-    canShoot: true, // Added required property
-    shootConfig: { projectileType: 'enemy_bullet', cooldownMs: 2000 }, // Corrected property name
-    abilities: [],
+const mockScoutConfig: EnemyConfig = {
+  id: 'triangle_scout',
+  shape: 'triangle',
+  collisionRadius: 15,
+  baseHealth: 10,
+  baseSpeed: 100,
+  baseReward: 5,
+  scoreValue: 10,
+  movementPattern: 'invader_standard',
+  collisionDamage: 10,
+  canShoot: false,
 };
-const mockEnemyConfig2: EnemyConfig = {
-    id: 'square_tank',
-    // name: 'Square Tank', // Removed name
-    shape: 'square', // Added shape
-    // visual: 'enemy_medium_alien', // Removed visual, not in schema
-    baseHealth: 150,
-    baseReward: 25,
-    scoreValue: 250,
-    collisionDamage: 30,
-    movementPattern: 'invader_standard',
-    baseSpeed: 30,
-    collisionRadius: 25, // Added required property
-    canShoot: true, // Added required property
-    shootConfig: { projectileType: 'enemy_bullet_fast', cooldownMs: 1500 }, // Corrected property name
-    abilities: [],
+const mockTankConfig: EnemyConfig = {
+  id: 'square_tank',
+  shape: 'square',
+  collisionRadius: 25,
+  baseHealth: 50,
+  baseSpeed: 60,
+  baseReward: 15,
+  scoreValue: 30,
+  movementPattern: 'invader_standard',
+  collisionDamage: 20,
+  canShoot: false,
 };
-const mockEnemiesConfig: EnemiesConfig = [mockEnemyConfig1, mockEnemyConfig2];
-
-const mockDifficultyConfig: DifficultyConfig = {
-    initialWaveNumber: 1,
-    timeBetweenWavesSec: 5,
-    enemyCountMultiplierPerWave: 1.1,
-    enemyHealthMultiplierPerWave: 1.05,
-    enemySpeedMultiplierPerWave: 1.02,
-    enemyRewardMultiplierPerWave: 1.03,
-    bossWaveFrequency: 10,
-    bossId: 'circle_boss', // Assuming a boss config exists elsewhere
-    initialEnemyTypes: ['triangle_scout'], // Added initial types based on schema
-    waveEnemyTypeUnlock: { // Corrected structure: Record<string, string>
-        "3": 'square_tank', // Unlock square_tank at wave 3
-        // Add more unlocks as needed, e.g., "5": 'another_enemy'
+const mockShooterConfig: EnemyConfig = {
+  id: 'diamond_strafer',
+  shape: 'diamond',
+  collisionRadius: 18,
+  baseHealth: 20,
+  baseSpeed: 120,
+  baseReward: 10,
+  scoreValue: 25,
+  movementPattern: 'strafe_horizontal',
+  collisionDamage: 15,
+  canShoot: true,
+  shootConfig: { projectileType: 'enemy_bullet_fast', cooldownMs: 1500, damage: 8, speed: 300 },
+};
+const mockBomberConfig: EnemyConfig = {
+  id: 'hexagon_bomber',
+  shape: 'hexagon',
+  collisionRadius: 22,
+  baseHealth: 40,
+  baseSpeed: 80,
+  baseReward: 20,
+  scoreValue: 50,
+  movementPattern: 'bomber_dive',
+  collisionDamage: 25,
+  canShoot: false,
+  abilities: [
+    {
+      type: 'death_bomb',
+      projectileType: 'enemy_bomb',
+      damage: 50,
+      radius: 100,
+      timeToExplodeMs: 500,
     },
-    spawnPattern: 'standard_grid', // Added required property
+  ],
+};
+const mockEnemiesConfig: EnemiesConfig = [
+  mockScoutConfig,
+  mockTankConfig,
+  mockShooterConfig,
+  mockBomberConfig,
+];
+const mockDifficultyConfig: DifficultyConfig = {
+  initialWaveNumber: 1,
+  timeBetweenWavesSec: 5,
+  enemyCountMultiplierPerWave: 1.1,
+  enemyHealthMultiplierPerWave: 1.05,
+  enemySpeedMultiplierPerWave: 1.02,
+  enemyRewardMultiplierPerWave: 1.03,
+  bossWaveFrequency: 10,
+  bossId: 'circle_boss',
+  initialEnemyTypes: ['triangle_scout'],
+  waveEnemyTypeUnlock: { '3': 'square_tank', '5': 'diamond_strafer', '7': 'hexagon_bomber' },
+  spawnPattern: 'standard_grid',
+};
+
+// Local interface for hit data payload
+interface ProjectileHitEnemyData {
+  projectileId: string;
+  enemyInstanceId: string;
+  damage: number;
+}
+
+// Helper to find the specific listener function attached to the mock EventBus
+// Define a more specific function type for the listener
+type ListenerFn<T> = (payload: T) => void;
+const findListener = <T>(eventName: string): ListenerFn<T> | undefined => {
+  const call = mockEventBus.on.mock.calls.find(
+    // Use the specific ListenerFn type in the check
+    (c: [string, ListenerFn<T>]) => c[0] === eventName
+  );
+  return call ? call[1] : undefined;
 };
 
 describe('EnemyManager', () => {
-    let enemyManager: EnemyManager;
-    let mockEventBus: EventBus;
-    let mockLogger: Logger;
-    let mockWaveHandlerInstance: EnemyWaveHandler;
+  let enemyManager: EnemyManager;
+  let mockWaveHandlerInstance: Mocked<EnemyWaveHandler>;
 
-    // Spies
-    let emitSpy: ReturnType<typeof vi.spyOn>;
-    let onSpy: ReturnType<typeof vi.spyOn>;
-    let offSpy: ReturnType<typeof vi.spyOn>;
-    // Define mock functions for handler methods *before* beforeEach
-    const mockStartFn = vi.fn();
-    const mockDestroyFn = vi.fn();
-    const mockGetScaledHealthFn = vi.fn().mockImplementation(base => base * 1.1);
-    const mockGetScaledSpeedMultiplierFn = vi.fn().mockReturnValue(1.0);
-    const mockGetScaledRewardFn = vi.fn().mockImplementation(base => base * 1.2);
-    const mockTrackEnemyInWaveFn = vi.fn();
-    const mockHandleEnemyDestroyedInWaveFn = vi.fn();
-    const mockGetCurrentWaveFn = vi.fn().mockReturnValue(5);
+  beforeEach(() => {
+    vi.clearAllMocks();
+    MockEnemyWaveHandlerFn.mockClear();
+
+    mockConfigLoader.getEnemiesConfig.mockReturnValue(mockEnemiesConfig);
+    mockConfigLoader.getDifficultyConfig.mockReturnValue(mockDifficultyConfig);
+
+    enemyManager = new EnemyManager(mockEventBus, mockLogger);
+    mockWaveHandlerInstance = MockEnemyWaveHandlerFn.mock.instances[0] as Mocked<EnemyWaveHandler>;
+
+    // Default mocks for helper methods
+    mockWaveHandlerInstance.getScaledHealth.mockReturnValue(10);
+    mockWaveHandlerInstance.getScaledSpeedMultiplier.mockReturnValue(1);
+    mockWaveHandlerInstance.getScaledReward.mockReturnValue(5);
+  });
+
+  describe('Initialization', () => {
+    it('should initialize correctly, load configs, and create EnemyWaveHandler', () => {
+      expect(enemyManager).toBeDefined();
+      expect(mockConfigLoader.getEnemiesConfig).toHaveBeenCalled();
+      expect(mockConfigLoader.getDifficultyConfig).toHaveBeenCalled();
+      expect(MockEnemyWaveHandlerFn).toHaveBeenCalledTimes(1);
+      expect(MockEnemyWaveHandlerFn).toHaveBeenCalledWith(
+        enemyManager,
+        mockDifficultyConfig,
+        mockEventBus,
+        mockLogger
+      );
+      expect(enemyManager['waveHandler']).toBe(mockWaveHandlerInstance);
+      // Keep expect.any(Function) here as we just check if *a* function was registered
+      expect(mockEventBus.on).toHaveBeenCalledWith(
+        Events.PROJECTILE_HIT_ENEMY,
+        expect.any(Function)
+      );
+    });
+  });
+
+  describe('Spawning', () => {
+    it('should spawn a basic enemy, apply scaling, and emit ENEMY_SPAWNED', () => {
+      const configId = 'triangle_scout';
+      const x = 100;
+      const y = 50;
+      const scaledHealth = 12;
+      const scaledSpeedMultiplier = 1.1;
+
+      mockWaveHandlerInstance.getScaledHealth.mockReturnValue(scaledHealth);
+      mockWaveHandlerInstance.getScaledSpeedMultiplier.mockReturnValue(scaledSpeedMultiplier);
+
+      enemyManager.spawnEnemy(configId, { x, y });
+
+      const actualEnemyId = `enemy-${enemyManager['nextInstanceId'] - 1}`;
+      expect(enemyManager['enemies'].size).toBe(1);
+      const enemyState = enemyManager['enemies'].get(actualEnemyId);
+      expect(enemyState).toBeDefined();
+      expect(enemyState?.configId).toBe(configId);
+      expect(enemyState?.health).toBe(scaledHealth);
+
+      expect(mockWaveHandlerInstance.getScaledHealth).toHaveBeenCalledWith(
+        mockScoutConfig.baseHealth
+      );
+      expect(mockWaveHandlerInstance.getScaledSpeedMultiplier).toHaveBeenCalled();
+      expect(mockWaveHandlerInstance.trackEnemyInWave).toHaveBeenCalledWith(actualEnemyId);
+
+      expect(mockEventBus.emit).toHaveBeenCalledWith(Events.ENEMY_SPAWNED, {
+        instanceId: actualEnemyId,
+        config: mockScoutConfig,
+        position: { x, y },
+        initialHealth: scaledHealth,
+        maxHealth: scaledHealth,
+        speedMultiplier: scaledSpeedMultiplier,
+      });
+    });
+
+    it('should spawn an enemy with shooting capabilities and emit correct config', () => {
+      const configId = 'diamond_strafer';
+      const x = 150;
+      const y = 75;
+      const scaledHealth = 25;
+      const scaledSpeedMultiplier = 1.2;
+
+      mockWaveHandlerInstance.getScaledHealth.mockReturnValue(scaledHealth);
+      mockWaveHandlerInstance.getScaledSpeedMultiplier.mockReturnValue(scaledSpeedMultiplier);
+
+      enemyManager.spawnEnemy(configId, { x, y });
+      const actualEnemyId = `enemy-${enemyManager['nextInstanceId'] - 1}`;
+
+      expect(enemyManager['enemies'].size).toBe(1);
+      expect(enemyManager['enemies'].get(actualEnemyId)?.configId).toBe(configId);
+
+      expect(mockEventBus.emit).toHaveBeenCalledWith(Events.ENEMY_SPAWNED, {
+        instanceId: actualEnemyId,
+        config: mockShooterConfig,
+        position: { x, y },
+        initialHealth: scaledHealth,
+        maxHealth: scaledHealth,
+        speedMultiplier: scaledSpeedMultiplier,
+      });
+    });
+
+    it('should spawn an enemy with abilities and emit correct config', () => {
+      const configId = 'hexagon_bomber';
+      const x = 180;
+      const y = 90;
+      const scaledHealth = 45;
+      const scaledSpeedMultiplier = 1.0;
+
+      mockWaveHandlerInstance.getScaledHealth.mockReturnValue(scaledHealth);
+      mockWaveHandlerInstance.getScaledSpeedMultiplier.mockReturnValue(scaledSpeedMultiplier);
+
+      enemyManager.spawnEnemy(configId, { x, y });
+      const actualEnemyId = `enemy-${enemyManager['nextInstanceId'] - 1}`;
+
+      expect(enemyManager['enemies'].size).toBe(1);
+      expect(enemyManager['enemies'].get(actualEnemyId)?.configId).toBe(configId);
+
+      expect(mockEventBus.emit).toHaveBeenCalledWith(Events.ENEMY_SPAWNED, {
+        instanceId: actualEnemyId,
+        config: mockBomberConfig,
+        position: { x, y },
+        initialHealth: scaledHealth,
+        maxHealth: scaledHealth,
+        speedMultiplier: scaledSpeedMultiplier,
+      });
+    });
+  });
+
+  describe('Damage & Destruction', () => {
+    let hitHandler: ((data: ProjectileHitEnemyData) => void) | undefined;
+    let actualEnemyId: string;
+    const configId = 'square_tank';
+    const initialX = 200,
+      initialY = 100;
 
     beforeEach(() => {
-        vi.clearAllMocks();
-
-        // Mock ConfigLoader return values
-        vi.mocked(ConfigLoader.getEnemiesConfig).mockReturnValue(mockEnemiesConfig);
-        vi.mocked(ConfigLoader.getDifficultyConfig).mockReturnValue(mockDifficultyConfig);
-
-        mockEventBus = new EventBus();
-        mockLogger = new Logger();
-
-        // Setup spies on mocks
-        emitSpy = vi.spyOn(mockEventBus, 'emit');
-        onSpy = vi.spyOn(mockEventBus, 'on');
-        offSpy = vi.spyOn(mockEventBus, 'off');
-        vi.spyOn(mockLogger, 'log');
-        vi.spyOn(mockLogger, 'debug');
-        vi.spyOn(mockLogger, 'warn');
-        vi.spyOn(mockLogger, 'error');
-
-        // Configure the mock implementation *before* EnemyManager instantiates it
-        vi.mocked(EnemyWaveHandler).mockImplementation(() => {
-            return {
-                start: mockStartFn,
-                getScaledHealth: mockGetScaledHealthFn,
-                getScaledSpeedMultiplier: mockGetScaledSpeedMultiplierFn,
-                getScaledReward: mockGetScaledRewardFn,
-                trackEnemyInWave: mockTrackEnemyInWaveFn,
-                handleEnemyDestroyedInWave: mockHandleEnemyDestroyedInWaveFn,
-                getCurrentWave: mockGetCurrentWaveFn,
-                destroy: mockDestroyFn,
-            } as unknown as EnemyWaveHandler; // Cast to satisfy type checker
-        });
-
-        // Instantiate the manager (this will now use the mocked implementation above)
-        enemyManager = new EnemyManager(mockEventBus, mockLogger);
-
-        // Get the instance for verification if needed (optional, as we check the mock fns directly)
-        mockWaveHandlerInstance = vi.mocked(EnemyWaveHandler).mock.instances[0];
-        if (!mockWaveHandlerInstance) {
-             throw new Error("Mock EnemyWaveHandler instance not created");
-         }
-
+      // Spawn an enemy for damage/destruction tests
+      enemyManager.spawnEnemy(configId, { x: initialX, y: initialY });
+      actualEnemyId = `enemy-${enemyManager['nextInstanceId'] - 1}`;
+      hitHandler = findListener<ProjectileHitEnemyData>(Events.PROJECTILE_HIT_ENEMY);
+      expect(hitHandler).toBeDefined(); // Ensure listener was found
     });
 
-    afterEach(() => {
-        enemyManager.destroy();
+    it('should handle PROJECTILE_HIT_ENEMY, apply damage, and emit ENEMY_HEALTH_UPDATED', () => {
+      const initialHealth = enemyManager['enemies'].get(actualEnemyId)?.health ?? 0;
+      const scaledMaxHealth = 60;
+      mockWaveHandlerInstance.getScaledHealth.mockReturnValue(scaledMaxHealth);
+
+      const hitData: ProjectileHitEnemyData = {
+        projectileId: 'proj_1',
+        enemyInstanceId: actualEnemyId,
+        damage: 10,
+      };
+      if (hitHandler) hitHandler(hitData);
+
+      const enemyState = enemyManager['enemies'].get(actualEnemyId);
+      expect(enemyState?.health).toBe(initialHealth - hitData.damage);
+
+      expect(mockEventBus.emit).toHaveBeenCalledWith(Events.ENEMY_HEALTH_UPDATED, {
+        instanceId: actualEnemyId,
+        currentHealth: initialHealth - hitData.damage,
+        maxHealth: scaledMaxHealth,
+        damageTaken: hitData.damage,
+      });
     });
 
-    it('should initialize, load configs, register listeners, and start wave handler', () => {
-        expect(enemyManager).toBeDefined();
-        expect(ConfigLoader.getEnemiesConfig).toHaveBeenCalledTimes(1);
-        expect(ConfigLoader.getDifficultyConfig).toHaveBeenCalledTimes(1);
-        expect(mockLogger.log).toHaveBeenCalledWith('EnemyManager initialized');
-        expect(onSpy).toHaveBeenCalledWith(Events.PROJECTILE_HIT_ENEMY, expect.any(Function));
-        // Check that the handler was instantiated and its start method called
-        expect(EnemyWaveHandler).toHaveBeenCalledTimes(1);
-        expect(EnemyWaveHandler).toHaveBeenCalledWith(enemyManager, mockDifficultyConfig, mockEventBus, mockLogger);
-        // Check the mock function directly
-        expect(mockStartFn).toHaveBeenCalledTimes(1);
+    it('should destroy enemy when health drops to zero or below after PROJECTILE_HIT_ENEMY', () => {
+      const initialHealth = enemyManager['enemies'].get(actualEnemyId)?.health ?? 0;
+      const scaledReward = 7;
+      mockWaveHandlerInstance.getScaledReward.mockReturnValue(scaledReward);
+
+      const hitData: ProjectileHitEnemyData = {
+        projectileId: 'proj_2',
+        enemyInstanceId: actualEnemyId,
+        damage: initialHealth + 5,
+      };
+      if (hitHandler) hitHandler(hitData);
+
+      expect(enemyManager['enemies'].has(actualEnemyId)).toBe(false);
+      expect(mockWaveHandlerInstance.getScaledReward).toHaveBeenCalledWith(
+        mockTankConfig.baseReward
+      ); // Use correct config
+      expect(mockWaveHandlerInstance.handleEnemyDestroyedInWave).toHaveBeenCalledWith(
+        actualEnemyId
+      );
+
+      expect(mockEventBus.emit).toHaveBeenCalledWith(Events.ENEMY_DESTROYED, {
+        instanceId: actualEnemyId,
+        configId: configId,
+        reward: scaledReward,
+        scoreValue: mockTankConfig.scoreValue, // Use correct config
+        config: mockTankConfig, // Use correct config
+      });
+      expect(mockEventBus.emit).not.toHaveBeenCalledWith(
+        Events.ENEMY_HEALTH_UPDATED,
+        expect.objectContaining({ instanceId: actualEnemyId })
+      );
     });
 
-    it('should spawn an enemy, call wave handler methods, and emit ENEMY_SPAWNED', () => {
-        const position = { x: 100, y: 50 };
-        const configId = 'triangle_scout';
-        const expectedScaledHealth = 50 * 1.1; // Based on mockWaveHandlerInstance mock
-        const expectedSpeedMultiplier = 1.0; // Based on mockWaveHandlerInstance mock
+    it('should destroy enemy when destroyEnemy is called directly', () => {
+      const scaledReward = 20;
+      mockWaveHandlerInstance.getScaledReward.mockReturnValue(scaledReward);
 
-        enemyManager.spawnEnemy(configId, position);
+      expect(enemyManager['enemies'].has(actualEnemyId)).toBe(true);
+      enemyManager.destroyEnemy(actualEnemyId);
 
-        // Check wave handler mock function calls
-        expect(mockGetScaledHealthFn).toHaveBeenCalledWith(mockEnemyConfig1.baseHealth);
-        expect(mockGetScaledSpeedMultiplierFn).toHaveBeenCalledTimes(1);
-        expect(mockTrackEnemyInWaveFn).toHaveBeenCalledWith(expect.stringContaining('enemy-'));
+      expect(enemyManager['enemies'].has(actualEnemyId)).toBe(false);
+      expect(mockWaveHandlerInstance.getScaledReward).toHaveBeenCalledWith(
+        mockTankConfig.baseReward
+      );
+      expect(mockWaveHandlerInstance.handleEnemyDestroyedInWave).toHaveBeenCalledWith(
+        actualEnemyId
+      );
 
-        // Check event emission
-        expect(emitSpy).toHaveBeenCalledWith(Events.ENEMY_SPAWNED, expect.objectContaining({
-            instanceId: expect.stringContaining('enemy-'),
-            config: mockEnemyConfig1,
-            position: position,
-            initialHealth: expectedScaledHealth,
-            maxHealth: expectedScaledHealth,
-            speedMultiplier: expectedSpeedMultiplier,
-        }));
-
-        // Check logger - Use regex for more robust matching of the dynamic message
-        expect(mockLogger.debug).toHaveBeenCalledWith(expect.stringMatching(/^Spawning enemy: triangle_scout \(Instance ID: enemy-\d+\) at \(\d+, \d+\) with [\d.]+ health \(Speed x[\d.]+\)$/));
+      expect(mockEventBus.emit).toHaveBeenCalledWith(Events.ENEMY_DESTROYED, {
+        instanceId: actualEnemyId,
+        configId: configId,
+        reward: scaledReward,
+        scoreValue: mockTankConfig.scoreValue,
+        config: mockTankConfig,
+      });
+      expect(mockEventBus.emit).not.toHaveBeenCalledWith(
+        Events.ENEMY_HEALTH_UPDATED,
+        expect.objectContaining({ instanceId: actualEnemyId })
+      );
     });
+  });
 
-     it('should handle PROJECTILE_HIT_ENEMY event, apply damage, and emit ENEMY_HEALTH_UPDATED', () => {
-        // 1. Spawn an enemy
-        const position = { x: 100, y: 50 };
-        const configId = 'square_tank';
-        enemyManager.spawnEnemy(configId, position);
-        const spawnedCall = emitSpy.mock.calls.find(call => call[0] === Events.ENEMY_SPAWNED);
-        const instanceId = (spawnedCall?.[1] as any)?.instanceId; // Get instance ID
-        expect(instanceId).toBeDefined();
-        emitSpy.mockClear(); // Clear emit spy after setup
+  describe('Cleanup', () => {
+    it('should clean up listeners and call waveHandler.destroy on destroy', () => {
+      // Capture the listener reference using the helper
+      const hitHandlerRef = findListener<ProjectileHitEnemyData>(Events.PROJECTILE_HIT_ENEMY);
+      expect(hitHandlerRef).toBeDefined(); // Ensure the listener was registered
 
-        // 2. Find and call the PROJECTILE_HIT_ENEMY listener
-        const hitListener = onSpy.mock.calls.find(call => call[0] === Events.PROJECTILE_HIT_ENEMY)?.[1];
-        expect(hitListener).toBeDefined();
-        const hitData = { projectileId: 'proj-1', enemyInstanceId: instanceId, damage: 40 };
-        // Assert listener type before calling
-        (hitListener as Function)(hitData);
+      enemyManager.destroy();
 
-        // 3. Verify damage handling
-        expect(mockLogger.debug).toHaveBeenCalledWith(expect.stringContaining(`Enemy ${instanceId} hit by projectile proj-1. Applying 40 damage.`));
-        expect(mockLogger.debug).toHaveBeenCalledWith(expect.stringContaining(`Health: ${150 * 1.1 - 40}`)); // Scaled health - damage
-
-        // 4. Verify ENEMY_HEALTH_UPDATED emitted (since health > 0)
-        expect(mockGetScaledHealthFn).toHaveBeenCalledWith(mockEnemyConfig2.baseHealth); // Called again for max health
-        expect(emitSpy).toHaveBeenCalledWith(Events.ENEMY_HEALTH_UPDATED, {
-            instanceId: instanceId,
-            currentHealth: 150 * 1.1 - 40,
-            maxHealth: 150 * 1.1, // Scaled max health
-        });
-        expect(emitSpy).not.toHaveBeenCalledWith(Events.ENEMY_DESTROYED, expect.anything()); // Should not be destroyed yet
+      // Use the captured reference in the .off assertion
+      expect(mockEventBus.off).toHaveBeenCalledWith(Events.PROJECTILE_HIT_ENEMY, hitHandlerRef);
+      expect(mockWaveHandlerInstance.destroy).toHaveBeenCalledTimes(1);
     });
-
-    it('should handle PROJECTILE_HIT_ENEMY event and trigger destroyEnemy if health drops to zero or below', () => {
-        // 1. Spawn an enemy
-        const position = { x: 100, y: 50 };
-        const configId = 'triangle_scout'; // 50 base health -> 55 scaled health
-        enemyManager.spawnEnemy(configId, position);
-        const spawnedCall = emitSpy.mock.calls.find(call => call[0] === Events.ENEMY_SPAWNED);
-        const instanceId = (spawnedCall?.[1] as any)?.instanceId;
-        expect(instanceId).toBeDefined();
-        emitSpy.mockClear();
-
-        // 2. Find and call the PROJECTILE_HIT_ENEMY listener with lethal damage
-        const hitListener = onSpy.mock.calls.find(call => call[0] === Events.PROJECTILE_HIT_ENEMY)?.[1];
-        expect(hitListener).toBeDefined();
-        const hitData = { projectileId: 'proj-1', enemyInstanceId: instanceId, damage: 60 }; // More than scaled health
-        // Assert listener type before calling
-        (hitListener as Function)(hitData);
-
-        // 3. Verify destroy logic was triggered
-        // Check logger debug message for health calculation (allow for floating point inaccuracies)
-        expect(mockLogger.debug).toHaveBeenCalledWith(expect.stringMatching(/Enemy enemy-\d+ took \d+ damage\. Health: -?\d+(\.\d+)?/));
-        expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining(`Destroyed enemy: ${configId}`));
-
-        // 4. Verify ENEMY_DESTROYED emitted
-        expect(mockGetScaledRewardFn).toHaveBeenCalledWith(mockEnemyConfig1.baseReward);
-        expect(emitSpy).toHaveBeenCalledWith(Events.ENEMY_DESTROYED, expect.objectContaining({
-            instanceId: instanceId,
-            configId: configId,
-            reward: 10 * 1.2, // Scaled reward based on mock
-            scoreValue: mockEnemyConfig1.scoreValue,
-            config: mockEnemyConfig1,
-        }));
-        expect(mockHandleEnemyDestroyedInWaveFn).toHaveBeenCalledWith(instanceId);
-        expect(emitSpy).not.toHaveBeenCalledWith(Events.ENEMY_HEALTH_UPDATED, expect.anything()); // Should not emit health update on destroy
-    });
-
-    it('should get current wave from wave handler', () => {
-        const wave = enemyManager.getCurrentWave();
-        expect(wave).toBe(5); // Value from mock function
-        expect(mockGetCurrentWaveFn).toHaveBeenCalledTimes(1);
-    });
-
-    it('should unregister listeners and destroy wave handler on destroy', () => {
-        // Need to capture the actual listener function passed to 'on'
-        let capturedListener: Function | undefined;
-         vi.spyOn(mockEventBus, 'on').mockImplementation((eventName, listener) => {
-            if (eventName === Events.PROJECTILE_HIT_ENEMY) {
-                capturedListener = listener;
-            }
-            return mockEventBus;
-        });
-        // Re-initialize to capture listener with the new spy implementation
-        enemyManager = new EnemyManager(mockEventBus, mockLogger);
-        expect(capturedListener).toBeDefined(); // Make sure listener was captured
-
-        enemyManager.destroy();
-
-        expect(offSpy).toHaveBeenCalledWith(Events.PROJECTILE_HIT_ENEMY, capturedListener);
-        // Check the mock function directly
-        expect(mockDestroyFn).toHaveBeenCalledTimes(1);
-        expect(mockLogger.log).toHaveBeenCalledWith('EnemyManager destroyed, listeners and timers removed');
-    });
-
+  });
 });
