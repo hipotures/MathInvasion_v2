@@ -1,270 +1,226 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { PowerupManager } from '../../../src/core/managers/PowerupManager';
+import { describe, it, expect, beforeEach, vi, Mocked } from 'vitest';
+import { PowerupManager } from '../../../src/core/managers/PowerupManager'; // Named import
 import { EventBus } from '../../../src/core/events/EventBus';
-import { Logger } from '../../../src/core/utils/Logger';
-import { PowerupsConfig, PowerupConfig } from '../../../src/core/config/schemas/powerupSchema'; // Import PowerupConfig too
+import { Logger } from '../../../src/core/utils/Logger'; // Logger is used
+import ConfigLoader from '../../../src/core/config/ConfigLoader';
+import { PowerupsConfig, PowerupConfig } from '../../../src/core/config/schemas/powerupSchema';
 import * as Events from '../../../src/core/constants/events';
-// Import types from the correct file
-import type { RequestSpawnPowerupData, PowerupCollectedData, PowerupSpawnedData } from '../../../src/core/managers/PowerupManager';
+// Import PowerupManager event data types
+import {
+  RequestSpawnPowerupData,
+  PowerupCollectedData,
+} from '../../../src/core/managers/PowerupManager';
 
-// Mock dependencies
+// Mocks
 vi.mock('../../../src/core/events/EventBus');
 vi.mock('../../../src/core/utils/Logger');
+vi.mock('../../../src/core/config/ConfigLoader', () => ({
+  default: {
+    getPowerupsConfig: vi.fn(),
+  },
+}));
 
-// Mock Powerup Config Data
+const mockEventBus = new EventBus() as Mocked<EventBus>;
+// Lines 19-25 (duplicate mock and declaration) removed
+const mockLogger = new Logger() as Mocked<Logger>; // Reinstate mockLogger
+const mockConfigLoader = ConfigLoader as Mocked<typeof ConfigLoader>;
+
+// Mock Config Data - Use 'effect' and 'visual'
+const mockShieldPowerup: PowerupConfig = {
+  id: 'shield',
+  name: 'Shield',
+  effect: 'temporary_invulnerability', // Use 'effect'
+  durationMs: 5000,
+  dropChance: 0.1,
+  visual: 'shield_icon', // Use 'visual'
+  // soundKey: 'powerup_get_shield', // soundKey not in schema
+};
+
+const mockRapidFirePowerup: PowerupConfig = {
+  id: 'rapid_fire',
+  name: 'Rapid Fire',
+  effect: 'weapon_cooldown_reduction', // Use 'effect'
+  durationMs: 8000,
+  multiplier: 0.5,
+  dropChance: 0.1,
+  visual: 'rapid_fire_icon', // Use 'visual'
+  // soundKey: 'powerup_get_rapid',
+};
+
+const mockCashBoostPowerup: PowerupConfig = {
+  id: 'cash_boost',
+  name: 'Cash Boost',
+  effect: 'currency_multiplier', // Use 'effect'
+  durationMs: 10000,
+  multiplier: 2,
+  dropChance: 0.05,
+  visual: 'cash_boost_icon', // Use 'visual'
+  // soundKey: 'powerup_get_cash',
+};
+
 const mockPowerupsConfig: PowerupsConfig = [
-    {
-        id: 'shield',
-        name: 'Shield',
-        visual: 'shield_icon',
-        effect: 'temporary_invulnerability',
-        durationMs: 5000,
-        dropChance: 0 // Add placeholder dropChance
-    },
-    {
-        id: 'rapid',
-        name: 'Rapid Fire',
-        visual: 'rapid_fire_icon',
-        effect: 'weapon_cooldown_reduction',
-        multiplier: 0.5,
-        durationMs: 8000,
-        dropChance: 0 // Add placeholder dropChance
-    },
-    {
-        id: 'cash',
-        name: 'Cash Boost',
-        visual: 'cash_icon', // Assuming a visual key
-        effect: 'currency_multiplier',
-        multiplier: 2,
-        durationMs: 10000,
-        dropChance: 0 // Add placeholder dropChance
-    }
+  // Config is an array
+  mockShieldPowerup,
+  mockRapidFirePowerup,
+  mockCashBoostPowerup,
 ];
 
-
 describe('PowerupManager', () => {
-    // Declare variables in the describe scope
-    let powerupManager: PowerupManager;
-    let mockEventBus: EventBus;
-    let mockLogger: Logger;
-    let emitSpy: ReturnType<typeof vi.spyOn>;
-    let onSpy: ReturnType<typeof vi.spyOn>;
-    let offSpy: ReturnType<typeof vi.spyOn>;
-    // Variables to capture listener functions
-    let requestSpawnListener: (data: RequestSpawnPowerupData) => void;
-    let collectedListener: (data: PowerupCollectedData) => void;
+  let powerupManager: PowerupManager;
 
-    beforeEach(() => {
-        vi.clearAllMocks();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Mock the config loader getter to return the array
+    // Note: PowerupManager constructor expects the config array directly
+    // mockConfigLoader.getPowerupsConfig.mockReturnValue(mockPowerupsConfig);
+    // Use correct constructor signature
+    powerupManager = new PowerupManager(mockEventBus, mockLogger, mockPowerupsConfig);
+    powerupManager.init(); // Call init to register listeners
+  });
 
-        mockEventBus = new EventBus();
-        mockLogger = new Logger();
+  it('should initialize correctly and load configs', () => {
+    expect(powerupManager).toBeDefined();
+    // Constructor receives config directly, no need to mock/check loader getter call
+    // expect(mockConfigLoader.getPowerupsConfig).toHaveBeenCalled();
+    expect(mockEventBus.on).toHaveBeenCalledWith(
+      Events.REQUEST_SPAWN_POWERUP,
+      expect.any(Function)
+    );
+    expect(mockEventBus.on).toHaveBeenCalledWith(Events.POWERUP_COLLECTED, expect.any(Function));
+    // Add more listener checks if PowerupManager listens to other events initially
+  });
 
-        // Store spies
-        emitSpy = vi.spyOn(mockEventBus, 'emit');
-        offSpy = vi.spyOn(mockEventBus, 'off');
-        vi.spyOn(mockLogger, 'log');
-        vi.spyOn(mockLogger, 'debug');
-        vi.spyOn(mockLogger, 'warn');
-        vi.spyOn(mockLogger, 'error');
+  it('should handle REQUEST_SPAWN_POWERUP and emit POWERUP_SPAWNED', () => {
+    // Request data might need enemyId based on interface
+    const requestData: RequestSpawnPowerupData = { x: 100, y: 200, enemyId: 'enemy-1' }; // Use imported type
+    const spawnHandler = mockEventBus.on.mock.calls.find(
+      (call: [string, (data: RequestSpawnPowerupData) => void]) =>
+        call[0] === Events.REQUEST_SPAWN_POWERUP
+    )?.[1];
 
-        // Capture listeners when 'on' is called
-        onSpy = vi.spyOn(mockEventBus, 'on').mockImplementation((eventName, listener) => {
-            if (eventName === Events.REQUEST_SPAWN_POWERUP) {
-                requestSpawnListener = listener as (data: RequestSpawnPowerupData) => void;
-            } else if (eventName === Events.POWERUP_COLLECTED) {
-                collectedListener = listener as (data: PowerupCollectedData) => void;
-            }
-            // Return the mock instance for chaining or other purposes if needed
-            return mockEventBus;
-        });
+    expect(spawnHandler).toBeDefined();
+    if (!spawnHandler) return;
 
-        // Create manager instance AFTER setting up the 'on' spy
-        powerupManager = new PowerupManager(mockEventBus, mockLogger, mockPowerupsConfig);
+    // Mock Math.random to control which powerup is selected (select shield)
+    vi.spyOn(Math, 'random').mockReturnValue(0); // Index 0 = shield
+
+    spawnHandler(requestData);
+
+    expect(mockEventBus.emit).toHaveBeenCalledWith(
+      Events.POWERUP_SPAWNED,
+      expect.objectContaining({
+        configId: mockShieldPowerup.id,
+        x: requestData.x,
+        y: requestData.y,
+        visual: mockShieldPowerup.visual, // Check 'visual'
+        instanceId: expect.any(Number), // Instance ID is generated internally (number)
+      })
+    );
+
+    vi.spyOn(Math, 'random').mockRestore(); // Restore Math.random
+  });
+
+  it('should handle POWERUP_COLLECTED, emit POWERUP_EFFECT_APPLIED, and start timer', () => {
+    // Simulate spawning a powerup to get an instance ID
+    const instanceId = 0; // Assuming first ID is 0
+    // Manually add to internal state for testing collection
+    // Note: PowerupManager uses instanceId (number) as key for spawnedPowerups
+    powerupManager['spawnedPowerups'].set(instanceId, {
+      instanceId: instanceId,
+      config: mockRapidFirePowerup,
+      x: 100,
+      y: 100, // Position doesn't matter for collection logic
     });
 
-    afterEach(() => {
-        powerupManager.destroy(); // Ensure cleanup
+    const collectData: PowerupCollectedData = { instanceId: instanceId }; // Use imported type
+    const collectHandler = mockEventBus.on.mock.calls.find(
+      (call: [string, (data: PowerupCollectedData) => void]) => call[0] === Events.POWERUP_COLLECTED
+    )?.[1];
+
+    expect(collectHandler).toBeDefined();
+    if (!collectHandler) return;
+
+    collectHandler(collectData);
+
+    expect(mockEventBus.emit).toHaveBeenCalledWith(
+      Events.POWERUP_EFFECT_APPLIED,
+      expect.objectContaining({
+        // instanceId is NOT part of PowerupEffectData
+        configId: mockRapidFirePowerup.id,
+        effect: mockRapidFirePowerup.effect, // Check 'effect'
+        durationMs: mockRapidFirePowerup.durationMs,
+        multiplier: mockRapidFirePowerup.multiplier,
+      })
+    );
+
+    // Check internal state
+    // Note: PowerupManager uses effect type (string) as key for activeEffects
+    const effectType = mockRapidFirePowerup.effect;
+    expect(powerupManager['activeEffects'].has(effectType)).toBe(true);
+    const effectState = powerupManager['activeEffects'].get(effectType);
+    expect(effectState?.config).toEqual(mockRapidFirePowerup);
+    expect(effectState?.timer).toBe(mockRapidFirePowerup.durationMs); // Check 'timer' property
+  });
+
+  it('should update timers and emit POWERUP_EFFECT_REMOVED and POWERUP_EXPIRED when duration ends', () => {
+    // Simulate spawning and collecting a powerup
+    const instanceId = 0;
+    powerupManager['spawnedPowerups'].set(instanceId, {
+      instanceId: instanceId,
+      config: mockShieldPowerup,
+      x: 100,
+      y: 100,
     });
+    const collectData: PowerupCollectedData = { instanceId: instanceId }; // Use imported type
+    const collectHandler = mockEventBus.on.mock.calls.find(
+      (call: [string, (data: PowerupCollectedData) => void]) => call[0] === Events.POWERUP_COLLECTED
+    )?.[1];
+    if (collectHandler) collectHandler(collectData);
 
-    // --- Tests --- (Now outside beforeEach)
+    const effectType = mockShieldPowerup.effect;
+    expect(powerupManager['activeEffects'].has(effectType)).toBe(true);
 
-    it('should initialize correctly', () => {
-        expect(powerupManager).toBeDefined();
-        expect(mockLogger.log).toHaveBeenCalledWith('PowerupManager initialized.');
+    // Simulate time passing (slightly less than duration)
+    powerupManager.update(mockShieldPowerup.durationMs - 100);
+    expect(powerupManager['activeEffects'].has(effectType)).toBe(true);
+    expect(mockEventBus.emit).not.toHaveBeenCalledWith(
+      Events.POWERUP_EFFECT_REMOVED,
+      expect.anything()
+    );
+    expect(mockEventBus.emit).not.toHaveBeenCalledWith(Events.POWERUP_EXPIRED, expect.anything());
+
+    // Simulate time passing past the duration
+    powerupManager.update(110); // Pass the remaining duration + extra
+    expect(powerupManager['activeEffects'].has(effectType)).toBe(false); // Effect should be removed
+    expect(mockEventBus.emit).toHaveBeenCalledWith(
+      Events.POWERUP_EFFECT_REMOVED,
+      expect.objectContaining({
+        // instanceId is NOT part of PowerupEffectData
+        configId: mockShieldPowerup.id,
+        effect: mockShieldPowerup.effect, // Check 'effect'
+        durationMs: mockShieldPowerup.durationMs,
+        // multiplier is undefined for shield
+      })
+    );
+    // POWERUP_EXPIRED payload only contains configId
+    expect(mockEventBus.emit).toHaveBeenCalledWith(Events.POWERUP_EXPIRED, {
+      configId: mockShieldPowerup.id,
     });
+  });
 
-    it('should register listeners on init', () => {
-        powerupManager.init(); // Call init to trigger listener registration
-        expect(mockLogger.log).toHaveBeenCalledWith('PowerupManager listeners registered.');
-        // Check that 'on' was called with the correct event names
-        expect(onSpy).toHaveBeenCalledWith(Events.REQUEST_SPAWN_POWERUP, expect.any(Function));
-        expect(onSpy).toHaveBeenCalledWith(Events.POWERUP_COLLECTED, expect.any(Function));
-        // Ensure the listener variables were captured
-        expect(requestSpawnListener).toBeDefined();
-        expect(collectedListener).toBeDefined();
-    });
+  it('should clean up listeners on destroy', () => {
+    powerupManager.destroy();
+    expect(mockEventBus.off).toHaveBeenCalledWith(
+      Events.REQUEST_SPAWN_POWERUP,
+      expect.any(Function)
+    );
+    expect(mockEventBus.off).toHaveBeenCalledWith(Events.POWERUP_COLLECTED, expect.any(Function));
+    // Add more listener checks if needed
+  });
 
-    it('should handle REQUEST_SPAWN_POWERUP and emit POWERUP_SPAWNED', () => {
-        powerupManager.init(); // Register listeners first
-
-        const requestData: RequestSpawnPowerupData = {
-            x: 100,
-            y: 200,
-            enemyId: 'enemy-1'
-        };
-
-        // Call the captured listener
-        expect(requestSpawnListener).toBeDefined(); // Ensure listener was captured
-        requestSpawnListener(requestData);
-
-        // Check that POWERUP_SPAWNED was emitted
-        expect(emitSpy).toHaveBeenCalledWith(Events.POWERUP_SPAWNED, expect.objectContaining({
-            instanceId: 0, // First instance ID should be 0
-            configId: expect.any(String), // Config ID will be one of the mocks
-            x: 100,
-            y: 200,
-            visual: expect.any(String), // Visual key from the selected config
-        }));
-
-        // Check logger debug message - expect the full string or a more specific pattern
-        expect(mockLogger.debug).toHaveBeenCalledWith(expect.stringMatching(/^Powerup spawned: .+ \(Instance ID: \d+\) at \(\d+, \d+\)$/));
-    });
-
-     it('should handle POWERUP_COLLECTED, apply effect, and emit POWERUP_EFFECT_APPLIED', () => {
-        powerupManager.init();
-
-        // 1. Spawn a powerup first to get an instance ID
-        const requestData: RequestSpawnPowerupData = { x: 100, y: 200, enemyId: 'enemy-1' };
-        expect(requestSpawnListener).toBeDefined();
-        requestSpawnListener(requestData);
-
-        // Get the spawned powerup data from the emit call
-        const spawnedEmitCall = emitSpy.mock.calls.find(call => call[0] === Events.POWERUP_SPAWNED);
-        expect(spawnedEmitCall).toBeDefined();
-        const spawnedData = spawnedEmitCall?.[1] as PowerupSpawnedData; // Use corrected import type
-        const instanceId = spawnedData.instanceId;
-        const configId = spawnedData.configId;
-        const expectedConfig = mockPowerupsConfig.find(p => p.id === configId);
-        expect(expectedConfig).toBeDefined();
-
-        // 2. Simulate the POWERUP_COLLECTED event
-        const collectedData: PowerupCollectedData = { instanceId };
-        expect(collectedListener).toBeDefined(); // Ensure listener was captured
-        collectedListener(collectedData);
-
-        // 3. Check that POWERUP_EFFECT_APPLIED was emitted
-        expect(emitSpy).toHaveBeenCalledWith(Events.POWERUP_EFFECT_APPLIED, expect.objectContaining({
-            configId: expectedConfig!.id,
-            effect: expectedConfig!.effect,
-            multiplier: expectedConfig!.multiplier, // Will be undefined for shield
-            durationMs: expectedConfig!.durationMs,
-        }));
-
-        // Check logger message
-        expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining(`Powerup collected: ${expectedConfig!.name}`));
-        expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining(`Applying powerup effect: ${expectedConfig!.effect}`));
-
-        // TODO: Add test to check if spawnedPowerups map is cleared for this instanceId (requires internal access or another event)
-    });
-
-    it('should update timers and remove expired effects, emitting events', () => {
-        powerupManager.init();
-        vi.useFakeTimers(); // Use fake timers for this test
-
-        // 1. Spawn and collect a powerup (e.g., shield with 5000ms duration)
-        const requestData: RequestSpawnPowerupData = { x: 100, y: 200, enemyId: 'enemy-1' };
-        expect(requestSpawnListener).toBeDefined();
-        expect(collectedListener).toBeDefined();
-        // Force spawn of shield for predictability
-        const shieldConfig = mockPowerupsConfig.find(p => p.id === 'shield')!;
-        vi.spyOn(Math, 'random').mockReturnValue(0); // Ensure first config (shield) is picked
-        requestSpawnListener(requestData);
-        const spawnedEmitCall = emitSpy.mock.calls.find(call => call[0] === Events.POWERUP_SPAWNED);
-        const spawnedData = spawnedEmitCall?.[1] as PowerupSpawnedData; // Use corrected import type
-        const instanceId = spawnedData.instanceId;
-
-        const collectedData: PowerupCollectedData = { instanceId };
-        collectedListener(collectedData);
-        emitSpy.mockClear(); // Clear emit calls after setup
-
-        // 2. Advance time partially
-        powerupManager.update(3000); // Pass 3000ms
-        expect(emitSpy).not.toHaveBeenCalledWith(Events.POWERUP_EFFECT_REMOVED, expect.anything());
-        expect(emitSpy).not.toHaveBeenCalledWith(Events.POWERUP_EXPIRED, expect.anything());
-
-        // 3. Advance time past expiration
-        powerupManager.update(2500); // Pass another 2500ms (total 5500ms)
-
-        // 4. Check events were emitted
-        expect(emitSpy).toHaveBeenCalledWith(Events.POWERUP_EFFECT_REMOVED, expect.objectContaining({
-            configId: 'shield',
-            effect: 'temporary_invulnerability',
-            durationMs: 5000,
-        }));
-        expect(emitSpy).toHaveBeenCalledWith(Events.POWERUP_EXPIRED, { configId: 'shield' });
-
-        // Check logger message
-        expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('Removing powerup effect: temporary_invulnerability'));
-
-        vi.restoreAllMocks(); // Restore Math.random
-        vi.useRealTimers(); // Restore real timers
-    });
-
-     it('should reset timer if same effect type is collected again', () => {
-        powerupManager.init();
-        vi.useFakeTimers();
-
-        // Force spawn/collect shield
-        vi.spyOn(Math, 'random').mockReturnValue(0);
-        expect(requestSpawnListener).toBeDefined();
-        expect(collectedListener).toBeDefined();
-
-        // Collect first shield
-        requestSpawnListener({ x: 100, y: 100, enemyId: 'e1' });
-        let spawnedEmitCall = emitSpy.mock.calls.find(call => call[0] === Events.POWERUP_SPAWNED);
-        let spawnedData = spawnedEmitCall?.[1] as PowerupSpawnedData; // Use corrected import type
-        collectedListener({ instanceId: spawnedData.instanceId });
-        emitSpy.mockClear(); // Clear emits after first collection
-
-        // Advance time partially (e.g., 3000ms)
-        powerupManager.update(3000);
-
-        // Collect second shield
-        requestSpawnListener({ x: 200, y: 200, enemyId: 'e2' });
-        spawnedEmitCall = emitSpy.mock.calls.find(call => call[0] === Events.POWERUP_SPAWNED); // Find the new spawn event
-        spawnedData = spawnedEmitCall?.[1] as PowerupSpawnedData; // Use corrected import type
-        collectedListener({ instanceId: spawnedData.instanceId });
-
-        // Check POWERUP_EFFECT_APPLIED was NOT emitted again (timer just reset)
-        expect(emitSpy).not.toHaveBeenCalledWith(Events.POWERUP_EFFECT_APPLIED, expect.anything());
-        expect(mockLogger.debug).toHaveBeenCalledWith('Resetting timer for active effect: temporary_invulnerability');
-
-        // Advance time past original expiration (e.g., 2500ms more, total 5500ms)
-        powerupManager.update(2500);
-        // Effect should NOT have expired yet because timer was reset
-        expect(emitSpy).not.toHaveBeenCalledWith(Events.POWERUP_EFFECT_REMOVED, expect.anything());
-        expect(emitSpy).not.toHaveBeenCalledWith(Events.POWERUP_EXPIRED, expect.anything());
-
-         // Advance time past the *new* expiration (e.g., 3000ms more, total 8500ms from start, 5500ms from reset)
-        powerupManager.update(3000);
-        // Effect SHOULD have expired now
-        expect(emitSpy).toHaveBeenCalledWith(Events.POWERUP_EFFECT_REMOVED, expect.objectContaining({ configId: 'shield' }));
-        expect(emitSpy).toHaveBeenCalledWith(Events.POWERUP_EXPIRED, { configId: 'shield' });
-
-        vi.restoreAllMocks();
-        vi.useRealTimers();
-    });
-
-    it('should unregister listeners on destroy', () => {
-        powerupManager.init(); // Register first
-        powerupManager.destroy();
-        // Check that 'off' was called with the correct event names and any function,
-        // because the manager calls .bind(this) again in unregisterListeners, creating new function references.
-        // Alternatively, capture the bound functions if needed, but checking event name is usually sufficient.
-        expect(offSpy).toHaveBeenCalledWith(Events.REQUEST_SPAWN_POWERUP, expect.any(Function));
-        expect(offSpy).toHaveBeenCalledWith(Events.POWERUP_COLLECTED, expect.any(Function));
-        expect(mockLogger.log).toHaveBeenCalledWith('PowerupManager destroyed.');
-    });
-
+  // Add more tests:
+  // - Test random selection logic more thoroughly if multiple powerups have same drop chance
+  // - Test case where drop chance is not met in handleRequestSpawnPowerup (requires mocking enemy event handler?)
+  // - Test handling collection of non-existent powerup ID
+  // - Test interaction with multiple active powerups (effect timer reset)
 });

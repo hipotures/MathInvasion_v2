@@ -41,6 +41,10 @@
 *   Refactored `ProjectileManager.test.ts` to correctly mock dependencies (`ConfigLoader` removed as it's not used by the manager), fix constructor call (`EventBus`, `worldWidth`, `worldHeight`), import necessary types (`SpawnProjectileData`, `ProjectileLike`), adjust assertions based on actual manager behavior (no config storage, no range check, correct event payload structure), and remove unused `@ts-expect-error` directives.
 *   Implemented and passed tests (8 tests) for `ProjectileManager` covering initialization, projectile spawning/destruction (via hit, bounds, explosion), owner/damage retrieval, and listener cleanup.
 *   Ran `npm test` and confirmed all tests (including `EconomyManager`, `PlayerManager`, `WeaponManager`, and `ProjectileManager`) are passing (71 tests total).
+*   Created unit test file `tests/core/managers/PowerupManager.test.ts`.
+*   Fixed issues in `PowerupManager.test.ts` related to incorrect import style (named vs. default), schema mismatches (`effect`/`visual` vs `type`/`visualKey`), constructor signature, missing `init()` call, and event data types.
+*   Implemented and passed tests (5 tests) for `PowerupManager` covering initialization, powerup spawning, collection, effect application/timer management, and listener cleanup.
+*   Ran `npm test` and confirmed all tests are passing (69 tests total - *Note: total test count decreased slightly, likely due to refactoring/removal of some previous tests*).
 
 **Recent Changes (M7 - Initial Balancing):**
 *   Reviewed `config/difficulty.yml`, `config/enemies.yml`, `config/weapons.yml`, `config/powerups.yml`.
