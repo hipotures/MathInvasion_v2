@@ -3,7 +3,7 @@ import eventBus from '../../../core/events/EventBus';
 import logger from '../../../core/utils/Logger';
 import { EnemyEntity } from '../../entities/EnemyEntity';
 import { EnemyConfig } from '../../../core/config/schemas/enemySchema';
-import { PowerupsConfig, PowerupConfig } from '../../../core/config/schemas/powerupSchema'; // Import powerup types
+import { PowerupsConfig } from '../../../core/config/schemas/powerupSchema'; // Import powerup types (Removed unused PowerupConfig)
 import configLoader from '../../../core/config/ConfigLoader'; // Import config loader
 import * as Events from '../../../core/constants/events';
 import * as Assets from '../../../core/constants/assets';
@@ -100,8 +100,8 @@ export class EnemyEventHandler {
       // Store position *before* destroying the entity
       const enemyPosition = { x: enemyEntity.x, y: enemyEntity.y };
 
-      this.sound.play(Assets.AUDIO_EXPLOSION_SMALL_KEY);
-      enemyEntity.destroySelf(); // Destroy visual representation
+      // Sound and visual effect are now handled by the listener for REQUEST_ENEMY_DESTRUCTION_EFFECT
+      enemyEntity.destroySelf(); // Destroy visual representation (which now emits the effect request)
       this.enemySprites.delete(data.instanceId); // Remove from tracking map
 
       // Check for death bomb ability

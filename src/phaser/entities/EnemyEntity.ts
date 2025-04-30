@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { EnemyConfig } from '../../core/config/schemas/enemySchema';
 import Logger from '../../core/utils/Logger'; // Use default import for Logger instance
 import EventBus from '../../core/events/EventBus'; // Import EventBus instance
-import { ENEMY_REQUEST_FIRE } from '../../core/constants/events'; // Import the new event
+import { ENEMY_REQUEST_FIRE, REQUEST_ENEMY_DESTRUCTION_EFFECT } from '../../core/constants/events'; // Import the new events
 
 // Placeholder Enemy Entity
 export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
@@ -75,21 +75,15 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
     // Disable physics body immediately
     this.disableBody(true, false); // destroyGameObject = false, hideGameObject = false
 
-    // Add a simple tween effect: flash red and shrink
-    this.scene.tweens.add({
-      targets: this,
-      duration: 150, // ms
-      scaleX: 0.1,
-      scaleY: 0.1,
-      angle: 180,
-      alpha: 0.5,
-      tint: 0xff0000, // Flash red
-      ease: 'Power2',
-      onComplete: () => {
-        // Use destroy() which removes from scene and cleans up listeners
-        this.destroy();
-      },
+    // Emit event for the scene/handler to create the visual effect
+    EventBus.emit(REQUEST_ENEMY_DESTRUCTION_EFFECT, {
+      configId: this.configId,
+      x: this.x,
+      y: this.y,
     });
+
+    // Destroy the game object immediately after emitting the event
+    this.destroy();
   }
 
   // Pre-update loop for movement patterns etc.

@@ -10,6 +10,13 @@ import { ProjectileEventHandler } from './event/ProjectileEventHandler';
 import { EnemyEventHandler } from './event/EnemyEventHandler';
 import { PowerupSpawnedData } from '../../core/managers/PowerupManager'; // Import PowerupSpawnedData
 
+// Define the structure for the REQUEST_ENEMY_DESTRUCTION_EFFECT event data
+interface EnemyDestructionEffectData {
+  configId: string;
+  x: number;
+  y: number;
+}
+
 export class GameSceneEventHandler {
   // Sub-handlers
   private playerEventHandler: PlayerEventHandler;
@@ -49,11 +56,16 @@ export class GameSceneEventHandler {
 
     // Bind powerup handler
     this.handlePowerupSpawned = this.handlePowerupSpawned.bind(this);
+    // Bind destruction effect handler
+    this.handleEnemyDestructionEffect = this.handleEnemyDestructionEffect.bind(this);
 
-    // Register powerup listener
+    // Register listeners
     eventBus.on(Events.POWERUP_SPAWNED, this.handlePowerupSpawned);
+    eventBus.on(Events.REQUEST_ENEMY_DESTRUCTION_EFFECT, this.handleEnemyDestructionEffect);
 
-    logger.log('GameSceneEventHandler initialized with sub-handlers and powerup listener.');
+    logger.log(
+      'GameSceneEventHandler initialized with sub-handlers and powerup/destruction listeners.'
+    );
   }
 
   // Pass references to sub-handlers that need them
@@ -63,7 +75,6 @@ export class GameSceneEventHandler {
     this.playerEventHandler.setEnemySpawnerTimer(timer);
   }
 
-  /** Clean up event listeners by destroying sub-handlers */
   // --- Powerup Event Handler ---
 
   private handlePowerupSpawned(data: PowerupSpawnedData): void {
@@ -107,14 +118,79 @@ export class GameSceneEventHandler {
     this.scene.sound.play(Assets.AUDIO_POWERUP_APPEAR_KEY);
   }
 
+  // --- Enemy Destruction Effect Handler ---
+
+  private handleEnemyDestructionEffect(data: EnemyDestructionEffectData): void {
+    logger.debug(
+      `Handling REQUEST_ENEMY_DESTRUCTION_EFFECT for ${data.configId} at (${data.x}, ${data.y})`
+    );
+
+    // Play sound based on enemy type (can be expanded)
+    // For now, use the generic small explosion sound
+    this.scene.sound.play(Assets.AUDIO_EXPLOSION_SMALL_KEY);
+
+    // Create visual effect based on enemy type (can be expanded)
+    switch (data.configId) {
+      case 'triangle_scout':
+      case 'square_tank':
+      case 'pentagon_healer':
+      case 'hexagon_bomber':
+      case 'diamond_strafer': {
+        // TODO: Add simple particle effect or specific tween
+        logger.log(`Playing standard destruction effect for ${data.configId}`);
+        // Example placeholder: small flash
+        const flash = this.scene.add.circle(data.x, data.y, 10, 0xffffff, 0.8);
+        this.scene.tweens.add({
+          targets: flash,
+          radius: 30,
+          alpha: 0,
+          duration: 150,
+          ease: 'Quad.easeOut',
+          onComplete: () => flash.destroy(),
+        });
+        break;
+      }
+      case 'circle_boss': {
+        // TODO: Add larger, more impressive effect for boss
+        logger.log(`Playing BOSS destruction effect for ${data.configId}`);
+        // Example placeholder: larger flash
+        const bossFlash = this.scene.add.circle(data.x, data.y, 30, 0xffaa00, 1);
+        this.scene.tweens.add({
+          targets: bossFlash,
+          radius: 100,
+          alpha: 0,
+          duration: 400,
+          ease: 'Quad.easeOut',
+          onComplete: () => bossFlash.destroy(),
+        });
+        break;
+      }
+      default: {
+        logger.warn(`No specific destruction effect defined for enemy type: ${data.configId}`);
+        // Default fallback effect (e.g., the small flash)
+        const defaultFlash = this.scene.add.circle(data.x, data.y, 10, 0xcccccc, 0.7);
+        this.scene.tweens.add({
+          targets: defaultFlash,
+          radius: 25,
+          alpha: 0,
+          duration: 150,
+          ease: 'Quad.easeOut',
+          onComplete: () => defaultFlash.destroy(),
+        });
+        break;
+      }
+    }
+  }
+
   /** Clean up event listeners by destroying sub-handlers and removing own listeners */
   public destroy(): void {
     this.playerEventHandler.destroy();
     this.projectileEventHandler.destroy();
     this.enemyEventHandler.destroy();
-    eventBus.off(Events.POWERUP_SPAWNED, this.handlePowerupSpawned); // Unregister powerup listener
+    eventBus.off(Events.POWERUP_SPAWNED, this.handlePowerupSpawned);
+    eventBus.off(Events.REQUEST_ENEMY_DESTRUCTION_EFFECT, this.handleEnemyDestructionEffect); // Unregister destruction listener
     logger.log(
-      'GameSceneEventHandler destroyed, called destroy on sub-handlers and removed powerup listener.'
+      'GameSceneEventHandler destroyed, called destroy on sub-handlers and removed listeners.'
     );
   }
 }

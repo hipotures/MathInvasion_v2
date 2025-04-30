@@ -11,7 +11,7 @@ import { ENEMY_DESTROYED } from '../constants/events';
 
 import { ENEMY_HEALTH_UPDATED } from '../constants/events';
 import { PROJECTILE_HIT_ENEMY } from '../constants/events';
-import { WAVE_UPDATED } from '../constants/events'; // Import WAVE_UPDATED
+// WAVE_UPDATED is emitted by EnemyWaveHandler now
 
 /** Defines the data expected for the PROJECTILE_HIT_ENEMY event */
 // Note: This interface might be better placed in a shared types file or events.ts
@@ -39,10 +39,7 @@ interface EnemyInstance {
   // Add other relevant state properties like position, velocity etc. later
 }
 
-/** Data for the WAVE_UPDATED event */
-interface WaveUpdateData {
-  waveNumber: number;
-}
+// WaveUpdateData interface removed as WAVE_UPDATED is handled by EnemyWaveHandler
 
 export class EnemyManager {
   private enemies: Map<string, EnemyInstance> = new Map();
@@ -55,9 +52,6 @@ export class EnemyManager {
     private eventBus: EventBusType = EventBus,
     private logger: LoggerType = Logger
   ) {
-    // Load configs immediately in constructor
-    this.enemyConfigs = this.loadEnemyConfigs();
-    this.difficultyConfig = this.loadDifficultyConfig();
     // Load configs immediately in constructor
     this.enemyConfigs = this.loadEnemyConfigs();
     this.difficultyConfig = this.loadDifficultyConfig();
@@ -74,7 +68,7 @@ export class EnemyManager {
     this.logger.log('EnemyManager initialized');
     // Start the wave handler *after* it's assigned
     this.waveHandler.start();
-  }
+  } // <<< ADDED MISSING BRACE
 
   private loadEnemyConfigs(): Map<string, EnemyConfig> {
     try {

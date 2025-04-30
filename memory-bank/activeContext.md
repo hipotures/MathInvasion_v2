@@ -1,8 +1,35 @@
 # Active Context: Math Invasion v2
 
-**Current Focus:** Milestone M6 - Difficulty & Polish (Implementing Difficulty Scaling)
+**Current Focus:** Milestone M6 - Pełny Cykl Gry i PWA (Completed PWA Setup & Destruction Effects)
 
-**Recent Changes (M6 - Difficulty Scaling):**
+**Recent Changes (M6 - PWA Setup & Destruction Effects):**
+*   **PWA Setup:**
+    *   Installed `vite-plugin-pwa` and `workbox-window` dev dependencies.
+    *   Created `vite.config.ts` and configured `VitePWA` plugin:
+        *   Uses `generateSW` strategy for automatic service worker creation.
+        *   Configured Workbox `globPatterns` to cache essential assets (JS, CSS, HTML, images, audio, YAML).
+        *   Set `registerType: 'autoUpdate'` and `injectRegister: false`.
+        *   Included manifest details from `public/manifest.json`.
+    *   Updated `src/main.ts` to import and call `registerSW({ immediate: true })` from `virtual:pwa-register` to handle service worker registration.
+    *   Updated `src/vite-env.d.ts` to include `/// <reference types="vite-plugin-pwa/client" />` to resolve TypeScript errors for the virtual module.
+    *   Fixed syntax errors in `src/core/managers/EnemyManager.ts` (duplicated config loading, missing constructor brace) that occurred during related file saves.
+*   **Distinct Enemy Destruction Effects:**
+    *   Added `REQUEST_ENEMY_DESTRUCTION_EFFECT` event constant to `src/core/constants/events.ts`.
+    *   Modified `EnemyEntity.destroySelf` (`src/phaser/entities/EnemyEntity.ts`):
+        *   Removed the generic tween effect.
+        *   Added emission of `REQUEST_ENEMY_DESTRUCTION_EFFECT` with `configId`, `x`, and `y`.
+        *   Now destroys the sprite immediately after emitting the event.
+    *   Modified `EnemyEventHandler.handleEnemyDestroyed` (`src/phaser/handlers/event/EnemyEventHandler.ts`):
+        *   Removed the generic `AUDIO_EXPLOSION_SMALL_KEY` sound playback.
+    *   Updated `GameSceneEventHandler` (`src/phaser/handlers/GameSceneEventHandler.ts`):
+        *   Added listener for `REQUEST_ENEMY_DESTRUCTION_EFFECT`.
+        *   Implemented `handleEnemyDestructionEffect` method:
+            *   Plays `AUDIO_EXPLOSION_SMALL_KEY` (placeholder, can be customized later).
+            *   Uses a `switch` statement on `configId` to apply different placeholder visual effects (simple circle tweens) for standard enemies and the boss.
+        *   Added unregistration for the new listener in the `destroy` method.
+
+**Recent Changes (M6 - Difficulty Scaling & Visual Polish - Previous):**
+*   **Difficulty Configuration Loading:**
 *   **Difficulty Configuration Loading:**
     *   Verified `ConfigLoader.ts` already loads `config/difficulty.yml` and `difficultySchema.ts`.
 *   **EnemyManager Difficulty Integration (`src/core/managers/EnemyManager.ts`):**

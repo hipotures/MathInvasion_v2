@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { registerSW } from 'virtual:pwa-register'; // Import PWA registration
 
 // Import the new scenes
 import GameScene from './phaser/scenes/GameScene';
@@ -35,6 +36,7 @@ async function initGame() {
     logger.log('Configurations loaded successfully.');
 
     // Create the Phaser game instance AFTER configs are loaded
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const game = new Phaser.Game(config);
 
     // Optional: Clean up the default Vite HTML content if not needed
@@ -65,6 +67,9 @@ async function initGame() {
 
 // Start the game initialization process
 initGame();
+
+// Register the service worker
+registerSW({ immediate: true }); // immediate: true tries to register ASAP
 
 // --- Old synchronous initialization ---
 // const game = new Phaser.Game(config);

@@ -29,6 +29,7 @@ export const ENEMY_SPAWNED = 'ENEMY_SPAWNED'; // Emitted by EnemyManager for Sce
 export const ENEMY_DESTROYED = 'ENEMY_DESTROYED'; // Emitted by EnemyManager for Scene/EconomyManager
 export const ENEMY_HEALTH_UPDATED = 'ENEMY_HEALTH_UPDATED'; // Emitted by EnemyManager for Scene
 export const ENEMY_REQUEST_FIRE = 'ENEMY_REQUEST_FIRE'; // Emitted by EnemyEntity for Scene to handle spawn
+export const REQUEST_ENEMY_DESTRUCTION_EFFECT = 'REQUEST_ENEMY_DESTRUCTION_EFFECT'; // Emitted by EnemyEntity for Scene to handle visuals
 
 // Economy & Score Events
 export const CURRENCY_UPDATED = 'CURRENCY_UPDATED'; // Emitted by EconomyManager for UI

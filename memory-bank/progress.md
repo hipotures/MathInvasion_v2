@@ -1,8 +1,17 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Milestone M6: Pełny Cykl Gry i PWA - **IN PROGRESS** (Difficulty Scaling, Spawn Patterns, Wave Clear, Visual Polish Implemented)
+**Current Status:** Milestone M6: Pełny Cykl Gry i PWA - **COMPLETE** (PWA Setup, Destruction Effects, Difficulty Scaling, Spawn Patterns, Wave Clear, Visual Polish Implemented)
 
 **What Works:**
+*   **Milestone M6: PWA Setup (Implemented)**
+    *   `vite-plugin-pwa` configured in `vite.config.ts` for service worker generation (caching assets, configs).
+    *   Service worker registration handled in `src/main.ts` using `workbox-window`.
+    *   TypeScript types for PWA plugin added to `src/vite-env.d.ts`.
+*   **Milestone M6: Distinct Enemy Destruction Effects (Initial Implementation)**
+    *   Added `REQUEST_ENEMY_DESTRUCTION_EFFECT` event.
+    *   `EnemyEntity.destroySelf` now emits this event instead of applying a generic tween.
+    *   `EnemyEventHandler.handleEnemyDestroyed` no longer plays the generic sound.
+    *   `GameSceneEventHandler` listens for the new event and applies placeholder visual effects (circle tweens) and sound based on enemy `configId`.
 *   **Milestone M6: Difficulty Scaling & Wave Logic (Implemented)**
     *   `EnemyManager` loads `difficulty.yml` configuration.
     *   Enemy health, speed, reward, and wave enemy count are scaled based on the current wave number and multipliers defined in `difficulty.yml`.
@@ -111,8 +120,10 @@
 *   Add more enemy types/assets.
 *   Implement 'homing' movement pattern?
 *   Consider enemy invulnerability after hits.
-*   Add more distinct visual effects for different enemy destructions (M6 Polish).
-*   Implement PWA features (offline support, installability) (M6).
+*   Add more enemy types/assets.
+*   Implement 'homing' movement pattern?
+*   Consider enemy invulnerability after hits.
+*   Refine distinct visual effects for different enemy destructions (e.g., particle effects, specific sounds).
 
 **Overall Project Roadmap:**
 *   **M0: Szkielet Projektu (Setup)** - **COMPLETE**
@@ -121,8 +132,8 @@
 *   **M3: Wrogowie i Kolizje** - **COMPLETE** (Core features implemented, remaining tasks deferred)
 *   **M4: Rozbudowa Broni i UI** - **COMPLETE**
 *   **M5: Power-upy i Zaawansowani Wrogowie** - **COMPLETE**
-*   **M6: Pełny Cykl Gry i PWA** - **IN PROGRESS** (Difficulty, Spawning, Wave Clear, Polish done. Next: PWA features, Enemy Destruction Effects)
-*   **M7: Balans, Testy, Optymalizacja i CI/CD**
+*   **M6: Pełny Cykl Gry i PWA** - **COMPLETE**
+*   **M7: Balans, Testy, Optymalizacja i CI/CD** - **NEXT**
 
 **Known Issues:**
 *   ~~Using placeholder graphics (Vite logo) for player, bullets, and enemies.~~ (Fixed)
