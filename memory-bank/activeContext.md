@@ -2,6 +2,14 @@
 
 **Current Focus:** Milestone M7 - Balans, Testy, Optymalizacja i CI/CD
 
+**Recent Changes (M7 - Initial Balancing):**
+*   Reviewed `config/difficulty.yml`, `config/enemies.yml`, `config/weapons.yml`, `config/powerups.yml`.
+*   Adjusted `config/difficulty.yml`:
+    *   Reduced `enemyHealthMultiplierPerWave` from `1.08` to `1.06`.
+    *   Added `diamond_strafer` unlock at wave 10.
+    *   Added `hexagon_bomber` unlock at wave 12.
+    *   Shifted `pentagon_healer` unlock from wave 15 to wave 15 (no change, just reordered).
+
 **Recent Changes (M6 - PWA Setup & Destruction Effects):**
 *   **PWA Setup:**
     *   Installed `vite-plugin-pwa` and `workbox-window` dev dependencies.

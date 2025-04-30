@@ -1,8 +1,12 @@
 # Progress: Math Invasion v2
 
-**Current Status:** Milestone M6 Complete. Preparing for M7.
+**Current Status:** Milestone M7 In Progress (Initial Balancing).
 
 **What Works:**
+*   **Milestone M7: Balans, Testy, Optymalizacja i CI/CD (In Progress)**
+    *   **Initial Balancing:**
+        *   Reviewed `difficulty.yml`, `enemies.yml`, `weapons.yml`, `powerups.yml`.
+        *   Adjusted `difficulty.yml`: Reduced health scaling (`enemyHealthMultiplierPerWave: 1.06`), added `diamond_strafer` (wave 10) and `hexagon_bomber` (wave 12) to unlock schedule.
 *   **Milestone M6: PWA Setup (Implemented)**
     *   `vite-plugin-pwa` configured in `vite.config.ts` for service worker generation (caching assets, configs).
     *   Service worker registration handled in `src/main.ts` using `workbox-window`.
@@ -135,7 +139,7 @@
 *   **M4: Rozbudowa Broni i UI** - **COMPLETE**
 *   **M5: Power-upy i Zaawansowani Wrogowie** - **COMPLETE**
 *   **M6: Pełny Cykl Gry i PWA** - **COMPLETE**
-*   **M7: Balans, Testy, Optymalizacja i CI/CD** - **NEXT**
+*   **M7: Balans, Testy, Optymalizacja i CI/CD** - **IN PROGRESS**
 
 **Known Issues:**
 *   ~~Using placeholder graphics (Vite logo) for player, bullets, and enemies.~~ (Fixed)

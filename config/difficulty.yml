@@ -1,6 +1,6 @@
 initialWaveNumber: 1
 timeBetweenWavesSec: 7
-enemyHealthMultiplierPerWave: 1.08
+enemyHealthMultiplierPerWave: 1.06 # Reduced from 1.08
 enemySpeedMultiplierPerWave: 1.02
 enemyCountMultiplierPerWave: 1.10
 enemyRewardMultiplierPerWave: 1.05
@@ -9,5 +9,7 @@ bossId: circle_boss
 initialEnemyTypes: [triangle_scout]
 waveEnemyTypeUnlock:
   5: square_tank
+  10: diamond_strafer # Added
+  12: hexagon_bomber # Added
   15: pentagon_healer
 spawnPattern: standard_grid
