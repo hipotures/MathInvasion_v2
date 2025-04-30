@@ -6,7 +6,14 @@ import { EventBus as EventBusType } from '../events/EventBus';
 import * as Events from '../constants/events'; // Import event constants
 import configLoader from '../config/ConfigLoader'; // Import config loader instance
 import { type WeaponsConfig, type WeaponConfig } from '../config/schemas/weaponSchema'; // Import weapon config types
-import { PlayerState } from '../types/PlayerState'; // Assuming a type definition exists or will be created
+// import { PlayerState } from '../types/PlayerState'; // Assuming a type definition exists or will be created - Not used here
+
+/** Defines the data expected for the WEAPON_STATE_UPDATED event */
+interface WeaponStateUpdateData {
+  weaponId: string;
+  level: number;
+  // Add other relevant state later, e.g., upgrade cost, max level
+}
 
 /** Defines the data expected for the PLAYER_STATE_UPDATED event */
 // Note: This interface might be better placed in a shared types file or events.ts
@@ -27,7 +34,8 @@ export default class WeaponManager {
   private eventBus: EventBusType;
   private weaponsConfig: WeaponsConfig; // Store all weapon configs
   private currentWeaponConfig: WeaponConfig | null = null; // Store config for the active weapon
-  private currentWeaponId: string = 'bullet'; // Corrected initial weapon ID
+  private currentWeaponId: string = 'bullet'; // Default initial weapon ID
+  private currentWeaponLevel: number = 1; // Start at level 1
   private weaponCooldown: number = 500; // ms - Default, will be overwritten by config
   private cooldownTimer: number = 0; // ms
   private isFiring: boolean = false; // Is the fire button currently held?
@@ -55,6 +63,7 @@ export default class WeaponManager {
     // Bind methods
     this.handleFireStart = this.handleFireStart.bind(this);
     this.handleWeaponSwitch = this.handleWeaponSwitch.bind(this); // Bind switch handler
+    this.emitStateUpdate = this.emitStateUpdate.bind(this); // Bind state update emitter
     // Removed handlePlayerStateUpdate binding
     // Note: handleFireStop might not be needed if firing is triggered on press
 
@@ -64,6 +73,9 @@ export default class WeaponManager {
     // Removed PLAYER_STATE_UPDATED subscription
 
     // Config loaded and initial weapon set above
+
+    // Emit initial state
+    this.emitStateUpdate();
   }
 
   // --- Event Handlers ---
@@ -74,8 +86,9 @@ export default class WeaponManager {
     this.attemptFire(); // Try to fire immediately
   }
 
-  private handleWeaponSwitch(data: { weaponId: string }): void {
-    const newWeaponId = data.weaponId;
+  // Note: Event data is just the weaponId string based on UIScene/InputManager emissions
+  private handleWeaponSwitch(newWeaponId: string): void {
+    // const newWeaponId = data.weaponId; // Old way with object
     if (newWeaponId === this.currentWeaponId) {
       logger.debug(`Weapon ${newWeaponId} is already selected.`);
       return; // No change needed
@@ -88,8 +101,11 @@ export default class WeaponManager {
       this.currentWeaponConfig = newWeaponConfig;
       this.weaponCooldown = newWeaponConfig.baseCooldownMs;
       this.cooldownTimer = 0; // Reset cooldown when switching
-      logger.log(`Switched weapon to ${this.currentWeaponId}, Cooldown: ${this.weaponCooldown}ms`);
-      // TODO: Emit WEAPON_CHANGED event for UI updates?
+      this.currentWeaponLevel = 1; // Reset level when switching weapons (or load saved level later)
+      logger.log(
+        `Switched weapon to ${this.currentWeaponId}, Level: ${this.currentWeaponLevel}, Cooldown: ${this.weaponCooldown}ms`
+      );
+      this.emitStateUpdate(); // Emit state change
     } else {
       logger.warn(`Attempted to switch to unknown weapon ID: ${newWeaponId}`);
     }
@@ -113,6 +129,15 @@ export default class WeaponManager {
     // if (this.isFiring && this.cooldownTimer === 0) {
     //    this.attemptFire();
     // }
+  }
+
+  private emitStateUpdate(): void {
+    const stateData: WeaponStateUpdateData = {
+      weaponId: this.currentWeaponId,
+      level: this.currentWeaponLevel,
+    };
+    this.eventBus.emit(Events.WEAPON_STATE_UPDATED, stateData);
+    logger.debug(`Emitted WEAPON_STATE_UPDATED: ${JSON.stringify(stateData)}`);
   }
 
   private attemptFire(): void {

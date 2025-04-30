@@ -7,5 +7,7 @@ export interface PlayerState {
   y: number;
   velocityX: number;
   velocityY: number;
-  // TODO: Add other relevant state properties later (e.g., health, currentWeaponId)
+  health: number; // Current health
+  isInvulnerable: boolean; // Whether the player is currently invulnerable
+  // TODO: Add other relevant state properties later (e.g., currentWeaponId)
 }

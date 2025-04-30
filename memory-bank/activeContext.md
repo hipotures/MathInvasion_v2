@@ -1,6 +1,25 @@
 # Active Context: Math Invasion v2
 
-**Current Focus:** Milestone M4: Rozbudowa Broni i UI - *Starting implementation.*
+**Current Focus:** Milestone M4: Rozbudowa Broni i UI - *Implementing UI display elements.*
+
+**Recent Changes (M4 - In Progress):**
+*   **M4 - UI Enhancements (Partial):**
+    *   Made weapon selection buttons interactive in `UIScene.ts`, emitting `WEAPON_SWITCH` event on click.
+    *   Added `WEAPON_STATE_UPDATED` event constant to `src/core/constants/events.ts`.
+    *   Updated `WeaponManager.ts`:
+        *   Added `WeaponStateUpdateData` interface.
+        *   Added `currentWeaponLevel` property (init 1).
+        *   Added `emitStateUpdate` method, called in constructor and `handleWeaponSwitch`.
+    *   Updated `UIScene.ts`:
+        *   Added `WeaponStateUpdateData` interface.
+        *   Added `weaponStatusText` and `weaponButtons` array properties.
+        *   Added `handleWeaponStateUpdate` method to update status text and highlight active button.
+        *   Added listener for `WEAPON_STATE_UPDATED`.
+    *   Updated `PlayerState` type in `src/core/types/PlayerState.ts` to include `health` and `isInvulnerable`.
+    *   Updated `UIScene.ts`:
+        *   Added `PlayerState` import and `healthText` property.
+        *   Added `handlePlayerStateUpdate` method to display health and change color based on value.
+        *   Added listener for `PLAYER_STATE_UPDATED`.
 
 **Recent Changes (End of M3):**
 *   **M3 - Add Diamond Strafer Enemy:**
@@ -217,10 +236,12 @@
         *   If affordable, deduct cost and apply upgrades based on `weaponConfig.upgrade` properties (damage, cooldown, range, etc.).
         *   Emit events to update UI (e.g., `WEAPON_UPGRADED`, `CURRENCY_UPDATED`).
 *   **UI Enhancements:**
-    *   Make weapon selection buttons functional (emit `WEAPON_SWITCH` event).
-    *   Display current weapon name/level.
-    *   Display player health (e.g., health bar).
+    *   ~~Make weapon selection buttons functional (emit `WEAPON_SWITCH` event).~~ *(Done)*
+    *   ~~Display current weapon name/level.~~ *(Done)*
+    *   ~~Display player health (e.g., health bar).~~ *(Done)*
     *   Display current wave number/score.
+    *   Implement UI elements for displaying current weapon level and upgrade cost.
+    *   Add input handling (e.g., key press or UI button click) to trigger weapon upgrades.
 
 *(Deferred M3 Tasks: Add more enemy types/assets, implement difficulty scaling, consider enemy invulnerability)*
 

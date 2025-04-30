@@ -36,6 +36,7 @@ export const CURRENCY_UPDATED = 'CURRENCY_UPDATED'; // Emitted by EconomyManager
 
 // Weapon Events
 export const REQUEST_FIRE_WEAPON = 'REQUEST_FIRE_WEAPON'; // Emitted by WeaponManager for Scene to handle spawn location
+export const WEAPON_STATE_UPDATED = 'WEAPON_STATE_UPDATED'; // Emitted by WeaponManager for UI updates (current weapon, level)
 // export const WEAPON_COOLDOWN_START = 'WEAPON_COOLDOWN_START'; // Future event
 // export const WEAPON_COOLDOWN_FINISH = 'WEAPON_COOLDOWN_FINISH'; // Future event
 // export const WEAPON_READY = 'WEAPON_READY'; // Future event
