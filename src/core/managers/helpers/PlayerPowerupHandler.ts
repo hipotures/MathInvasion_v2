@@ -31,23 +31,14 @@ export class PlayerPowerupHandler {
     if (data.effect === 'temporary_invulnerability') {
       this.isShieldActive = true;
       this.logger.log(`Player Shield activated for ${data.durationMs}ms`);
-      // Optionally emit PLAYER_INVULNERABILITY_START if needed by other systems (like visuals)
-      // Note: PlayerManager still handles post-hit invulnerability separately.
-      // The combined state should be checked for damage application.
-      // this.eventBus.emit(Events.PLAYER_INVULNERABILITY_START);
     }
-    // Handle other player-specific powerup effects here
   }
 
   private handlePowerupEffectRemoved(data: PowerupEffectData): void {
     if (data.effect === 'temporary_invulnerability') {
       this.isShieldActive = false;
       this.logger.log('Player Shield deactivated.');
-      // Optionally emit PLAYER_INVULNERABILITY_END if needed by other systems
-      // and if post-hit invulnerability isn't also active.
-      // this.eventBus.emit(Events.PLAYER_INVULNERABILITY_END);
     }
-    // Handle removal of other player-specific powerup effects here
   }
 
   public isShieldPowerupActive(): boolean {

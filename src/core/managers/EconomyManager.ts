@@ -3,8 +3,7 @@ import { EventBus as EventBusType } from '../events/EventBus';
 import * as Events from '../constants/events';
 import { PowerupEffectData } from './PowerupManager';
 
-// Note: This interface should ideally be defined centrally, perhaps in EnemyManager or a shared types file.
-// It needs to match the payload emitted by EnemyManager.
+// TODO: Consider moving this interface to a shared types file
 interface EnemyDestroyedData {
   instanceId: string;
   configId: string;
@@ -58,8 +57,6 @@ export default class EconomyManager {
       return true;
     } else {
       logger.log(`Insufficient currency to spend ${amount}. Current: ${this.currentCurrency}`);
-      // Optionally emit an 'INSUFFICIENT_FUNDS' event
-      // this.eventBus.emit('INSUFFICIENT_FUNDS', { attemptedAmount: amount, currentAmount: this.currentCurrency });
       return false;
     }
   }
@@ -88,7 +85,6 @@ export default class EconomyManager {
       this.cashBoostMultiplier = data.multiplier && data.multiplier > 0 ? data.multiplier : 2.0;
       logger.log(`Cash Boost activated! Currency multiplier: ${this.cashBoostMultiplier}`);
     }
-    // Handle other powerup effects here if EconomyManager needs to react
   }
 
   private handlePowerupEffectRemoved(data: PowerupEffectData): void {
@@ -97,7 +93,6 @@ export default class EconomyManager {
       this.cashBoostMultiplier = 1.0;
       logger.log('Cash Boost deactivated.');
     }
-    // Handle removal of other powerup effects here
   }
 
   public addScore(amount: number): void {

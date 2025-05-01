@@ -35,7 +35,6 @@ export class WeaponPowerupHandler {
       this.rapidFireMultiplier = data.multiplier && data.multiplier > 0 ? data.multiplier : 0.5;
       this.logger.log(`Rapid Fire activated! Cooldown multiplier: ${this.rapidFireMultiplier}`);
     }
-    // Handle other weapon-related powerup effects here if added later
   }
 
   private handlePowerupEffectRemoved(data: PowerupEffectData): void {
@@ -44,7 +43,6 @@ export class WeaponPowerupHandler {
       this.rapidFireMultiplier = 1.0; // Reset multiplier
       this.logger.log('Rapid Fire deactivated.');
     }
-    // Handle removal of other weapon-related powerup effects here
   }
 
   public getCurrentCooldownMultiplier(): number {

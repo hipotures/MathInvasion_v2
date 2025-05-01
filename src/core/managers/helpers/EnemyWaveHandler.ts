@@ -23,7 +23,6 @@ export class EnemyWaveHandler {
   ) {
     this.currentWave = this.difficultyConfig.initialWaveNumber - 1;
     this.logger.log('EnemyWaveHandler initialized');
-    // DO NOT start the wave sequence immediately from constructor
   }
 
   public start(): void {
@@ -39,18 +38,15 @@ export class EnemyWaveHandler {
     );
   }
 
-  // Public access needed by EnemyManager before spawning
   public getScaledHealth(baseHealth: number): number {
     const multiplier = this.getWaveMultiplier(this.difficultyConfig.enemyHealthMultiplierPerWave);
     return Math.round(baseHealth * multiplier);
   }
 
-  // Public access needed by EnemyManager before spawning
   public getScaledSpeedMultiplier(): number {
     return this.getWaveMultiplier(this.difficultyConfig.enemySpeedMultiplierPerWave);
   }
 
-  // Public access needed by EnemyManager when destroying
   public getScaledReward(baseReward: number): number {
     const multiplier = this.getWaveMultiplier(this.difficultyConfig.enemyRewardMultiplierPerWave);
     return Math.round(baseReward * multiplier);
@@ -83,7 +79,7 @@ export class EnemyWaveHandler {
     this.logger.debug(
       `Available enemy types for wave ${this.currentWave}: ${available.join(', ')}`
     );
-  } // Corrected closing brace position
+  }
 
   public advanceWave(): void {
     if (this.waveClearTimer !== null) {

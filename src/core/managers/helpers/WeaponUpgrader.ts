@@ -72,7 +72,6 @@ export class WeaponUpgrader {
         baseSpeed * Math.pow(upgradeConfig.projectileSpeedMultiplier, levelFactor)
       );
     }
-    // TODO: Calculate range upgrade if needed
 
     logger.log(
       `Calculated upgrade for ${currentWeaponConfig.id} to Level ${newLevel}. Cost: ${upgradeCost}`
@@ -84,11 +83,12 @@ export class WeaponUpgrader {
     return {
       success: true,
       newLevel: newLevel,
-      newCooldown: newCooldown, // Will be undefined if no multiplier
-      newDamage: newDamage, // Will be undefined if no multiplier/base damage
-      newProjectileSpeed: newProjectileSpeed, // Will be undefined if no multiplier
+      newCooldown: newCooldown,
+      newDamage: newDamage,
+      newProjectileSpeed: newProjectileSpeed,
     };
   }
+  
   /**
    * Calculates the cost to upgrade to the next level.
    * @param currentWeaponConfig The configuration of the weapon.

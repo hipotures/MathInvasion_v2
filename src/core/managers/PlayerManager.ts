@@ -1,19 +1,15 @@
-// Import singleton instances
-// import eventBus from '../events/EventBus'; // Removed - instance passed in constructor
 import logger from '../utils/Logger';
 import { EventBus as EventBusType } from '../events/EventBus';
 import * as Events from '../constants/events';
 import { type PlayerConfig } from '../config/schemas/playerSchema';
-// PowerupEffectData no longer needed here
 import { PlayerPowerupHandler } from './helpers/PlayerPowerupHandler';
 
-// Note: This interface might be better placed in a shared types file or events.ts
+// TODO: Consider moving these interfaces to a shared types file
 interface PlayerHitEnemyData {
   enemyInstanceId: string;
   damage: number;
 }
 
-// Note: This interface might be better placed in a shared types file or events.ts
 interface PlayerHitProjectileData {
   projectileId: string;
   damage: number;
@@ -34,7 +30,6 @@ export default class PlayerManager {
   private health: number;
   private isInvulnerable: boolean = false;
   private invulnerabilityTimer: number = 0;
-  // isShieldPowerupActive removed - managed by PlayerPowerupHandler
   private playerPowerupHandler: PlayerPowerupHandler;
 
   private creationTime: number;
@@ -55,7 +50,6 @@ export default class PlayerManager {
     this.handleMoveRightStop = this.handleMoveRightStop.bind(this);
     this.handlePlayerHitEnemy = this.handlePlayerHitEnemy.bind(this);
     this.handlePlayerHitProjectile = this.handlePlayerHitProjectile.bind(this);
-    // Powerup handlers removed - managed by PlayerPowerupHandler
 
     this.eventBus.on(Events.MOVE_LEFT_START, this.handleMoveLeftStart);
     this.eventBus.on(Events.MOVE_LEFT_STOP, this.handleMoveLeftStop);
@@ -63,7 +57,6 @@ export default class PlayerManager {
     this.eventBus.on(Events.MOVE_RIGHT_STOP, this.handleMoveRightStop);
     this.eventBus.on(Events.PLAYER_HIT_ENEMY, this.handlePlayerHitEnemy);
     this.eventBus.on(Events.PLAYER_HIT_PROJECTILE, this.handlePlayerHitProjectile);
-    // Powerup listeners removed - managed by PlayerPowerupHandler
 
     this.emitStateUpdate();
   }
@@ -151,8 +144,6 @@ export default class PlayerManager {
     }
     this.emitStateUpdate();
   }
-
-  // Powerup handlers removed - managed by PlayerPowerupHandler
 
   private updateVelocity(): void {
     // Don't allow movement if dead
@@ -251,7 +242,6 @@ export default class PlayerManager {
     this.eventBus.off(Events.MOVE_RIGHT_STOP, this.handleMoveRightStop);
     this.eventBus.off(Events.PLAYER_HIT_ENEMY, this.handlePlayerHitEnemy);
     this.eventBus.off(Events.PLAYER_HIT_PROJECTILE, this.handlePlayerHitProjectile);
-    // Powerup listeners removed - managed by PlayerPowerupHandler
     this.playerPowerupHandler.destroy();
     logger.log('PlayerManager destroyed and listeners removed');
   }

@@ -26,7 +26,6 @@ export default class InputManager {
   }
 
   public update(_deltaTime: number): void {
-    // Prefix with underscore
     // TODO: Implement input polling/processing if needed
   }
 
@@ -141,10 +140,6 @@ export default class InputManager {
     this.moveLeftActive = false;
     this.moveRightActive = false;
     this.fireActive = false;
-    // Optionally emit STOP events if needed, though GameScene pause should handle entity state
-    // this.eventBus.emit(Events.MOVE_LEFT_STOP);
-    // this.eventBus.emit(Events.MOVE_RIGHT_STOP);
-    // this.eventBus.emit(Events.FIRE_STOP);
   }
 
   // TODO: Add methods for mouse/touch input if required

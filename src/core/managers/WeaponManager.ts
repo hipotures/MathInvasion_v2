@@ -6,7 +6,6 @@ import { type WeaponsConfig, type WeaponConfig } from '../config/schemas/weaponS
 import EconomyManager from './EconomyManager';
 import { WeaponUpgrader } from './helpers/WeaponUpgrader';
 import { WeaponPowerupHandler } from './helpers/WeaponPowerupHandler';
-// PowerupEffectData is no longer needed directly here
 
 interface WeaponStateUpdateData {
   weaponId: string;
@@ -14,12 +13,10 @@ interface WeaponStateUpdateData {
   nextUpgradeCost: number | null; // Cost for the next level, null if maxed or no upgrades
 }
 
-// Ensure this matches the payload emitted in attemptFire
 interface RequestFireWeaponData {
   weaponConfig: WeaponConfig;
   damage: number;
   projectileSpeed: number;
-  // Add range etc. later if needed
 }
 
 export default class WeaponManager {
@@ -36,8 +33,6 @@ export default class WeaponManager {
   private currentProjectileSpeed: number = 400; // Current speed, updated by upgrades
   private cooldownTimer: number = 0;
   private isFiring: boolean = false; // Is the fire button currently held?
-  // Powerup state removed - managed by WeaponPowerupHandler
-  // Removed playerPosition tracking
 
   constructor(
     eventBusInstance: EventBusType,
@@ -57,14 +52,12 @@ export default class WeaponManager {
     if (this.currentWeaponConfig) {
       this.weaponCooldown = this.currentWeaponConfig.baseCooldownMs;
       this.currentDamage = this.currentWeaponConfig.baseDamage ?? 0; // Use 0 if baseDamage is undefined
-      // Use nullish coalescing operator for projectileSpeed default
       this.currentProjectileSpeed = this.currentWeaponConfig.projectileSpeed ?? 400;
       logger.log(
         `Initial weapon set to ${this.currentWeaponId}, Lvl: ${this.currentWeaponLevel}, Cooldown: ${this.weaponCooldown}ms, Damage: ${this.currentDamage}, Speed: ${this.currentProjectileSpeed}`
       );
     } else {
       logger.error(`Initial weapon config not found for ID: ${this.currentWeaponId}`);
-      // Handle error appropriately - maybe default to a failsafe weapon or throw
       this.weaponCooldown = 500;
     }
 
@@ -72,15 +65,10 @@ export default class WeaponManager {
     this.handleWeaponSwitch = this.handleWeaponSwitch.bind(this);
     this.handleWeaponUpgradeRequest = this.handleWeaponUpgradeRequest.bind(this);
     this.emitStateUpdate = this.emitStateUpdate.bind(this);
-    // Powerup handlers removed - managed by WeaponPowerupHandler
-    // Removed handlePlayerStateUpdate binding
-    // Note: handleFireStop might not be needed if firing is triggered on press
 
     this.eventBus.on(Events.FIRE_START, this.handleFireStart);
     this.eventBus.on(Events.WEAPON_SWITCH, this.handleWeaponSwitch);
     this.eventBus.on(Events.REQUEST_WEAPON_UPGRADE, this.handleWeaponUpgradeRequest);
-    // Powerup listeners removed - managed by WeaponPowerupHandler
-    // Removed PLAYER_STATE_UPDATED subscription
 
     this.emitStateUpdate();
   }
@@ -91,9 +79,7 @@ export default class WeaponManager {
     this.attemptFire();
   }
 
-  // Note: Event data is just the weaponId string based on UIScene/InputManager emissions
   private handleWeaponSwitch(newWeaponId: string): void {
-    // const newWeaponId = data.weaponId; // Old way with object
     if (newWeaponId === this.currentWeaponId) {
       logger.debug(`Weapon ${newWeaponId} is already selected.`);
       return;
@@ -106,8 +92,7 @@ export default class WeaponManager {
       this.currentWeaponConfig = newWeaponConfig;
       this.currentWeaponLevel = 1;
       this.weaponCooldown = newWeaponConfig.baseCooldownMs;
-      this.currentDamage = newWeaponConfig.baseDamage ?? 0; // Use 0 if baseDamage is undefined
-      // Use nullish coalescing operator for projectileSpeed default
+      this.currentDamage = newWeaponConfig.baseDamage ?? 0;
       this.currentProjectileSpeed = newWeaponConfig.projectileSpeed ?? 400;
       this.cooldownTimer = 0;
       logger.log(
@@ -118,8 +103,6 @@ export default class WeaponManager {
       logger.warn(`Attempted to switch to unknown weapon ID: ${newWeaponId}`);
     }
   }
-
-  // Removed handlePlayerStateUpdate method
 
   private handleWeaponUpgradeRequest(): void {
     logger.debug(`Received REQUEST_WEAPON_UPGRADE for ${this.currentWeaponId}`);
@@ -154,15 +137,10 @@ export default class WeaponManager {
       );
 
       this.emitStateUpdate();
-      // Optionally emit WEAPON_UPGRADED event here
     } else {
-      // Log the reason for failure (already logged by the upgrader, but can add more context here if needed)
       logger.log(`Upgrade failed for ${this.currentWeaponId}: ${result.message}`);
-      // Optionally emit INSUFFICIENT_FUNDS or UPGRADE_FAILED event
     }
   }
-
-  // Powerup handlers removed - managed by WeaponPowerupHandler
 
   public update(deltaTime: number): void {
     if (this.cooldownTimer > 0) {
@@ -234,8 +212,6 @@ export default class WeaponManager {
     this.eventBus.off(Events.WEAPON_SWITCH, this.handleWeaponSwitch);
     this.eventBus.off(Events.REQUEST_WEAPON_UPGRADE, this.handleWeaponUpgradeRequest);
     this.weaponPowerupHandler.destroy();
-    // No need to destroy weaponUpgrader as it doesn't hold listeners currently
-    // Removed PLAYER_STATE_UPDATED unsubscription
     logger.log('WeaponManager destroyed and listeners removed');
   }
 }
