@@ -1,64 +1,64 @@
+import Phaser from 'phaser'; // Import Phaser
+import eventBus from '../../core/events/EventBus'; // Import EventBus
+import { DEBUG_PERFORM_HIT_TEST } from '../../core/constants/events'; // Import event constant
+
+// Removed LabelData interface
+
 /**
- * Utility class for creating and managing HTML labels for game objects in debug mode
- * This uses the browser's DOM rendering instead of Phaser's text rendering
- * for better font scaling at high resolutions
+ * Utility class for creating and managing HTML labels for game objects in debug mode.
+ * Labels are appended directly to the body.
  */
 export class HtmlDebugLabels {
-  private container: HTMLDivElement;
+  // Store only the element now
   private labels: Map<string, HTMLDivElement> = new Map();
   private isVisible = false;
-  
+  private gameCanvas: HTMLCanvasElement | null = null;
+  private sceneRef: Phaser.Scene | null = null;
+
   constructor() {
-    this.container = document.createElement('div');
-    this.container.style.position = 'absolute';
-    this.container.style.top = '0';
-    this.container.style.left = '0';
-    this.container.style.width = '100%';
-    this.container.style.height = '100%';
-    this.container.style.pointerEvents = 'none'; // Don't interfere with game input
-    this.container.style.zIndex = '999';
-    this.container.style.display = 'none';
-    this.container.style.overflow = 'hidden'; // Prevent scrollbars
-    
-    document.body.appendChild(this.container);
-    
-    window.addEventListener('resize', this.handleResize.bind(this));
+    this.handleLabelClick = this.handleLabelClick.bind(this); // Bind the click handler
   }
   
+  /**
+   * Sets the scene reference to access camera information.
+   */
+  public setScene(scene: Phaser.Scene): void {
+      this.sceneRef = scene;
+      this.gameCanvas = scene.game.canvas; 
+      window.removeEventListener('resize', this.handleResize.bind(this)); 
+      window.addEventListener('resize', this.handleResize.bind(this));
+      this.handleResize(); 
+  }
+
   /**
    * Handle window resize to adjust label positions
    */
   private handleResize(): void {
-    // Force update of all labels on resize
-    const labels = Array.from(this.labels.entries());
-    this.clearLabels();
-    
-    labels.forEach(([id, label]) => {
-      const x = parseFloat(label.dataset.x || '0');
-      const y = parseFloat(label.dataset.y || '0');
-      const name = label.textContent || '';
-      const color = label.style.color;
-      
-      this.updateLabel(id, name, x, y, color);
+    this.labels.forEach((element) => {
+        const worldX = parseFloat(element.dataset.worldX || '0');
+        const worldY = parseFloat(element.dataset.worldY || '0');
+        this.positionLabel(element, worldX, worldY); 
     });
   }
   
   /**
    * Set the visibility of all debug labels
-   * @param visible Whether the labels should be visible
    */
   public setVisible(visible: boolean): void {
     this.isVisible = visible;
-    this.container.style.display = visible ? 'block' : 'none';
+    this.labels.forEach(element => {
+      element.style.display = visible ? 'block' : 'none';
+    });
   }
   
   /**
    * Clear all labels
    */
   public clearLabels(): void {
-    this.labels.forEach(label => {
-      if (this.container.contains(label)) {
-        this.container.removeChild(label);
+    this.labels.forEach(element => {
+      element.removeEventListener('click', this.handleLabelClick); // Remove listener
+      if (element.parentNode === document.body) {
+        document.body.removeChild(element);
       }
     });
     this.labels.clear();
@@ -66,55 +66,123 @@ export class HtmlDebugLabels {
   
   /**
    * Add or update a label for a game object
-   * @param id Unique identifier for the object
-   * @param name Name to display
-   * @param x X position in game coordinates
-   * @param y Y position in game coordinates
-   * @param color Text color (CSS color string)
    */
-  public updateLabel(id: string, name: string, x: number, y: number, color = '#ffffff'): void {
-    if (!this.isVisible) return;
+  public updateLabel(
+      id: string,
+      name: string,
+      worldX: number,
+      worldY: number,
+      color = '#ffffff',
+      gameObject: Phaser.GameObjects.GameObject // Keep gameObject for potential future use
+    ): void {
+    if (!this.isVisible || !this.sceneRef) return;
     
-    let label = this.labels.get(id);
-    if (!label) {
-      label = this.createLabel(color);
-      this.labels.set(id, label);
-      this.container.appendChild(label);
+    let labelElement = this.labels.get(id);
+
+    if (!labelElement) {
+      labelElement = this.createLabel(color);
+      labelElement.addEventListener('click', this.handleLabelClick); // Add click listener
+      this.labels.set(id, labelElement);
+      document.body.appendChild(labelElement);
     }
     
-    label.dataset.x = x.toString(); // Store original coordinates for resize handling
-    label.dataset.y = y.toString();
+    // Store world coordinates on dataset for resize
+    labelElement.dataset.worldX = worldX.toString();
+    labelElement.dataset.worldY = worldY.toString();
     
-    label.textContent = name;
+    // Store the label ID and object type in the dataset
+    labelElement.dataset.labelId = id;
     
-    // Calculate position based on game canvas size and position
-    const canvas = document.querySelector('canvas');
-    if (canvas) {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = rect.width / canvas.width;
-      const scaleY = rect.height / canvas.height;
-      
-      const scaledX = x * scaleX;
-      const scaledY = y * scaleY;
-      
-      label.style.left = `${rect.left + scaledX}px`;
-      label.style.top = `${rect.top + scaledY}px`;
-    } else {
-      // Fallback if canvas not found
-      label.style.left = `${x}px`;
-      label.style.top = `${y}px`;
+    // Try to determine object type and store specific ID
+    if (id.startsWith('debuglabel_player')) {
+      labelElement.dataset.objectType = 'player';
+      labelElement.dataset.objectId = 'player';
+    } else if (id.startsWith('debuglabel_enemy_')) {
+      labelElement.dataset.objectType = 'enemy';
+      // Extract the enemy ID from the label ID
+      const enemyId = id.replace('debuglabel_enemy_', '');
+      labelElement.dataset.objectId = enemyId;
+    } else if (id.startsWith('debuglabel_proj_')) {
+      labelElement.dataset.objectType = 'projectile';
+      // Extract the projectile ID from the label ID
+      const projId = id.replace('debuglabel_proj_', '');
+      labelElement.dataset.objectId = projId;
+    } else if (id.startsWith('debuglabel_powerup_')) {
+      labelElement.dataset.objectType = 'powerup';
+      // Extract the powerup ID from the label ID
+      const powerupId = id.replace('debuglabel_powerup_', '');
+      labelElement.dataset.objectId = powerupId;
     }
+    
+    labelElement.textContent = name;
+    labelElement.style.color = color;
+    labelElement.style.borderColor = color;
+    labelElement.style.display = 'block';
+
+    this.positionLabel(labelElement, worldX, worldY);
+  }
+
+  /**
+   * Handles clicks on the debug labels.
+   * Emits an event with screen coordinates for hit testing.
+   */
+  private handleLabelClick(event: MouseEvent): void {
+    event.stopPropagation(); // Prevent event bubbling further
+    event.preventDefault(); // Prevent default behavior
+    
+    const screenX = event.clientX;
+    const screenY = event.clientY;
+    
+    // Get the label element that was clicked
+    const label = event.currentTarget as HTMLDivElement;
+    
+    // Get the object type and ID from the dataset
+    const objectType = label.dataset.objectType || '';
+    const objectId = label.dataset.objectId || '';
+    const labelId = label.dataset.labelId || '';
+    
+    // Emit event for GameSceneDebugHandler to perform the hit test
+    // Include the object type and ID to precisely identify the object
+    eventBus.emit(DEBUG_PERFORM_HIT_TEST, {
+      x: screenX,
+      y: screenY,
+      objectType: objectType,
+      objectId: objectId,
+      labelId: labelId
+    });
+  }
+
+  /**
+   * Calculates and sets the screen position of a label element relative to the canvas.
+   */
+  private positionLabel(label: HTMLDivElement, worldX: number, worldY: number): void {
+     if (!this.gameCanvas || !this.sceneRef) return;
+
+     try {
+        const cam = this.sceneRef.cameras.main;
+        const canvasRect = this.gameCanvas.getBoundingClientRect();
+        const scaleX = canvasRect.width / cam.width;
+        const scaleY = canvasRect.height / cam.height;
+        const screenRelX = (worldX - cam.scrollX) * scaleX;
+        const screenRelY = (worldY - cam.scrollY) * scaleY;
+
+        label.style.left = `${canvasRect.left + screenRelX}px`;
+        label.style.top = `${canvasRect.top + screenRelY}px`;
+
+     } catch (error) {
+         console.error("Error positioning debug label:", error);
+         label.style.left = `0px`;
+         label.style.top = `0px`;
+     }
   }
   
   /**
    * Create a new label element
-   * @param color Text color
-   * @returns HTML element for the label
    */
   private createLabel(color: string): HTMLDivElement {
     const label = document.createElement('div');
     label.style.position = 'absolute';
-    label.style.transform = 'translate(-50%, -50%)'; // Center on position
+    label.style.transform = 'translate(-50%, -100%)';
     label.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
     label.style.color = color;
     label.style.padding = '3px 6px';
@@ -123,21 +191,33 @@ export class HtmlDebugLabels {
     label.style.fontFamily = 'Arial, sans-serif';
     label.style.fontWeight = 'bold';
     label.style.whiteSpace = 'nowrap';
-    label.style.pointerEvents = 'none'; // Don't interfere with game input
     label.style.border = '1px solid ' + color;
     label.style.boxShadow = '0 0 3px rgba(0, 0, 0, 0.5)';
     label.style.textShadow = '0 0 2px #000';
+    label.style.marginTop = '-5px';
+    label.style.display = 'none';
+    label.style.pointerEvents = 'auto'; // Allow clicks
+    label.style.cursor = 'pointer'; // Indicate interactivity
+    label.style.zIndex = '1000';
+    
+    // Make the label more visible and clickable for debugging
+    label.style.minWidth = '80px';
+    label.style.minHeight = '20px';
+    label.style.textAlign = 'center';
+    
     return label;
   }
   
   /**
    * Remove a specific label
-   * @param id Identifier of the label to remove
    */
   public removeLabel(id: string): void {
-    const label = this.labels.get(id);
-    if (label && this.container.contains(label)) {
-      this.container.removeChild(label);
+    const labelElement = this.labels.get(id);
+    if (labelElement) {
+      labelElement.removeEventListener('click', this.handleLabelClick); // Remove listener
+      if (labelElement.parentNode === document.body) {
+        document.body.removeChild(labelElement);
+      }
       this.labels.delete(id);
     }
   }
@@ -149,9 +229,9 @@ export class HtmlDebugLabels {
     window.removeEventListener('resize', this.handleResize.bind(this));
     
     this.clearLabels();
-    if (document.body.contains(this.container)) {
-      document.body.removeChild(this.container);
-    }
+    
+    this.sceneRef = null;
+    this.gameCanvas = null;
   }
 }
 

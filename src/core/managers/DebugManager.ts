@@ -19,7 +19,8 @@ export default class DebugManager {
 
   private handleDebugToggle(): void {
     debugState.toggleDebugMode();
-    logger.log(`Debug mode ${debugState.isDebugMode ? 'enabled' : 'disabled'}`);
+    // Single concise log message
+    logger.log(`Debug mode: ${debugState.isDebugMode ? 'ON' : 'OFF'}`);
     
     this.eventBus.emit(Events.DEBUG_MODE_CHANGED, { isDebugMode: debugState.isDebugMode });
   }

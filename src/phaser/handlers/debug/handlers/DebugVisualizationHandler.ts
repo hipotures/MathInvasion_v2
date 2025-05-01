@@ -47,41 +47,55 @@ export class DebugVisualizationHandler {
     // Clear previous debug graphics
     this.debugGraphics.clear();
 
-    // Clear all previous debug labels
-    this.htmlDebugLabels.clearLabels();
+    // Don't clear labels every frame - we'll update them individually
+    // this.htmlDebugLabels.clearLabels();
+
+    // Track active labels to remove stale ones later
+    const activeLabels = new Set<string>();
 
     // Draw debug rectangles for player
-    this.drawDebugRectangle(this.playerSprite, 'player', inspectedObject);
+    if (this.playerSprite && this.playerSprite.active) {
+      this.drawDebugRectangle(this.playerSprite, 'player', inspectedObject);
+      activeLabels.add('debuglabel_player');
+    }
 
     // Draw debug rectangles for enemies
     this.enemySprites.forEach((enemyEntity, id) => {
-      const assetKey = enemyEntity.texture.key;
-      const assetName = assetKey.split('_').pop() || assetKey;
-      this.drawDebugRectangle(enemyEntity, `${assetName}_${id.substring(0, 4)}`, inspectedObject);
+      if (enemyEntity && enemyEntity.active) {
+        this.drawDebugRectangle(enemyEntity, `enemy_${id}`, inspectedObject);
+        activeLabels.add(`debuglabel_enemy_${id}`);
+      }
     });
 
     // Draw debug rectangles for projectiles
     this.projectileShapes.forEach((projectileShape, id) => {
-      this.drawDebugRectangle(projectileShape, `proj_${id.substring(0, 4)}`, inspectedObject);
+      if (projectileShape && projectileShape.active) {
+        this.drawDebugRectangle(projectileShape, `proj_${id}`, inspectedObject);
+        activeLabels.add(`debuglabel_proj_${id}`);
+      }
     });
 
     // Draw debug rectangles for powerups
     this.powerupSprites.forEach((powerupSprite, id) => {
-      const assetKey = powerupSprite.texture.key;
-      const assetName = assetKey.split('_').pop() || assetKey;
-      this.drawDebugRectangle(powerupSprite, `${assetName}_${id}`, inspectedObject);
+      if (powerupSprite && powerupSprite.active) {
+        this.drawDebugRectangle(powerupSprite, `powerup_${id}`, inspectedObject);
+        activeLabels.add(`debuglabel_powerup_${id}`);
+      }
     });
+
+    // TODO: Remove stale labels that are no longer active
+    // This would require tracking all active labels and removing ones not in the set
   }
 
   /**
-   * Draws a debug rectangle around a game object
+   * Draws a debug rectangle around a game object and updates its label
    * @param obj The game object to draw a debug rectangle around
-   * @param name The name to display in the debug label
+   * @param baseLabelId Base ID for the label (e.g., 'player', 'enemy_abc')
    * @param inspectedObject The currently inspected object, if any
    */
   private drawDebugRectangle(
     obj: DebugDrawableObject,
-    name: string,
+    baseLabelId: string, // Use a base ID passed from the caller
     inspectedObject: InspectionState | null
   ): void {
     if (!obj || !obj.active) return;
@@ -111,106 +125,111 @@ export class DebugVisualizationHandler {
       labelColor: isInspected ? '#ffff00' : '#00ff00', // Yellow if inspected, green otherwise
       lineWidth: 1
     };
+    
+    // Generate a predictable label ID and store it on the object
+    const labelId = `debuglabel_${baseLabelId}`; 
+    obj.setData('debugLabelId', labelId); // Store the ID
+
+    // Generate display name (shortened ID for label text)
+    let displayName = baseLabelId;
+    if (objectType === 'enemy' && objectId) {
+        const assetKey = (obj as EnemyEntity).texture.key;
+        const assetName = assetKey.split('_').pop() || assetKey;
+        displayName = `${assetName}_${objectId.substring(0, 4)}`;
+    } else if (objectType === 'projectile' && objectId) {
+         displayName = `proj_${objectId.substring(0, 4)}`;
+    } else if (objectType === 'powerup' && objectId) {
+         const assetKey = (obj as Phaser.Physics.Arcade.Sprite).texture.key;
+         const assetName = assetKey.split('_').pop() || assetKey;
+         displayName = `${assetName}_${objectId}`;
+    } else if (objectType === 'player') {
+         displayName = 'player';
+    }
+
 
     try {
-      // Body should exist for both Sprites and Shapes with physics enabled
-      const body = obj.body as Phaser.Physics.Arcade.Body;
-      if (!body) {
-        // Fallback if no physics body (less likely now but good practice)
-        this.debugGraphics.lineStyle(1, isInspected ? 0xffff00 : 0xff0000, 1); // Yellow if inspected, red otherwise
-        let x, y, w, h;
-        // Check if it's a Sprite (or EnemyEntity which extends Sprite)
-        if (obj instanceof Phaser.GameObjects.Sprite) {
-          x = obj.x - obj.displayWidth / 2;
-          y = obj.y - obj.displayHeight / 2;
-          w = obj.displayWidth;
-          h = obj.displayHeight;
-        } else {
-          // Assume Shape
-          // Shapes origin is usually top-left or center depending on type
-          // This might need adjustment based on specific shape types if body is missing
-          x = obj.x - obj.width / 2; // Assuming center origin for simplicity
-          y = obj.y - obj.height / 2;
-          w = obj.width;
-          h = obj.height;
-        }
-        this.debugGraphics.strokeRect(x, y, w, h);
+      // Removed hit area visualization (red rectangles)
 
-        // Add HTML label for the object
-        this.htmlDebugLabels.updateLabel(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          `${name}_${(obj as any).name || Math.random()}`, // Use name or random ID
-          name,
-          Math.round(obj.x),
-          Math.round(y - 5), // Position above calculated top edge
-          isInspected ? '#ffff00' : '#ff0000' // Yellow if inspected, red otherwise
-        );
-        return;
+      // --- Draw Physics Body / Fallback Bounds (Green/Yellow Rectangle) & Label ---
+      const body = obj.body as Phaser.Physics.Arcade.Body;
+      let labelPosX = 0, labelPosY = 0; // Variables to store label position
+
+      if (!body) {
+        // Fallback if no physics body
+        this.debugGraphics.lineStyle(config.lineWidth ?? 1, config.strokeColor, 1); 
+        let fallbackX, fallbackY, fallbackW, fallbackH;
+        if (obj instanceof Phaser.GameObjects.Sprite || obj instanceof EnemyEntity) {
+          const sprite = obj as Phaser.GameObjects.Sprite;
+          fallbackW = sprite.displayWidth;
+          fallbackH = sprite.displayHeight;
+          fallbackX = sprite.x - fallbackW / 2;
+          fallbackY = sprite.y - fallbackH / 2;
+          labelPosX = sprite.x; 
+          labelPosY = fallbackY - 5; 
+        } else { 
+          const shape = obj as Phaser.GameObjects.Shape; 
+          fallbackW = shape.width * shape.scaleX;
+          fallbackH = shape.height * shape.scaleY;
+          fallbackX = shape.x - fallbackW / 2; 
+          fallbackY = shape.y - fallbackH / 2;
+          labelPosX = shape.x; 
+          labelPosY = fallbackY - 5; 
+        }
+        this.debugGraphics.strokeRect(fallbackX, fallbackY, fallbackW, fallbackH);
+
+      } else {
+        // Draw rectangle around physics body
+        this.debugGraphics.lineStyle(config.lineWidth ?? 1, config.strokeColor, 1); 
+        this.debugGraphics.strokeRect(body.x, body.y, body.width, body.height);
+        labelPosX = body.center.x; 
+        labelPosY = body.y - 10; 
       }
 
-      // Draw rectangle around physics body (works for both)
-      this.debugGraphics.lineStyle(config.lineWidth ?? 1, config.strokeColor, 1);
-      this.debugGraphics.strokeRect(body.x, body.y, body.width, body.height);
-
-      // Add HTML label for the object
+      // Add/Update HTML label for the object using the predictable labelId
+      // Make the label text more descriptive for debugging
+      const labelText = isInspected ? `⭐ ${displayName} ⭐` : displayName;
+      
       this.htmlDebugLabels.updateLabel(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        `${name}_${(obj as any).name || Math.random()}`, // Use name or random ID
-        name,
-        Math.round(body.center.x),
-        Math.round(body.y - 10), // Position above body
-        config.labelColor
+        labelId, // Use the stored predictable ID
+        labelText, // Use the generated display name with highlight if inspected
+        Math.round(labelPosX),
+        Math.round(labelPosY),
+        config.labelColor,
+        obj // Pass the GameObject itself
       );
+
     } catch (error) {
-      // Silently handle any errors during debug drawing
-      logger.warn(`Error drawing debug for ${name}: ${error}`);
+      logger.warn(`Error drawing debug for ${baseLabelId}: ${error}`);
     }
   }
 
   /**
    * Toggles the visibility of game objects
-   * @param visible Whether the objects should be visible
    */
   public toggleObjectVisibility(visible: boolean): void {
-    // Toggle player sprite visibility
     if (this.playerSprite) {
       this.playerSprite.setVisible(visible);
     }
-
-    // Toggle enemy sprites visibility
     this.enemySprites.forEach((sprite) => {
-      if (sprite) {
-        sprite.setVisible(visible);
-      }
+      if (sprite) sprite.setVisible(visible);
     });
-
-    // Toggle projectile shapes visibility
     this.projectileShapes.forEach((shape) => {
-      if (shape) {
-        shape.setVisible(visible);
-      }
+      if (shape) shape.setVisible(visible);
     });
-
-    // Toggle powerup sprites visibility
     this.powerupSprites.forEach((sprite) => {
-      if (sprite) {
-        sprite.setVisible(visible);
-      }
+      if (sprite) sprite.setVisible(visible);
     });
   }
 
   /**
-   * Cleans up resources used by this handler
+   * Clears up resources used by this handler
    */
   public destroy(): void {
-    // Clear debug labels
-    this.htmlDebugLabels.clearLabels();
-
-    // Clear debug graphics
+    if (this.htmlDebugLabels) {
+        this.htmlDebugLabels.clearLabels();
+    }
     if (this.debugGraphics && this.debugGraphics.scene) {
       this.debugGraphics.clear();
-      // Optionally destroy graphics object if scene is being destroyed
-      // this.debugGraphics.destroy();
     }
   }
 }

@@ -11,7 +11,7 @@ import ProjectileManager from '../../core/managers/ProjectileManager';
 import { PowerupManager } from '../../core/managers/PowerupManager';
 import EconomyManager from '../../core/managers/EconomyManager';
 import HtmlDebugPanel from '../../core/utils/HtmlDebugPanel';
-import HtmlDebugLabels from '../../core/utils/HtmlDebugLabels';
+import HtmlDebugLabels from '../../core/utils/HtmlDebugLabels'; // Ensure this is imported
 import { DebugPanelUpdater } from './debug/DebugPanelUpdater';
 import { DebugObjectInspector } from '../../core/utils/debug/DebugObjectInspector';
 import { ProjectileShape } from './event/ProjectileEventHandler';
@@ -19,8 +19,9 @@ import { EnemyEntity } from '../entities/EnemyEntity';
 
 // Import the new handler classes
 import { DebugVisualizationHandler } from './debug/handlers/DebugVisualizationHandler';
-import { DebugInteractionHandler } from './debug/handlers/DebugInteractionHandler';
+import { DebugInteractionHandler } from './debug/handlers/DebugInteractionHandler'; // Keep for cursor setting
 import { DebugInspectionHandler } from './debug/handlers/DebugInspectionHandler';
+import { DebugDrawableObject } from './debug/types/DebugTypes'; // Import DebugDrawableObject
 
 /**
  * Handles debug visualization and functionality for the game scene
@@ -29,12 +30,12 @@ import { DebugInspectionHandler } from './debug/handlers/DebugInspectionHandler'
 export class GameSceneDebugHandler {
   private scene: Phaser.Scene;
   private htmlDebugPanel: HtmlDebugPanel;
-  private htmlDebugLabels: HtmlDebugLabels;
+  private htmlDebugLabels: HtmlDebugLabels; // Instance is already here
   private debugPanelUpdater: DebugPanelUpdater;
   
   // Specialized handlers
   private visualizationHandler: DebugVisualizationHandler;
-  private interactionHandler: DebugInteractionHandler;
+  private interactionHandler: DebugInteractionHandler; // Keep for cursor setting
   private inspectionHandler: DebugInspectionHandler;
 
   // References to game objects (needed for handlers)
@@ -66,7 +67,8 @@ export class GameSceneDebugHandler {
 
     // Create HTML debug panel and labels
     this.htmlDebugPanel = new HtmlDebugPanel();
-    this.htmlDebugLabels = new HtmlDebugLabels();
+    this.htmlDebugLabels = new HtmlDebugLabels(); 
+    this.htmlDebugLabels.setScene(scene); // Set the scene reference
 
     // Instantiate the DebugPanelUpdater
     this.debugPanelUpdater = new DebugPanelUpdater(
@@ -93,128 +95,210 @@ export class GameSceneDebugHandler {
       enemySprites,
       projectileShapes,
       powerupSprites,
-      this.htmlDebugLabels
+      this.htmlDebugLabels // Pass labels instance
     );
     
     // Inspection handler for object inspection
     this.inspectionHandler = new DebugInspectionHandler(debugObjectInspector);
     
-    // Interaction handler for making objects interactive
+    // Interaction handler - Now ONLY sets interactive flag and cursor
     this.interactionHandler = new DebugInteractionHandler(
       scene,
       playerSprite,
       enemySprites,
       projectileShapes,
       powerupSprites,
-      this.handleObjectClick.bind(this),
-      this.handleSceneClick.bind(this)
+      this.handleObjectClick.bind(this) 
     );
 
     // Bind methods
     this.handleDebugModeChanged = this.handleDebugModeChanged.bind(this);
+    this.handleDebugHitTestRequest = this.handleDebugHitTestRequest.bind(this); // Bind new handler
     
     // Register event listeners
     eventBus.on(Events.DEBUG_MODE_CHANGED, this.handleDebugModeChanged);
+    eventBus.on(Events.DEBUG_PERFORM_HIT_TEST, this.handleDebugHitTestRequest); // Listen for hit test request
     
-    // Listen for game pause/resume events to ensure objects remain interactive
+    // Listen for game pause/resume events - simplified, no input manipulation needed here
     eventBus.on(Events.GAME_PAUSED, () => {
-      logger.debug('GameSceneDebugHandler: Game paused, ensuring objects remain interactive');
-      if (debugState.isDebugMode) {
-        // Re-enable interactivity for all objects when paused
-        this.interactionHandler.setObjectInteractivity(true);
-      }
+      logger.debug('GameSceneDebugHandler: Game paused');
     });
     
     eventBus.on(Events.GAME_RESUMED, () => {
       logger.debug('GameSceneDebugHandler: Game resumed');
-      if (debugState.isDebugMode) {
-        // Re-enable interactivity for all objects when resumed
-        this.interactionHandler.setObjectInteractivity(true);
-      }
     });
   }
 
   /**
    * Handles changes to debug mode
-   * @param data Debug mode change data
    */
   public handleDebugModeChanged(data: { isDebugMode: boolean }): void {
-    logger.log(`Debug mode changed to: ${data.isDebugMode}`);
+    // Removed duplicate log message - DebugManager already logs this
 
-    // Toggle HTML debug panel and labels
     this.htmlDebugPanel.setVisible(data.isDebugMode);
     this.htmlDebugLabels.setVisible(data.isDebugMode);
+    
+    if (this.visualizationHandler) {
+        this.visualizationHandler.toggleObjectVisibility(!data.isDebugMode);
+    }
+    // Still set interactivity for cursor changes
+    if (this.interactionHandler) {
+        this.interactionHandler.setObjectInteractivity(data.isDebugMode);
+    }
+    
+    // REMOVED management of scene input / canvas pointer events
 
-    // Toggle object visibility
-    this.visualizationHandler.toggleObjectVisibility(!data.isDebugMode);
-
-    // Toggle object interactivity
-    this.interactionHandler.setObjectInteractivity(data.isDebugMode);
-
-    // Update all sprites to show/hide debug info and set interactivity
     if (data.isDebugMode) {
-      this.updateDebugVisuals();
+        this.updateDebugVisuals(); 
     } else {
-      // Clear all debug labels and stop inspecting when debug mode is disabled
-      this.htmlDebugLabels.clearLabels();
-      this.inspectionHandler.stopInspecting(); // Stop inspecting if debug mode is turned off
+        // Cleanup when turning debug mode OFF
+        this.htmlDebugLabels.clearLabels();
+        if (this.visualizationHandler) this.visualizationHandler.destroy(); 
+        this.inspectionHandler.stopInspecting(); 
     }
   }
 
   /**
-   * Updates all debug visuals
+   * Updates all debug visuals (custom ones)
    */
   public updateDebugVisuals(): void {
-    // Only proceed if debug mode is enabled
     if (!debugState.isDebugMode) return;
-
-    // Update visuals using the visualization handler
-    this.visualizationHandler.updateDebugVisuals(this.inspectionHandler.getInspectionState());
-
-    // Update HTML debug panel using the updater
-    this.debugPanelUpdater.update();
+    if (this.visualizationHandler) {
+       this.visualizationHandler.updateDebugVisuals(this.inspectionHandler.getInspectionState());
+    }
+    if (this.debugPanelUpdater) {
+       this.debugPanelUpdater.update();
+    }
   }
 
   /**
-   * Handles a click on a game object
+   * Handles the logic when an interactive object is determined to be clicked.
    * @param gameObject The game object that was clicked
    */
   private handleObjectClick(gameObject: Phaser.GameObjects.GameObject): void {
-    if (!debugState.isDebugMode) return; // Only allow clicks in debug mode
-    
-    // Log the clicked object to the console
-    logger.debug("Clicked object:", gameObject);
-    
-    // Delegate to the inspection handler
     const stateChanged = this.inspectionHandler.handleObjectClick(gameObject);
-    
-    // Force redraw to update highlight color immediately if state changed
     if (stateChanged) {
       this.updateDebugVisuals();
     }
   }
   
   /**
-   * Handles a click on the scene
-   * @param pointer The pointer that triggered the click
+   * Handles the DEBUG_PERFORM_HIT_TEST event emitted by UIScene.
+   * Performs manual hit detection using world coordinates and object bounds.
+   * @param data Object containing pointer screen coordinates { x: number, y: number }
    */
-  private handleSceneClick(pointer: Phaser.Input.Pointer): void {
+  private handleDebugHitTestRequest(data: {
+    x: number,
+    y: number,
+    objectType?: string,
+    objectId?: string,
+    labelId?: string
+  }): void {
     if (!debugState.isDebugMode) return;
+
+    const objectType = data.objectType;
+    const objectId = data.objectId;
+
+    // If we have object type and ID, use them to find the corresponding game object
+    if (objectType && objectId) {
+      // Try to find the object based on its type and ID
+      let hitObject: Phaser.GameObjects.GameObject | null = null;
+      
+      // Check player
+      if (objectType === 'player') {
+        hitObject = this.playerSprite;
+      }
+      
+      // Check enemies
+      else if (objectType === 'enemy') {
+        // Find the enemy with the matching ID
+        for (const [_, enemy] of this.enemySprites.entries()) {
+          if (enemy && enemy.active && enemy.instanceId === objectId) {
+            hitObject = enemy;
+            break;
+          }
+        }
+      }
+      
+      // Check projectiles
+      else if (objectType === 'projectile') {
+        // Find the projectile with the matching ID
+        if (this.projectileShapes.has(objectId)) {
+          hitObject = this.projectileShapes.get(objectId) || null;
+        }
+      }
+      
+      // Check powerups
+      else if (objectType === 'powerup') {
+        // Find the powerup with the matching ID
+        const powerupId = parseInt(objectId, 10);
+        if (!isNaN(powerupId) && this.powerupSprites.has(powerupId)) {
+          hitObject = this.powerupSprites.get(powerupId) || null;
+        }
+      }
+      
+      // Process result
+      if (hitObject) {
+        this.handleObjectClick(hitObject);
+        return;
+      }
+    }
     
-    logger.debug("Scene clicked at:", pointer.x, pointer.y);
-    logger.debug("Debug mode is active:", debugState.isDebugMode);
-    logger.debug("Player sprite position:", this.playerSprite.x, this.playerSprite.y);
-    
-    // Log all active game objects
-    logger.debug("Active game objects:");
-    logger.debug("Player:", this.playerSprite.active ? "Active" : "Inactive");
-    logger.debug("Enemy count:", this.enemySprites.size);
-    logger.debug("Projectile count:", this.projectileShapes.size);
-    logger.debug("Powerup count:", this.powerupSprites.size);
-    
-    // Check if any objects are interactive
-    logger.debug("Player interactive:", this.playerSprite.input ? "Yes" : "No");
+    // Fallback to the coordinate-based method if we couldn't find an object by ID
+    const pointerX = data.x;
+    const pointerY = data.y;
+    const worldPoint = this.scene.cameras.main.getWorldPoint(pointerX, pointerY);
+    const worldX = worldPoint.x;
+    const worldY = worldPoint.y;
+
+    let hitObject: Phaser.GameObjects.GameObject | null = null;
+
+    // Gather all potentially interactive objects
+    const allObjects: DebugDrawableObject[] = [];
+    if (this.playerSprite && this.playerSprite.active) allObjects.push(this.playerSprite);
+    this.enemySprites.forEach(sprite => { if (sprite && sprite.active) allObjects.push(sprite); });
+    this.projectileShapes.forEach(shape => { if (shape && shape.active) allObjects.push(shape); });
+    this.powerupSprites.forEach(sprite => { if (sprite && sprite.active) allObjects.push(sprite); });
+
+    // Iterate and check bounds (reverse order for top-most)
+    for (let i = allObjects.length - 1; i >= 0; i--) {
+        const obj = allObjects[i];
+        let bounds: Phaser.Geom.Rectangle | null = null;
+
+        try {
+            // Prioritize physics body bounds if available
+            const body = (obj as any).body as Phaser.Physics.Arcade.Body | undefined;
+            // Ensure body exists and has getBounds method
+            if (body && typeof body.getBounds === 'function') {
+                 // Create a new Rectangle to store the bounds
+                 const bodyBoundsRect = new Phaser.Geom.Rectangle();
+                 body.getBounds(bodyBoundsRect); // Populate the rectangle
+                 bounds = bodyBoundsRect;
+            } else if (typeof obj.getBounds === 'function') {
+                 // Fallback to GameObject's getBounds
+                 const objBoundsRect = new Phaser.Geom.Rectangle();
+                 obj.getBounds(objBoundsRect); // Populate the rectangle
+                 bounds = objBoundsRect;
+            }
+            
+            if (bounds && bounds.contains(worldX, worldY)) {
+                hitObject = obj;
+                break; // Found hit
+            }
+        } catch (e) {
+            // Silently continue to next object
+        }
+    }
+
+    // Process result
+    if (hitObject) {
+        this.handleObjectClick(hitObject);
+    } else {
+        this.inspectionHandler.stopInspecting();
+        this.updateDebugVisuals();
+    }
   }
+
 
   /**
    * Cleans up resources used by this handler
@@ -222,19 +306,19 @@ export class GameSceneDebugHandler {
   public destroy(): void {
     // Remove event listeners
     eventBus.off(Events.DEBUG_MODE_CHANGED, this.handleDebugModeChanged);
-    
-    // Remove pause/resume event listeners
-    eventBus.off(Events.GAME_PAUSED, () => {});
+    eventBus.off(Events.DEBUG_PERFORM_HIT_TEST, this.handleDebugHitTestRequest); 
+    eventBus.off(Events.GAME_PAUSED, () => {}); 
     eventBus.off(Events.GAME_RESUMED, () => {});
     
-    // Destroy specialized handlers
-    this.visualizationHandler.destroy();
-    this.interactionHandler.destroy();
-    this.inspectionHandler.destroy();
-
-    // Destroy HTML debug panel and labels
-    this.htmlDebugPanel.destroy();
-    this.htmlDebugLabels.destroy();
+    // Destroy handlers and UI elements
+    if (this.visualizationHandler) this.visualizationHandler.destroy();
+    if (this.interactionHandler) this.interactionHandler.destroy(); 
+    if (this.inspectionHandler) this.inspectionHandler.destroy();
+    if (this.htmlDebugPanel) this.htmlDebugPanel.destroy();
+    if (this.htmlDebugLabels) this.htmlDebugLabels.destroy();
+    if (this.debugPanelUpdater && typeof this.debugPanelUpdater.destroy === 'function') {
+        this.debugPanelUpdater.destroy();
+    }
     
     logger.log('GameSceneDebugHandler destroyed and listeners removed');
   }

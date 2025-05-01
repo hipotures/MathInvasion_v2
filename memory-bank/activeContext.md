@@ -153,6 +153,30 @@ Process Update:
      *   Update the `preUpdate` method to check the `isPaused` flag before handling movement and shooting.
  *   Updated `GameScene` to initialize and clean up the static event listeners for `EnemyEntity`.
  
+**Recent Changes (M7 - Debug Enhancement Planning):**
+*   Created and approved a detailed plan to enhance debug object inspection (visualize hit area, display all properties). Plan saved to `refactoring-plan/DebugEnhancements-plan.md`.
+| **Recent Changes (M7 - Debug Click Troubleshooting):**
+| *   **Goal:** Implement clickable debug elements (initially the padded hit area, later refined to the visual object bounds or the HTML label) to trigger object inspection, especially when the game scene is paused.
+| *   **Problem:** Clicks on interactive elements (objects or HTML labels) were not being registered correctly when the game was paused; only clicks on the scene background were detected.
+| *   **Attempted Solutions:**
+|     1.  **Object-specific Listeners:** Added `pointerdown` listeners directly to interactive game objects. (Failed - listeners didn't fire when paused).
+|     2.  **Global Listener + Manual Bounds Check (Screen Coords):** Used the scene's global `pointerdown` listener and manually calculated/compared screen coordinates of the click vs. object/label bounds. (Failed - likely coordinate system mismatch).
+|     3.  **Global Listener + Manual Bounds Check (Canvas Coords):** Refined the manual check to use canvas-relative coordinates. (Failed - still missed).
+|     4.  **Phaser Hit Test:** Attempted to use Phaser's built-in `hitTest` methods. (Failed - `hitTest` method assumption was incorrect; `gameObjectsUnderPointer` from the event was empty when paused).
+|     5.  **Clickable HTML Labels:** Made HTML labels interactive, removed object listeners, and used DOM click events + EventBus. (Failed - label click listeners didn't fire, despite cursor changing).
+|     6.  **Disable Scene Input:** Disabled `GameScene.input.enabled` during pause + debug mode. (Failed - label clicks still didn't register).
+|     7.  **Disable Canvas Pointer Events:** Disabled `canvas.style.pointerEvents` during pause + debug mode. (Failed - label clicks still didn't register).
+|     8.  **DOM Capture Phase:** Switched label click listener to use the capture phase. (Failed - listener still didn't fire).
+|     9.  **Increased Z-Index:** Significantly increased label `z-index`. (Failed).
+|     10. **Body/Window Capture Listener:** Added diagnostic listeners to `body` and `window` capture phase. Confirmed clicks *outside* labels reach these listeners, but clicks *on* labels do not, suggesting an unknown interception.
+| *   **Solution Implemented:**
+|     1. Modified `HtmlDebugLabels.ts` to store each object's exact type and ID in the label's dataset.
+|     2. Updated the click handler to pass this precise identification to the event.
+|     3. Updated `GameSceneDebugHandler.ts` to use the object type and ID to find the exact corresponding object.
+|     4. Disabled canvas pointer events during both pause and debug mode to prevent the canvas from intercepting clicks.
+|     5. Removed the red outlines (hit areas) that didn't represent actual physical boundaries.
+|     6. Consolidated debug mode logging to a single concise message.
+| *   **Current Status:** Debug click interaction now works reliably when paused. Clicking on a specific debug label selects the exact corresponding game object, even when multiple objects have similar display names.
  **Next Steps (Milestone M7 - Balans, Testy, Optymalizacja i CI/CD):**
  *   **Balancing:**
     *   Review and adjust values in `config/*.yml` (enemy health/speed/reward/score, weapon damage/cooldown/cost, powerup duration/effects, difficulty scaling) based on playtesting.
