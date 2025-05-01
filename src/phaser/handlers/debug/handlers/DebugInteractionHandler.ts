@@ -6,10 +6,10 @@ import { ProjectileShape } from '../../event/ProjectileEventHandler';
 
 /**
  * Handles debug interaction for game objects
- * Responsible for making objects interactive and handling click events
+ * Responsible for making objects interactive (for hit testing and cursor)
  */
 export class DebugInteractionHandler {
-  private scene: Phaser.Scene;
+  private scene: Phaser.Scene; // Keep scene reference if needed for other things, otherwise remove
   
   // References to game objects for interactivity
   private playerSprite: Phaser.Physics.Arcade.Sprite;
@@ -19,34 +19,36 @@ export class DebugInteractionHandler {
 
   // Default configuration for interactivity
   private defaultConfig: InteractivityConfig = {
-    hitAreaPadding: 20,
     useHandCursor: true,
-    pixelPerfect: false
+    pixelPerfect: false 
   };
 
-  // Callback for when an object is clicked
+  // Callback for when an object is clicked (passed but not used directly here anymore)
   private onObjectClickCallback: (gameObject: Phaser.GameObjects.GameObject) => void;
-  private onSceneClickCallback: (pointer: Phaser.Input.Pointer) => void;
+  // REMOVED: Callback for scene click 
+  // private onSceneClickCallback: (pointer: Phaser.Input.Pointer) => void; 
 
   constructor(
-    scene: Phaser.Scene,
+    scene: Phaser.Scene, // Keep scene reference? Only if needed elsewhere in this class
     playerSprite: Phaser.Physics.Arcade.Sprite,
     enemySprites: Map<string, EnemyEntity>,
     projectileShapes: Map<string, ProjectileShape>,
     powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite>,
-    onObjectClick: (gameObject: Phaser.GameObjects.GameObject) => void,
-    onSceneClick: (pointer: Phaser.Input.Pointer) => void
+    onObjectClick: (gameObject: Phaser.GameObjects.GameObject) => void
+    // REMOVED: onSceneClick parameter
+    // onSceneClick: (pointer: Phaser.Input.Pointer) => void 
   ) {
-    this.scene = scene;
+    this.scene = scene; // Keep scene reference?
     this.playerSprite = playerSprite;
     this.enemySprites = enemySprites;
     this.projectileShapes = projectileShapes;
     this.powerupSprites = powerupSprites;
-    this.onObjectClickCallback = onObjectClick;
-    this.onSceneClickCallback = onSceneClick;
+    this.onObjectClickCallback = onObjectClick; // Keep reference if needed elsewhere
+    // REMOVED: Assignment of onSceneClickCallback
+    // this.onSceneClickCallback = onSceneClick;
 
-    // Add a click event listener to the scene itself
-    this.scene.input.on('pointerdown', this.onSceneClickCallback);
+    // REMOVED: Setting up scene input listener here
+    // this.scene.input.on('pointerdown', this.onSceneClickCallback); 
   }
 
   /**
@@ -56,55 +58,27 @@ export class DebugInteractionHandler {
   public setObjectInteractivity(interactive: boolean): void {
     logger.debug(`Setting object interactivity: ${interactive ? 'ON' : 'OFF'}`);
     
-    // Player
-    if (this.playerSprite) {
-      if (interactive) {
-        this.setupObjectInteractivity(this.playerSprite);
-        logger.debug("Player sprite is now interactive");
-      } else {
-        this.removeObjectInteractivity(this.playerSprite);
-      }
-    }
-
-    // Enemies
-    this.enemySprites.forEach((sprite) => {
-      if (sprite && sprite.active) {
-        if (interactive) {
-          this.setupObjectInteractivity(sprite);
-        } else {
-          this.removeObjectInteractivity(sprite);
+    const processObject = (obj: Phaser.GameObjects.GameObject | undefined | null) => {
+        if (obj && obj.active) {
+             if (interactive) {
+                this.setupObjectInteractivity(obj);
+             } else {
+                this.removeObjectInteractivity(obj);
+             }
         }
-      }
-    });
-    logger.debug(`Set interactivity on ${this.enemySprites.size} enemies`);
+    };
 
-    // Projectiles
-    this.projectileShapes.forEach((shape) => {
-      if (shape && shape.active) {
-        if (interactive) {
-          this.setupObjectInteractivity(shape);
-        } else {
-          this.removeObjectInteractivity(shape);
-        }
-      }
-    });
-    logger.debug(`Set interactivity on ${this.projectileShapes.size} projectiles`);
+    processObject(this.playerSprite);
+    this.enemySprites.forEach(processObject);
+    this.projectileShapes.forEach(processObject);
+    this.powerupSprites.forEach(processObject);
 
-    // Powerups
-    this.powerupSprites.forEach((sprite) => {
-      if (sprite && sprite.active) {
-        if (interactive) {
-          this.setupObjectInteractivity(sprite);
-        } else {
-          this.removeObjectInteractivity(sprite);
-        }
-      }
-    });
-    logger.debug(`Set interactivity on ${this.powerupSprites.size} powerups`);
+    logger.debug(`Set interactivity on relevant objects.`);
   }
 
   /**
-   * Sets up interactivity for a single game object
+   * Sets up interactivity for a single game object, defining the hit area
+   * to match visual bounds (body or fallback).
    * @param obj The game object to make interactive
    * @param config Optional configuration for interactivity
    */
@@ -112,58 +86,44 @@ export class DebugInteractionHandler {
     obj: Phaser.GameObjects.GameObject,
     config: InteractivityConfig = this.defaultConfig
   ): void {
-    // Make sure the object is enabled for input with a larger hit area
-    if (obj instanceof Phaser.GameObjects.Sprite) {
-      // For sprites, use a rectangle with padding
-      const width = (obj as Phaser.GameObjects.Sprite).width * (obj as Phaser.GameObjects.Sprite).scaleX;
-      const height = (obj as Phaser.GameObjects.Sprite).height * (obj as Phaser.GameObjects.Sprite).scaleY;
-      const padding = config.hitAreaPadding ?? this.defaultConfig.hitAreaPadding ?? 20;
-      
-      obj.setInteractive(
-        new Phaser.Geom.Rectangle(
-          -width/2 - padding, 
-          -height/2 - padding,
-          width + padding*2, 
-          height + padding*2
-        ),
-        Phaser.Geom.Rectangle.Contains
-      );
-      
-      logger.debug(`Set interactive on sprite with padding:`, obj);
+    // Remove previous listeners/settings first
+    obj.off('pointerdown'); 
+    obj.off('pointerover'); 
+    obj.off('pointerout'); 
+    (obj as any).clearTint?.(); 
+
+    // Define hit area based on physics body or visual bounds
+    let hitArea: Phaser.Geom.Rectangle | undefined;
+    let hitAreaCallback: Function | undefined = Phaser.Geom.Rectangle.Contains;
+
+    const body = (obj as any).body as Phaser.Physics.Arcade.Body | undefined;
+
+    if (body) {
+        const objWithPos = obj as any; 
+        const offsetX = body.x - objWithPos.x; 
+        const offsetY = body.y - objWithPos.y;
+        hitArea = new Phaser.Geom.Rectangle(offsetX, offsetY, body.width, body.height);
+        logger.debug(`Setting hit area from BODY for ${objWithPos.name || objWithPos.getData('instanceId')}: ${hitArea.width}x${hitArea.height} at (${hitArea.x}, ${hitArea.y}) relative to origin (${objWithPos.x}, ${objWithPos.y})`);
+
+    } else if (obj instanceof Phaser.GameObjects.Sprite || obj instanceof EnemyEntity) {
+        const sprite = obj as Phaser.GameObjects.Sprite;
+        hitArea = new Phaser.Geom.Rectangle(-sprite.displayWidth / 2, -sprite.displayHeight / 2, sprite.displayWidth, sprite.displayHeight);
+         logger.debug(`Setting hit area from SPRITE bounds for ${obj.name || obj.getData('instanceId')}: ${hitArea.width}x${hitArea.height}`);
     } else if (obj instanceof Phaser.GameObjects.Shape) {
-      // For shapes, use a rectangle with padding
-      const shape = obj as Phaser.GameObjects.Shape;
-      const width = shape.width * shape.scaleX;
-      const height = shape.height * shape.scaleY;
-      const padding = config.hitAreaPadding ?? this.defaultConfig.hitAreaPadding ?? 20;
-      
-      obj.setInteractive(
-        new Phaser.Geom.Rectangle(
-          -width/2 - padding, 
-          -height/2 - padding,
-          width + padding*2, 
-          height + padding*2
-        ),
-        Phaser.Geom.Rectangle.Contains
-      );
-      
-      logger.debug(`Set interactive on shape with padding:`, obj);
+        const shape = obj as Phaser.GameObjects.Shape;
+        hitArea = new Phaser.Geom.Rectangle(-shape.width * shape.scaleX / 2, -shape.height * shape.scaleY / 2, shape.width * shape.scaleX, shape.height * shape.scaleY);
+         logger.debug(`Setting hit area from SHAPE bounds for ${obj.name || obj.getData('instanceId')}: ${hitArea.width}x${hitArea.height}`);
     } else {
-      // For other objects, use default interactivity
-      obj.setInteractive({ 
-        useHandCursor: config.useHandCursor ?? this.defaultConfig.useHandCursor, 
-        pixelPerfect: config.pixelPerfect ?? this.defaultConfig.pixelPerfect 
-      });
-      logger.debug(`Set interactive on object:`, obj);
+        hitArea = undefined;
+        hitAreaCallback = undefined;
+         logger.warn(`Could not determine specific hit area for object:`, obj);
     }
-    
-    // Remove any existing listeners to avoid duplicates
-    obj.off('pointerdown');
-    
-    // Add the click listener
-    obj.on('pointerdown', () => {
-      logger.debug("Object clicked directly:", obj);
-      this.onObjectClickCallback(obj);
+
+    // Set interactive using the calculated hit area (or default) and cursor setting
+    obj.setInteractive({
+        hitArea: hitArea,
+        hitAreaCallback: hitAreaCallback,
+        useHandCursor: config.useHandCursor ?? this.defaultConfig.useHandCursor ?? true
     });
   }
 
@@ -172,18 +132,18 @@ export class DebugInteractionHandler {
    * @param obj The game object to make non-interactive
    */
   private removeObjectInteractivity(obj: Phaser.GameObjects.GameObject): void {
-    obj.off('pointerdown');
     obj.disableInteractive();
+    (obj as any).clearTint?.(); // Clear tint if any remains
   }
 
   /**
    * Cleans up resources used by this handler
    */
   public destroy(): void {
-    // Remove scene click listener
-    if (this.scene && this.scene.input) {
-      this.scene.input.off('pointerdown', this.onSceneClickCallback);
-    }
+    // REMOVED: Removing scene click listener here
+    // if (this.scene && this.scene.input) {
+    //   this.scene.input.off('pointerdown', this.onSceneClickCallback);
+    // }
     
     // Remove interactivity from any remaining objects
     this.setObjectInteractivity(false);

@@ -71,6 +71,8 @@ export default class GameScene extends Phaser.Scene {
     // Initialize static event listeners for EnemyEntity
     EnemyEntity.initializeEventListeners();
     
+    // REMOVED: this.input.ignorePause = true;
+
     // Launch UI scene
     this.scene.launch('UIScene');
     logger.log('Launched UIScene');
@@ -89,7 +91,10 @@ export default class GameScene extends Phaser.Scene {
     }
 
     // Always update debug visuals, even when paused
-    this.debugHandler.updateDebugVisuals();
+    // Ensure debugHandler exists before calling update
+    if (this.debugHandler) {
+        this.debugHandler.updateDebugVisuals();
+    }
   }
 
   /**
@@ -196,10 +201,14 @@ export default class GameScene extends Phaser.Scene {
     const spawnerTimer = this.spawner.setupEnemySpawner();
     
     // Pass the timer reference to the event handler so it can stop it on player death
-    this.eventHandler.setEnemySpawnerTimer(spawnerTimer);
+    if (this.eventHandler && typeof this.eventHandler.setEnemySpawnerTimer === 'function') {
+        this.eventHandler.setEnemySpawnerTimer(spawnerTimer);
+    }
     
     // Pass the timer to the event manager
-    this.eventManager.setEnemySpawnerTimer(spawnerTimer);
+    if (this.eventManager && typeof this.eventManager.setEnemySpawnerTimer === 'function') {
+        this.eventManager.setEnemySpawnerTimer(spawnerTimer);
+    }
     
     // Setup shutdown cleanup
     this.initializer.setupShutdownCleanup(

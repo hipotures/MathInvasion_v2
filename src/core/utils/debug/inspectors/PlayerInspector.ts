@@ -16,35 +16,80 @@ export class PlayerInspector {
    * @param playerSprite The player sprite to inspect
    * @returns Player inspection data or null if data cannot be retrieved
    */
-  public getPlayerDetails(playerSprite: Phaser.Physics.Arcade.Sprite): PlayerInspectionData | null {
+  // Return a simple key-value object instead of the structured PlayerInspectionData
+  public getPlayerDetails(playerSprite: Phaser.Physics.Arcade.Sprite): { [key: string]: any } | null {
     const state = this.playerManager.getPlayerState(); // Get manager state
     const config = ConfigLoader.getPlayerConfig();
     const body = playerSprite.body as Phaser.Physics.Arcade.Body | null;
-  
-    if (!state || !body) {
-      Logger.warn('Could not get player state or body for inspection');
+    const creationTime = this.playerManager.getCreationTime();
+
+    if (!state || !body || !config) {
+      Logger.warn('Could not get player state, body, or config for inspection');
       return null;
     }
 
-    return {
-      id: 'player',
-      type: 'Player',
-      configData: this.extractConfigData(config),
-      standardProperties: {
-        'Position X': playerSprite.x?.toFixed(1), // Get from sprite
-        'Position Y': playerSprite.y?.toFixed(1), // Get from sprite
-        'Velocity X': body.velocity.x?.toFixed(1), // Get from body
-        'Velocity Y': body.velocity.y?.toFixed(1), // Get from body
-        'Health': state.health, // Get from manager state
-        'Max Health': state.maxHealth, // Get from manager state
-        'Age (s)': this.calculateAge(this.playerManager.getCreationTime()),
-      },
-      otherProperties: {
-        'Is Invulnerable': state.isInvulnerable,
-        'Invulnerability Timer (ms)': state.invulnerabilityTimer,
-        'Movement Direction': state.movementDirection,
-      },
+    const details: { [key: string]: any } = {
+      // --- Core Identification ---
+      ID: 'player',
+      Type: 'Player',
+      
+      // --- Sprite Properties ---
+      X: playerSprite.x?.toFixed(1),
+      Y: playerSprite.y?.toFixed(1),
+      Angle: playerSprite.angle?.toFixed(1),
+      ScaleX: playerSprite.scaleX?.toFixed(2),
+      ScaleY: playerSprite.scaleY?.toFixed(2),
+      Depth: playerSprite.depth,
+      Visible: playerSprite.visible,
+      Active: playerSprite.active,
+      Texture: playerSprite.texture?.key,
+
+      // --- Physics Body Properties ---
+      Vx: body.velocity.x?.toFixed(1),
+      Vy: body.velocity.y?.toFixed(1),
+      Ax: body.acceleration.x?.toFixed(1),
+      Ay: body.acceleration.y?.toFixed(1),
+      BodyWidth: body.width?.toFixed(0),
+      BodyHeight: body.height?.toFixed(0),
+      BodyX: body.x?.toFixed(1),
+      BodyY: body.y?.toFixed(1),
+      Mass: body.mass?.toFixed(2),
+      BounceX: body.bounce.x?.toFixed(2),
+      BounceY: body.bounce.y?.toFixed(2),
+      OnFloor: body.onFloor(),
+      OnWall: body.onWall(),
+      AllowGravity: body.allowGravity,
+      Immovable: body.immovable,
+
+      // --- Manager State Properties ---
+      Health: state.health,
+      MaxHealth: state.maxHealth,
+      IsInvulnerable: state.isInvulnerable,
+      InvulnerabilityTimerMs: state.invulnerabilityTimer,
+      MovementDirection: state.movementDirection,
+      AgeSeconds: this.calculateAge(creationTime),
+
+      // --- Config Properties (Prefixed) ---
+      // Flatten config or select key properties
     };
+    
+    // Add config properties with prefix
+    // Cast config to any to allow dynamic key access for debugging display
+    const configAny = config as any;
+    for (const key in configAny) {
+        if (Object.prototype.hasOwnProperty.call(configAny, key)) {
+            const value = configAny[key];
+            // Avoid adding complex objects/arrays directly, stringify or skip
+            if (typeof value !== 'object' || value === null) {
+                details[`config_${key}`] = value;
+            } else if (Array.isArray(value)) {
+                 details[`config_${key}`] = JSON.stringify(value); // Or skip
+            }
+            // Skip nested objects for simplicity for now
+        }
+    }
+
+    return details;
   }
 
   /**
@@ -55,17 +100,5 @@ export class PlayerInspector {
   private calculateAge(creationTime?: number): string {
     if (creationTime === undefined) return 'N/A';
     return ((Date.now() - creationTime) / 1000).toFixed(1);
-  }
-
-  /**
-   * Extracts config data for display
-   * @param config The config object to extract data from
-   * @returns The extracted config data
-   */
-  private extractConfigData(config: any): any {
-    if (!config) return { 'Error': 'Config not found' };
-    // Simple extraction, might need refinement based on config structure
-    // We could filter out complex objects/arrays if needed
-    return { ...config };
   }
 }

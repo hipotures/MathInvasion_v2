@@ -22,7 +22,8 @@ export interface InspectionState {
  * Data for the DEBUG_SHOW_INSPECTION_DETAILS event
  */
 export interface InspectionDetailsData {
-  html: string;
+  // Changed from html: string to data: object
+  data: { [key: string]: any } | null;
 }
 
 /**

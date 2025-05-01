@@ -53,3 +53,8 @@ export const POWERUP_EFFECT_REMOVED = 'POWERUP_EFFECT_REMOVED'; // Emitted by Po
 export const TOGGLE_PAUSE = 'TOGGLE_PAUSE'; // Request to toggle pause state
 export const GAME_PAUSED = 'GAME_PAUSED'; // Emitted when the game is paused
 export const GAME_RESUMED = 'GAME_RESUMED'; // Emitted when the game is resumed
+
+// Debugging Events
+export const DEBUG_PERFORM_HIT_TEST = 'DEBUG_PERFORM_HIT_TEST'; // { x: number, y: number }
+
+export const DEBUG_LABEL_CLICKED = 'DEBUG_LABEL_CLICKED'; // { gameObject: Phaser.GameObjects.GameObject }

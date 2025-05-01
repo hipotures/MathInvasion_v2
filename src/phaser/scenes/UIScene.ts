@@ -4,23 +4,23 @@ import logger from '../../core/utils/Logger';
 import * as Events from '../../core/constants/events'; // Import event constants
 import { type PlayerState } from '../../core/types/PlayerState'; // Import PlayerState type
 import HtmlUI from '../../core/utils/HtmlUI'; // Import HtmlUI
+// Removed debugState import
 
 /** Defines the data expected for the WEAPON_STATE_UPDATED event */
-// Ensure this matches the interface in WeaponManager.ts
 interface WeaponStateUpdateData {
   weaponId: string;
   level: number;
-  nextUpgradeCost: number | null; // Added cost
+  nextUpgradeCost: number | null; 
 }
 
 /** Defines the data expected for the WAVE_UPDATED event */
-// Ensure this matches the interface in EnemyManager.ts
 interface WaveUpdateData {
   waveNumber: number;
 }
 
 export default class UIScene extends Phaser.Scene {
-  private htmlUI!: HtmlUI; // HTML UI for all text elements, using definite assignment assertion
+  private htmlUI!: HtmlUI; 
+  // Removed gameScene reference
 
   constructor() {
     super({ key: 'UIScene' });
@@ -33,6 +33,8 @@ export default class UIScene extends Phaser.Scene {
   create(): void {
     logger.log('UIScene created');
 
+    // Removed getting GameScene reference
+
     // Create HTML UI
     this.htmlUI = new HtmlUI();
 
@@ -42,6 +44,7 @@ export default class UIScene extends Phaser.Scene {
     this.handlePlayerStateUpdate = this.handlePlayerStateUpdate.bind(this);
     this.handleScoreUpdate = this.handleScoreUpdate.bind(this);
     this.handleWaveUpdate = this.handleWaveUpdate.bind(this);
+    // Removed binding for handleGlobalPointerDown
     // No need to bind arrow functions: handleGamePaused, handleGameResumed
 
     // --- Event Listeners ---
@@ -53,6 +56,8 @@ export default class UIScene extends Phaser.Scene {
     eventBus.on(Events.GAME_PAUSED, this.handleGamePaused); // Listen for pause
     eventBus.on(Events.GAME_RESUMED, this.handleGameResumed); // Listen for resume
 
+    // Removed global pointer listener
+
     // Clean up listeners when the scene is shut down
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
       logger.log('UIScene shutdown, removing listeners');
@@ -61,16 +66,17 @@ export default class UIScene extends Phaser.Scene {
       eventBus.off(Events.PLAYER_STATE_UPDATED, this.handlePlayerStateUpdate);
       eventBus.off(Events.SCORE_UPDATED, this.handleScoreUpdate);
       eventBus.off(Events.WAVE_UPDATED, this.handleWaveUpdate);
-      eventBus.off(Events.GAME_PAUSED, this.handleGamePaused); // Remove pause listener
-      eventBus.off(Events.GAME_RESUMED, this.handleGameResumed); // Remove resume listener
+      eventBus.off(Events.GAME_PAUSED, this.handleGamePaused); 
+      eventBus.off(Events.GAME_RESUMED, this.handleGameResumed); 
+      
+      // Removed global pointer listener removal
 
       // Destroy HTML UI
       this.htmlUI.destroy();
     });
-
-    // Request initial currency state (EconomyManager emits it on init, but good practice)
-    // eventBus.emit('REQUEST_CURRENCY_STATE'); // Need EconomyManager to listen for this
   }
+
+  // Removed handleGlobalPointerDown method
 
   private handleCurrencyUpdate(data: { currentAmount: number }): void {
     logger.debug(`UIScene received CURRENCY_UPDATED: ${data.currentAmount}`);
@@ -84,8 +90,6 @@ export default class UIScene extends Phaser.Scene {
 
   private handleWeaponStateUpdate(data: WeaponStateUpdateData): void {
     logger.debug(`UIScene received WEAPON_STATE_UPDATED: ${JSON.stringify(data)}`);
-
-    // Update weapon status and buttons
     this.htmlUI.updateWeaponStatus(data.weaponId, data.level);
     this.htmlUI.updateWeaponUpgradeCost(data.nextUpgradeCost);
     this.htmlUI.updateWeaponButtons(data.weaponId);
@@ -104,7 +108,6 @@ export default class UIScene extends Phaser.Scene {
   // Use arrow function to lexically bind 'this'
   private handleGamePaused = (): void => {
     logger.debug('UIScene received GAME_PAUSED');
-    // Assuming the check passed based on previous logs, remove extra logging
     if (this.htmlUI) {
         this.htmlUI.showPauseIndicator();
     } else {
@@ -115,15 +118,10 @@ export default class UIScene extends Phaser.Scene {
   // Use arrow function to lexically bind 'this'
   private handleGameResumed = (): void => {
     logger.debug('UIScene received GAME_RESUMED');
-     // Assuming the check passed based on previous logs, remove extra logging
     if (this.htmlUI) {
         this.htmlUI.hidePauseIndicator();
     } else {
         logger.error(`UIScene: this.htmlUI is not available in handleGameResumed.`);
     }
   }
-
-  // update(time: number, delta: number): void {
-  //   // UI updates are mostly event-driven
-  // }
 }

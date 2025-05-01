@@ -1,24 +1,21 @@
-import eventBus from '../events/EventBus';
-import * as Events from '../constants/events';
+// Removed EventBus imports as they are no longer needed here
+// import eventBus from '../events/EventBus';
+// import * as Events from '../constants/events';
 
 export class HtmlDebugPanel {
   private container: HTMLDivElement;
   private isVisible = false;
-  private isInspecting = false; // New state for inspection mode
+  // Removed isInspecting state - managed by DebugPanelUpdater
   private contentSections: Map<string, HTMLDivElement> = new Map();
-  private inspectionContentDiv: HTMLDivElement | null = null; // Div for inspection details
- 
+  // Removed inspectionContentDiv - inspection uses the main container now
+
   constructor() {
     this.container = document.createElement('div');
     this.container.style.position = 'absolute';
     this.container.style.top = '0px';
     this.container.style.right = '3px';
     this.container.style.bottom = '3px';
-    // Revert to fixed width to prevent overlap
     this.container.style.width = '390px';
-    // Remove min/max width constraints
-    // this.container.style.minWidth = '360px';
-    // this.container.style.maxWidth = '40vw';
     this.container.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
     this.container.style.color = 'white';
     this.container.style.fontFamily = 'Arial, sans-serif';
@@ -27,12 +24,12 @@ export class HtmlDebugPanel {
     this.container.style.border = '1px solid #00ff00';
     this.container.style.zIndex = '1000';
     this.container.style.display = 'none';
-    // Replace maxHeight with a fixed height calculated based on viewport height minus top/bottom margins
-    this.container.style.height = 'calc(100vh - 20px)'; // 10px top margin + 10px bottom margin
-    this.container.style.overflowY = 'auto'; // Keep scrolling for overflow
+    this.container.style.height = 'calc(100vh - 20px)';
+    this.container.style.overflowY = 'auto';
     this.container.style.borderRadius = '5px';
     this.container.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
 
+    // Keep the title
     const title = document.createElement('div');
     title.textContent = 'DEBUG PANEL';
     title.style.color = '#00ff00';
@@ -43,18 +40,12 @@ export class HtmlDebugPanel {
     title.style.borderBottom = '1px solid #00ff00';
     title.style.paddingBottom = '5px';
     this.container.appendChild(title);
- 
+
     document.body.appendChild(this.container);
- 
-    // this.handleInspectObject = this.handleInspectObject.bind(this); // Removed as method is removed
-    this.handleStopInspecting = this.handleStopInspecting.bind(this);
-    this.handleShowInspectionDetails = this.handleShowInspectionDetails.bind(this);
- 
-    // eventBus.on(Events.DEBUG_INSPECT_OBJECT, this.handleInspectObject); // No longer needed
-    eventBus.on(Events.DEBUG_STOP_INSPECTING, this.handleStopInspecting);
-    eventBus.on(Events.DEBUG_SHOW_INSPECTION_DETAILS, this.handleShowInspectionDetails);
+
+    // Removed event listener setup
   }
- 
+
   /**
    * Set the visibility of the debug panel
    * @param visible Whether the panel should be visible
@@ -65,46 +56,85 @@ export class HtmlDebugPanel {
   }
 
   /**
-   * Update the debug panel with new data
-   * @param data Debug data to display
+   * Update the debug panel with new data (either overview or inspection)
+   * @param data Debug data object to display
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public updateData(data: Record<string, any>): void {
-    // Reverted unknown back to any
-    // If inspecting, don't update with the default data stream
-    if (!this.isVisible || this.isInspecting) return;
- 
-    this.hideInspectionView();
- 
+  public updateData(data: Record<string, any> | null): void {
+    if (!this.isVisible || !data) {
+      // If not visible or data is null (e.g., inspection fetch failed), clear content
+      this.clearPanelContent(); 
+      if (data === null && this.isVisible) {
+         // Optionally display an error message if data is explicitly null
+         const errorDiv = document.createElement('div');
+         errorDiv.textContent = 'Error fetching inspection details.';
+         errorDiv.style.color = 'orange';
+         errorDiv.style.padding = '10px';
+         this.container.appendChild(errorDiv);
+      }
+      return;
+    }
+
+    // Clear previous content (excluding the main title)
+    this.clearPanelContent();
+
+    // Check if it's overview data (has specific top-level keys)
+    if (data.ActiveObjects && data.Game && data.Weapon) {
+      this.renderOverviewData(data);
+    } else {
+      // Assume it's flat inspection data
+      this.renderInspectionData(data);
+    }
+  }
+  
+  /**
+   * Clears the dynamic content of the panel, keeping the title.
+   */
+  private clearPanelContent(): void {
+     // Remove all children except the title (first child)
+     while (this.container.children.length > 1) {
+       this.container.removeChild(this.container.lastChild!);
+     }
+     // Clear the section map as sections are removed
+     this.contentSections.clear(); 
+  }
+
+  /**
+   * Renders the structured overview data.
+   * @param data The structured overview data object.
+   */
+  private renderOverviewData(data: Record<string, any>): void {
     Object.entries(data).forEach(([category, categoryData]) => {
-      let section = this.contentSections.get(category);
+      let section = this.contentSections.get(category); // Check if section exists (it shouldn't after clearPanelContent)
       if (!section) {
         section = this.createCategorySection(category);
-        this.contentSections.set(category, section);
+        this.contentSections.set(category, section); // Store the new section
         this.container.appendChild(section);
-        section.style.display = 'block';
-      } else {
-        section.style.display = 'block'; // Ensure section is visible if it was hidden during inspection
       }
- 
-      // Clear existing content within the section (keep the header)
-      while (section.children.length > 1) {
-        section.removeChild(section.lastChild!);
-      }
+      // Section content rendering logic (similar to before)
+      this.renderSectionContent(section, category, categoryData);
+    });
+  }
 
-      // Special handling for ActiveObjects category
-      if (category === 'ActiveObjects') {
+  /**
+   * Renders the content for a specific overview section.
+   * @param section The HTML element for the section.
+   * @param category The category name.
+   * @param categoryData The data for the category.
+   */
+  private renderSectionContent(section: HTMLDivElement, category: string, categoryData: any): void {
+     // Special handling for ActiveObjects category
+      if (category === 'ActiveObjects' && typeof categoryData === 'object' && categoryData !== null) {
         const { legend, objects } = categoryData as {
           legend: Record<string, string>;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          objects: Record<string, any>[]; // Reverted unknown back to any
+          objects: Record<string, any>[]; 
         };
 
         const legendDiv = document.createElement('div');
         legendDiv.style.marginLeft = '10px';
         legendDiv.style.marginBottom = '8px';
-        legendDiv.style.fontSize = '12px'; // Smaller font for legend
-        legendDiv.style.color = '#cccccc'; // Lighter color for legend
+        legendDiv.style.fontSize = '12px'; 
+        legendDiv.style.color = '#cccccc'; 
         const legendText = Object.entries(legend)
           .map(([key, desc]) => `${key}=${desc}`)
           .join(', ');
@@ -114,29 +144,29 @@ export class HtmlDebugPanel {
         objects.forEach((obj) => {
           const entry = document.createElement('div');
           entry.style.marginLeft = '10px';
-          entry.style.marginBottom = '3px'; // Less margin for compact list
-          entry.style.fontSize = '13px'; // Slightly smaller font for list
+          entry.style.marginBottom = '3px'; 
+          entry.style.fontSize = '13px'; 
           entry.style.whiteSpace = 'nowrap';
 
           const objectString = Object.entries(obj)
             .map(([key, value]) => {
-              if (value === undefined || value === null) return null; // Skip undefined/null properties
+              if (value === undefined || value === null) return null; 
               if (typeof value === 'boolean') {
-                return `${key}:${value ? 'T' : 'F'}`; // Format boolean values nicely
+                return `${key}:${value ? 'T' : 'F'}`; 
               }
               if (typeof value === 'number') {
-                return `${key}:${Number.isInteger(value) ? value : value.toFixed(1)}`; // Format numbers
+                return `${key}:${Number.isInteger(value) ? value : value.toFixed(1)}`; 
               }
-              return `${key}:${value}`; // Keep strings/IDs as is
+              return `${key}:${value}`; 
             })
-            .filter(Boolean) // Remove null entries
+            .filter(Boolean) 
             .join(' ');
 
           entry.textContent = objectString;
           section.appendChild(entry);
         });
-      } else {
-        // Generic handling for other categories
+      } else if (typeof categoryData === 'object' && categoryData !== null) {
+        // Generic handling for other categories (Game, Weapon)
         Object.entries(categoryData).forEach(([key, value]) => {
           const entry = document.createElement('div');
           entry.style.marginLeft = '10px';
@@ -144,27 +174,56 @@ export class HtmlDebugPanel {
           entry.style.fontSize = '14px';
 
           let displayValue = value;
-          if (typeof value === 'object') {
-            try {
-              // Use slightly more compact JSON stringification
-              displayValue = JSON.stringify(value, null, 1);
-            } catch {
-              // Removed unused 'e' variable
-              displayValue = '[Object]';
-            }
+          if (typeof value === 'object' && value !== null) {
+             try {
+               displayValue = JSON.stringify(value, null, 1);
+             } catch {
+               displayValue = '[Object]';
+             }
+          } else if (value === undefined || value === null) {
+             displayValue = 'N/A';
           }
 
           entry.textContent = `${key}: ${displayValue}`;
           section.appendChild(entry);
         });
+      } else {
+         // Handle cases where categoryData might not be an object (though unlikely for overview)
+         const entry = document.createElement('div');
+         entry.textContent = `${category}: ${categoryData ?? 'N/A'}`;
+         section.appendChild(entry);
       }
-    });
   }
 
   /**
-   * Create a section for a category
+   * Renders the flat inspection data.
+   * @param data The flat inspection data object.
+   */
+  private renderInspectionData(data: Record<string, any>): void {
+    const inspectionContainer = document.createElement('div');
+    // Use <pre> for monospace font and preserving line breaks, similar to DebugDataFormatter
+    inspectionContainer.style.fontFamily = 'monospace';
+    inspectionContainer.style.whiteSpace = 'pre';
+    inspectionContainer.style.lineHeight = '1.4';
+    inspectionContainer.style.marginTop = '10px'; // Add some space below the title
+
+    for (const key in data) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        const value = data[key];
+        const entry = document.createElement('div');
+        // Format as [key: value]
+        entry.textContent = `[${key}: ${value ?? 'N/A'}]`; 
+        inspectionContainer.appendChild(entry);
+      }
+    }
+    this.container.appendChild(inspectionContainer);
+  }
+
+
+  /**
+   * Create a section header for a category
    * @param category Category name
-   * @returns HTML element for the category section
+   * @returns HTML element for the category section header
    */
   private createCategorySection(category: string): HTMLDivElement {
     const section = document.createElement('div');
@@ -189,78 +248,16 @@ export class HtmlDebugPanel {
       document.body.removeChild(this.container);
     }
     this.contentSections.clear();
-    // eventBus.off(Events.DEBUG_INSPECT_OBJECT, this.handleInspectObject); // No longer needed
-    eventBus.off(Events.DEBUG_STOP_INSPECTING, this.handleStopInspecting);
-    eventBus.off(Events.DEBUG_SHOW_INSPECTION_DETAILS, this.handleShowInspectionDetails);
+    // Removed event listener cleanup
   }
- 
-  // --- Inspection Mode Methods ---
- 
-  // private handleInspectObject(data: { id: string; type: string }): void { // No longer needed
-  //   if (!this.isVisible) return;
-  //
-  //   this.isInspecting = true;
-  //   this.hideDefaultSections(); // Hide default sections
-  //   this.showInspectionView(`Inspecting ${data.type} ID: ${data.id}...`); // Show placeholder
-  //
-  //   // Data fetching is now handled by GameSceneDebugHandler + DebugObjectInspector
-  // }
- 
-  private handleStopInspecting(): void {
-    if (!this.isVisible) return;
- 
-    this.isInspecting = false;
-    this.hideInspectionView();
-    this.showDefaultSections();
-    // The next call to updateData will repopulate the default sections
-  }
- 
-  private handleShowInspectionDetails(data: { html: string }): void {
-      if (!this.isVisible) return;
- 
-      this.isInspecting = true;
-      this.hideDefaultSections();
-      this.showInspectionView(data.html, true); // Display the received HTML
-  }
- 
-  // Method to be called by DebugObjectInspector later - RENAME/REPURPOSE
-  // public displayObjectDetails(formattedHtml: string): void {
-  //   if (!this.isInspecting || !this.isVisible) return;
-  //   this.showInspectionView(formattedHtml, true); // Display formatted HTML
-  // }
- 
-  private showInspectionView(content: string, isHtml = false): void {
-    if (!this.inspectionContentDiv) {
-      this.inspectionContentDiv = document.createElement('div');
-      this.inspectionContentDiv.style.marginTop = '10px';
-      this.container.appendChild(this.inspectionContentDiv);
-    }
-    if (isHtml) {
-      this.inspectionContentDiv.innerHTML = content; // Set as HTML
-    } else {
-      this.inspectionContentDiv.textContent = content; // Set as plain text
-    }
-    this.inspectionContentDiv.style.display = 'block';
-  }
- 
-  private hideInspectionView(): void {
-    if (this.inspectionContentDiv) {
-      this.inspectionContentDiv.style.display = 'none';
-      this.inspectionContentDiv.innerHTML = '';
-    }
-  }
- 
-  private hideDefaultSections(): void {
-    this.contentSections.forEach(section => {
-      section.style.display = 'none';
-    });
-  }
- 
-  private showDefaultSections(): void {
-    this.contentSections.forEach(section => {
-      section.style.display = 'block';
-    });
-  }
+
+  // Removed inspection mode methods:
+  // - handleStopInspecting
+  // - handleShowInspectionDetails
+  // - showInspectionView
+  // - hideInspectionView
+  // - hideDefaultSections
+  // - showDefaultSections
 }
- 
+
 export default HtmlDebugPanel;

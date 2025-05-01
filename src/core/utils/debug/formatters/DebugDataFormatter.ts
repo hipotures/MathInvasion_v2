@@ -1,12 +1,13 @@
-import { InspectedObjectData, DebugFormatterOptions } from '../types/InspectionTypes';
+// Removed InspectedObjectData import as it's no longer used for the input type
+import { DebugFormatterOptions } from '../types/InspectionTypes';
 
 /**
- * Handles formatting of inspection data to HTML
+ * Handles formatting of inspection data (now a flat object) to HTML
  * Provides consistent styling and layout for debug data
  */
 export class DebugDataFormatter {
   private defaultOptions: DebugFormatterOptions = {
-    includeNullValues: false,
+    includeNullValues: false, // Note: These options are currently unused in the simplified formatter
     maxDepth: 2,
     indentSize: 2
   };
@@ -17,144 +18,37 @@ export class DebugDataFormatter {
   }
 
   /**
-   * Formats inspection data to HTML
-   * @param data The inspection data to format
-   * @returns Formatted HTML string
+   * Formats inspection data (flat object) to HTML
+   * @param data The flat key-value object from the inspector
+   * @returns Formatted HTML string in [key: value] format
    */
-  public formatDataToHtml(data: InspectedObjectData): string {
+  public formatDataToHtml(data: { [key: string]: any } | null): string {
+    // Handle null input gracefully
+    if (!data) {
+      return `<pre style="font-family: monospace; white-space: pre; line-height: 1.4; margin: 0; padding: 5px; color: orange;">No data available for inspection.</pre>`;
+    }
+
     // Use <pre> for monospace font and preserving line breaks
     let textContent = `<pre style="font-family: monospace; white-space: pre; line-height: 1.4; margin: 0; padding: 5px;">`;
-    
-    // ID and Type at the top
-    textContent += `ID:${data.id}\n`;
-    textContent += `Type:${data.type}\n`;
-    
-    // Add parent info if available (for projectiles)
-    if (data.standardProperties['Parent']) {
-      textContent += `Parent:${data.standardProperties['Parent']}\n`;
-      // Remove parent from standard properties to avoid duplication
-      delete data.standardProperties['Parent'];
+
+    // Iterate through all properties in the flat data object
+    for (const key in data) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        const value = data[key];
+        // Format as [key: value]
+        // Handle potential undefined/null values for display
+        textContent += `[${key}: ${value ?? 'N/A'}]\n`;
+      }
     }
-    
-    // Add age if available
-    if (data.standardProperties['Age (s)']) {
-      textContent += `Age:${data.standardProperties['Age (s)']}\n`;
-      // Remove age from standard properties to avoid duplication
-      delete data.standardProperties['Age (s)'];
-    }
-    
-    // Add position and velocity at the top level
-    this.extractAndAddProperty(textContent, data.standardProperties, 'Position X', 'X');
-    this.extractAndAddProperty(textContent, data.standardProperties, 'Position Y', 'Y');
-    this.extractAndAddProperty(textContent, data.standardProperties, 'Velocity X', 'Vx');
-    this.extractAndAddProperty(textContent, data.standardProperties, 'Velocity Y', 'Vy');
-    
-    // Add horizontal separator
-    textContent += this.addSeparator();
-    
-    // Config Section (YAML Data)
-    if (data.configData && Object.keys(data.configData).length > 0) {
-      textContent += this.formatConfigSection(data.configData);
-      // Add horizontal separator after config section
-      textContent += this.addSeparator();
-    }
-    
-    // Standard Properties Section (remaining properties)
-    if (Object.keys(data.standardProperties).length > 0) {
-      textContent += this.formatStandardProperties(data.standardProperties);
-      // Add horizontal separator after standard properties
-      textContent += this.addSeparator();
-    }
-    
-    // Other Properties Section
-    if (Object.keys(data.otherProperties).length > 0) {
-      textContent += this.formatOtherProperties(data.otherProperties);
-      // Add horizontal separator after other properties
-      textContent += this.addSeparator();
-    }
-    
+
     textContent += `</pre>`;
     return textContent;
   }
 
-  /**
-   * Extracts a property from an object and adds it to the text content
-   * @param textContent The text content to add to
-   * @param properties The properties object to extract from
-   * @param originalKey The original key in the properties object
-   * @param displayKey The key to display in the output
-   */
-  private extractAndAddProperty(
-    textContent: string, 
-    properties: Record<string, any>, 
-    originalKey: string, 
-    displayKey: string
-  ): void {
-    if (properties[originalKey] !== undefined) {
-      textContent += `${displayKey}:${properties[originalKey]}\n`;
-      delete properties[originalKey];
-    }
-  }
-
-  /**
-   * Adds a horizontal separator to the text content
-   * @returns The separator string
-   */
-  private addSeparator(): string {
-    return `------------------------------\n`;
-  }
-
-  /**
-   * Formats the config section of the inspection data
-   * @param configData The config data to format
-   * @returns Formatted config section
-   */
-  private formatConfigSection(configData: any): string {
-    let result = '';
-    
-    Object.entries(configData).forEach(([key, value]) => {
-      if (key !== 'id' && key !== 'type') { // Skip id and type as they're already shown
-        if (typeof value !== 'object' || value === null) {
-          result += `[${key}:${value}]\n`;
-        } else {
-          // Basic stringify for objects/arrays in config
-          result += `[${key}:${JSON.stringify(value)}]\n`;
-        }
-      }
-    });
-    
-    return result;
-  }
-
-  /**
-   * Formats the standard properties section of the inspection data
-   * @param properties The standard properties to format
-   * @returns Formatted standard properties section
-   */
-  private formatStandardProperties(properties: Record<string, any>): string {
-    let result = '';
-    
-    Object.entries(properties).forEach(([key, value]) => {
-      if (key !== 'Age (s)' && !key.startsWith('Position') && !key.startsWith('Velocity')) {
-        result += `[${key}:${value}]\n`;
-      }
-    });
-    
-    return result;
-  }
-
-  /**
-   * Formats the other properties section of the inspection data
-   * @param properties The other properties to format
-   * @returns Formatted other properties section
-   */
-  private formatOtherProperties(properties: Record<string, any>): string {
-    let result = '';
-    
-    Object.entries(properties).forEach(([key, value]) => {
-      result += `[${key}:${value}]\n`;
-    });
-    
-    return result;
-  }
+  // Removed unused private helper methods:
+  // - extractAndAddProperty
+  // - addSeparator
+  // - formatConfigSection
+  // - formatStandardProperties
+  // - formatOtherProperties
 }

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import logger from '../../../core/utils/Logger';
 import eventBus from '../../../core/events/EventBus';
+import debugState from '../../../core/utils/DebugState';
 import * as Events from '../../../core/constants/events';
 import { GameObjects } from '../types/GameSceneTypes';
 
@@ -19,6 +20,7 @@ export class GameSceneEventManager {
 
     // Bind event handlers
     this.handleTogglePause = this.handleTogglePause.bind(this);
+    this.handleDebugModeChanged = this.handleDebugModeChanged.bind(this);
   }
 
   /**
@@ -29,6 +31,9 @@ export class GameSceneEventManager {
     
     // Add listener for pause toggle
     eventBus.on(Events.TOGGLE_PAUSE, this.handleTogglePause);
+    
+    // Add listener for debug mode changes
+    eventBus.on(Events.DEBUG_MODE_CHANGED, this.handleDebugModeChanged);
   }
 
   /**
@@ -39,6 +44,9 @@ export class GameSceneEventManager {
     
     // Remove pause toggle listener
     eventBus.off(Events.TOGGLE_PAUSE, this.handleTogglePause);
+    
+    // Remove debug mode listener
+    eventBus.off(Events.DEBUG_MODE_CHANGED, this.handleDebugModeChanged);
   }
 
   /**
@@ -55,6 +63,9 @@ export class GameSceneEventManager {
   private handleTogglePause(): void {
     this.isPaused = !this.isPaused;
     
+    const canvas = this.scene.game.canvas; // Get canvas reference
+    const isDebugMode = debugState.isDebugMode;
+
     if (this.isPaused) {
       logger.log('Game Paused');
       // Instead of using scene.pause(), we'll implement a custom pause
@@ -69,6 +80,12 @@ export class GameSceneEventManager {
         this.enemySpawnerTimer.paused = true;
       }
       
+      // Disable canvas interaction to allow clicks on HTML elements above it
+      if (canvas) {
+        canvas.style.pointerEvents = 'none';
+        logger.debug('Canvas pointer events disabled (paused)');
+      }
+      
       eventBus.emit(Events.GAME_PAUSED);
     } else {
       logger.log('Game Resumed');
@@ -80,7 +97,34 @@ export class GameSceneEventManager {
         this.enemySpawnerTimer.paused = false;
       }
       
+      // Re-enable canvas interaction ONLY if not in debug mode
+      if (canvas) {
+        // If in debug mode, keep pointer events disabled to allow clicking labels
+        // Otherwise, re-enable pointer events
+        canvas.style.pointerEvents = isDebugMode ? 'none' : 'auto';
+        logger.debug(`Canvas pointer events ${isDebugMode ? 'kept disabled (debug mode)' : 'enabled'}`);
+      }
+      
       eventBus.emit(Events.GAME_RESUMED);
+    }
+  }
+
+  /**
+   * Handles changes to debug mode
+   * Updates canvas pointer events to allow clicking on HTML elements in debug mode
+   */
+  private handleDebugModeChanged(data: { isDebugMode: boolean }): void {
+    const canvas = this.scene.game.canvas;
+    if (!canvas) return;
+    
+    if (data.isDebugMode) {
+      // In debug mode, disable canvas pointer events to allow clicking HTML elements
+      canvas.style.pointerEvents = 'none';
+      logger.debug('Canvas pointer events disabled (debug mode activated)');
+    } else if (!this.isPaused) {
+      // Only re-enable if not paused
+      canvas.style.pointerEvents = 'auto';
+      logger.debug('Canvas pointer events enabled (debug mode deactivated)');
     }
   }
 

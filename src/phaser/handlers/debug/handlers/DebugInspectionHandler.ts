@@ -88,20 +88,22 @@ export class DebugInspectionHandler {
     // Set new inspected object (for highlighting)
     this.inspectedObject = { id: objectId, type: objectType };
 
-    // Get formatted details from the inspector
+    // Get raw details object from the inspector
     // Pass the gameObject directly to the inspector method
-    const formattedHtml = this.debugObjectInspector.getFormattedObjectDetails(gameObject);
+    const rawData = this.debugObjectInspector.getObjectDetails(gameObject);
 
-    // Emit event with HTML details for the panel
-    if (formattedHtml) {
-      const detailsData: InspectionDetailsData = { html: formattedHtml };
+    // Emit event with the raw data object for the panel
+    if (rawData) {
+      // Use the updated InspectionDetailsData structure
+      const detailsData: InspectionDetailsData = { data: rawData };
       eventBus.emit(Events.DEBUG_SHOW_INSPECTION_DETAILS, detailsData);
     } else {
-      // Handle case where details couldn't be fetched (e.g., object destroyed between click and fetch)
-      const errorData: InspectionDetailsData = { 
-        html: `<div style="color: orange;">Could not get details for ${objectType} ${objectId}.</div>` 
-      };
-      eventBus.emit(Events.DEBUG_SHOW_INSPECTION_DETAILS, errorData);
+      // Handle case where details couldn't be fetched
+      // Emit null data to signal the panel to show an error or revert
+      const errorEventData: InspectionDetailsData = { data: null };
+      eventBus.emit(Events.DEBUG_SHOW_INSPECTION_DETAILS, errorEventData);
+      // Optionally, log a more specific error message here if needed
+      logger.warn(`Could not get details for ${objectType} ${objectId}. Emitting null data.`);
       this.inspectedObject = { id: null, type: null }; // Clear inspection state if data fetch failed
     }
 

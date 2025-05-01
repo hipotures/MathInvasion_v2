@@ -46,11 +46,11 @@ export class DebugObjectInspector {
   }
 
   /**
-   * Fetches and formats the details for a specific game object.
+   * Fetches the raw details for a specific game object.
    * @param gameObject The Phaser GameObject to inspect.
-   * @returns An HTML string containing the formatted details, or null if object cannot be identified or data is missing.
+   * @returns A flat object containing the details, or null if object cannot be identified or data is missing.
    */
-  public getFormattedObjectDetails(gameObject: Phaser.GameObjects.GameObject): string | null {
+  public getObjectDetails(gameObject: Phaser.GameObjects.GameObject): { [key: string]: any } | null {
     // Determine objectId and objectType from the gameObject
     let objectId: string | null = null;
     let objectType: 'player' | 'enemy' | 'projectile' | 'powerup' | null = null;
@@ -78,7 +78,7 @@ export class DebugObjectInspector {
 
     if (!objectId || !objectType) {
       Logger.warn('Could not identify the inspected object type or ID.', gameObject);
-      return `<div style="color: orange;">Could not identify the clicked object.</div>`;
+      return null; // Return null instead of HTML string
     }
 
     Logger.debug(`Fetching details for ${objectType} ID: ${objectId}`);
@@ -114,16 +114,16 @@ export class DebugObjectInspector {
       }
     } catch (error) {
       Logger.error(`Error fetching details for ${objectType} ${objectId}:`, error);
-      return `<div style="color: red;">Error fetching details for ${objectType} ${objectId}. See console.</div>`;
+      return null; // Return null instead of HTML string
     }
 
     // Check for null data
     if (!data) {
       Logger.warn(`Could not find data for ${objectType} ID: ${objectId}`);
-      return `<div style="color: orange;">Could not find data for ${objectType} ID: ${objectId} (possibly destroyed).</div>`;
+      return null; // Return null instead of HTML string
     }
 
-    // Format the data to HTML using the formatter
-    return this.dataFormatter.formatDataToHtml(data);
+    // Return the raw data object, no formatting here
+    return data;
   }
 }
