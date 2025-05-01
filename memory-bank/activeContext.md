@@ -159,7 +159,7 @@ Process Update:
     *   Fine-tune enemy spawn patterns and wave composition.
     *   Adjust powerup drop rates.
 *   **Testing:**
-    *   Implement unit tests (Vitest/Jest) for core managers and utility functions. *(EconomyManager, PlayerManager, WeaponManager, ProjectileManager, PowerupManager, EnemyManager, InputManager, ConfigLoader, WeaponUpgrader, WeaponPowerupHandler, PlayerPowerupHandler, EnemyWaveHandler done)* -> **COMPLETED**. *(Note: Tests are currently failing after recent changes, fixing deferred until code stabilizes)*.
+    *   Implement unit tests (Vitest/Jest) for core managers and utility functions. *(Initial tests created, but were deleted by pre-commit hook. Decision: Tests will be (re)created after the code stabilizes, not during active development)*.
     *   Implement end-to-end tests (Playwright) for key gameplay flows (movement, shooting, upgrades, powerups, game over).
  *   **Optimization:**
     *   Profile game performance (FPS, memory usage) and identify bottlenecks.
