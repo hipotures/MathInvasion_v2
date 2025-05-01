@@ -18,16 +18,16 @@ export class HtmlDebugLabels {
   constructor() {
     this.handleLabelClick = this.handleLabelClick.bind(this); // Bind the click handler
   }
-  
+
   /**
    * Sets the scene reference to access camera information.
    */
   public setScene(scene: Phaser.Scene): void {
-      this.sceneRef = scene;
-      this.gameCanvas = scene.game.canvas; 
-      window.removeEventListener('resize', this.handleResize.bind(this)); 
-      window.addEventListener('resize', this.handleResize.bind(this));
-      this.handleResize(); 
+    this.sceneRef = scene;
+    this.gameCanvas = scene.game.canvas;
+    window.removeEventListener('resize', this.handleResize.bind(this));
+    window.addEventListener('resize', this.handleResize.bind(this));
+    this.handleResize();
   }
 
   /**
@@ -35,27 +35,27 @@ export class HtmlDebugLabels {
    */
   private handleResize(): void {
     this.labels.forEach((element) => {
-        const worldX = parseFloat(element.dataset.worldX || '0');
-        const worldY = parseFloat(element.dataset.worldY || '0');
-        this.positionLabel(element, worldX, worldY); 
+      const worldX = parseFloat(element.dataset.worldX || '0');
+      const worldY = parseFloat(element.dataset.worldY || '0');
+      this.positionLabel(element, worldX, worldY);
     });
   }
-  
+
   /**
    * Set the visibility of all debug labels
    */
   public setVisible(visible: boolean): void {
     this.isVisible = visible;
-    this.labels.forEach(element => {
+    this.labels.forEach((element) => {
       element.style.display = visible ? 'block' : 'none';
     });
   }
-  
+
   /**
    * Clear all labels
    */
   public clearLabels(): void {
-    this.labels.forEach(element => {
+    this.labels.forEach((element) => {
       element.removeEventListener('click', this.handleLabelClick); // Remove listener
       if (element.parentNode === document.body) {
         document.body.removeChild(element);
@@ -63,20 +63,20 @@ export class HtmlDebugLabels {
     });
     this.labels.clear();
   }
-  
+
   /**
    * Add or update a label for a game object
    */
   public updateLabel(
-      id: string,
-      name: string,
-      worldX: number,
-      worldY: number,
-      color = '#ffffff',
-      gameObject: Phaser.GameObjects.GameObject // Keep gameObject for potential future use
-    ): void {
+    id: string,
+    name: string,
+    worldX: number,
+    worldY: number,
+    color = '#ffffff',
+    gameObject: Phaser.GameObjects.GameObject // Keep gameObject for potential future use
+  ): void {
     if (!this.isVisible || !this.sceneRef) return;
-    
+
     let labelElement = this.labels.get(id);
 
     if (!labelElement) {
@@ -85,14 +85,14 @@ export class HtmlDebugLabels {
       this.labels.set(id, labelElement);
       document.body.appendChild(labelElement);
     }
-    
+
     // Store world coordinates on dataset for resize
     labelElement.dataset.worldX = worldX.toString();
     labelElement.dataset.worldY = worldY.toString();
-    
+
     // Store the label ID and object type in the dataset
     labelElement.dataset.labelId = id;
-    
+
     // Try to determine object type and store specific ID
     if (id.startsWith('debuglabel_player')) {
       labelElement.dataset.objectType = 'player';
@@ -113,7 +113,7 @@ export class HtmlDebugLabels {
       const powerupId = id.replace('debuglabel_powerup_', '');
       labelElement.dataset.objectId = powerupId;
     }
-    
+
     labelElement.textContent = name;
     labelElement.style.color = color;
     labelElement.style.borderColor = color;
@@ -129,18 +129,18 @@ export class HtmlDebugLabels {
   private handleLabelClick(event: MouseEvent): void {
     event.stopPropagation(); // Prevent event bubbling further
     event.preventDefault(); // Prevent default behavior
-    
+
     const screenX = event.clientX;
     const screenY = event.clientY;
-    
+
     // Get the label element that was clicked
     const label = event.currentTarget as HTMLDivElement;
-    
+
     // Get the object type and ID from the dataset
     const objectType = label.dataset.objectType || '';
     const objectId = label.dataset.objectId || '';
     const labelId = label.dataset.labelId || '';
-    
+
     // Emit event for GameSceneDebugHandler to perform the hit test
     // Include the object type and ID to precisely identify the object
     eventBus.emit(DEBUG_PERFORM_HIT_TEST, {
@@ -148,7 +148,7 @@ export class HtmlDebugLabels {
       y: screenY,
       objectType: objectType,
       objectId: objectId,
-      labelId: labelId
+      labelId: labelId,
     });
   }
 
@@ -156,26 +156,25 @@ export class HtmlDebugLabels {
    * Calculates and sets the screen position of a label element relative to the canvas.
    */
   private positionLabel(label: HTMLDivElement, worldX: number, worldY: number): void {
-     if (!this.gameCanvas || !this.sceneRef) return;
+    if (!this.gameCanvas || !this.sceneRef) return;
 
-     try {
-        const cam = this.sceneRef.cameras.main;
-        const canvasRect = this.gameCanvas.getBoundingClientRect();
-        const scaleX = canvasRect.width / cam.width;
-        const scaleY = canvasRect.height / cam.height;
-        const screenRelX = (worldX - cam.scrollX) * scaleX;
-        const screenRelY = (worldY - cam.scrollY) * scaleY;
+    try {
+      const cam = this.sceneRef.cameras.main;
+      const canvasRect = this.gameCanvas.getBoundingClientRect();
+      const scaleX = canvasRect.width / cam.width;
+      const scaleY = canvasRect.height / cam.height;
+      const screenRelX = (worldX - cam.scrollX) * scaleX;
+      const screenRelY = (worldY - cam.scrollY) * scaleY;
 
-        label.style.left = `${canvasRect.left + screenRelX}px`;
-        label.style.top = `${canvasRect.top + screenRelY}px`;
-
-     } catch (error) {
-         console.error("Error positioning debug label:", error);
-         label.style.left = `0px`;
-         label.style.top = `0px`;
-     }
+      label.style.left = `${canvasRect.left + screenRelX}px`;
+      label.style.top = `${canvasRect.top + screenRelY}px`;
+    } catch (error) {
+      console.error('Error positioning debug label:', error);
+      label.style.left = `0px`;
+      label.style.top = `0px`;
+    }
   }
-  
+
   /**
    * Create a new label element
    */
@@ -199,15 +198,15 @@ export class HtmlDebugLabels {
     label.style.pointerEvents = 'auto'; // Allow clicks
     label.style.cursor = 'pointer'; // Indicate interactivity
     label.style.zIndex = '1000';
-    
+
     // Make the label more visible and clickable for debugging
     label.style.minWidth = '80px';
     label.style.minHeight = '20px';
     label.style.textAlign = 'center';
-    
+
     return label;
   }
-  
+
   /**
    * Remove a specific label
    */
@@ -221,18 +220,25 @@ export class HtmlDebugLabels {
       this.labels.delete(id);
     }
   }
-  
+
+  /**
+   * Returns an array of all currently existing label IDs
+   */
+  public getAllLabelIds(): string[] {
+    return Array.from(this.labels.keys());
+  }
+
   /**
    * Destroy all labels and the container
    */
   public destroy(): void {
     window.removeEventListener('resize', this.handleResize.bind(this));
-    
+
     this.clearLabels();
-    
+
     this.sceneRef = null;
     this.gameCanvas = null;
   }
-}
+} // End of HtmlDebugLabels class
 
 export default HtmlDebugLabels;

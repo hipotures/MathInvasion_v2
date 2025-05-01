@@ -177,9 +177,15 @@ Process Update:
 |     5. Removed the red outlines (hit areas) that didn't represent actual physical boundaries.
 |     6. Consolidated debug mode logging to a single concise message.
 | *   **Current Status:** Debug click interaction now works reliably when paused. Clicking on a specific debug label selects the exact corresponding game object, even when multiple objects have similar display names.
- **Next Steps (Milestone M7 - Balans, Testy, Optymalizacja i CI/CD):**
- *   **Balancing:**
-    *   Review and adjust values in `config/*.yml` (enemy health/speed/reward/score, weapon damage/cooldown/cost, powerup duration/effects, difficulty scaling) based on playtesting.
+|
+| **Recent Changes (M7 - Debug Label Cleanup):**
+| *   Fixed issue where HTML debug labels remained on screen after their associated game objects were destroyed or went off-screen.
+| *   Added `getAllLabelIds()` method to `HtmlDebugLabels.ts`.
+| *   Updated `DebugVisualizationHandler.ts` to track active labels and remove stale ones using `htmlDebugLabels.removeLabel()`.
+|
+| **Next Steps (Milestone M7 - Balans, Testy, Optymalizacja i CI/CD):**
+| *   **Balancing:**
+|     *   Review and adjust values in `config/*.yml` (enemy health/speed/reward/score, weapon damage/cooldown/cost, powerup duration/effects, difficulty scaling) based on playtesting.
     *   Fine-tune enemy spawn patterns and wave composition.
     *   Adjust powerup drop rates.
 *   **Testing:**

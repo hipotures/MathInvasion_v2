@@ -1,7 +1,11 @@
 import Phaser from 'phaser';
 import logger from '../../../../core/utils/Logger';
 import HtmlDebugLabels from '../../../../core/utils/HtmlDebugLabels';
-import { DebugDrawableObject, DebugVisualizationConfig, InspectionState } from '../types/DebugTypes';
+import {
+  DebugDrawableObject,
+  DebugVisualizationConfig,
+  InspectionState,
+} from '../types/DebugTypes';
 import { EnemyEntity } from '../../../entities/EnemyEntity';
 import { ProjectileShape } from '../../event/ProjectileEventHandler';
 
@@ -13,7 +17,7 @@ export class DebugVisualizationHandler {
   private scene: Phaser.Scene;
   private debugGraphics: Phaser.GameObjects.Graphics;
   private htmlDebugLabels: HtmlDebugLabels;
-  
+
   // References to game objects for drawing
   private playerSprite: Phaser.Physics.Arcade.Sprite;
   private enemySprites: Map<string, EnemyEntity>;
@@ -83,8 +87,13 @@ export class DebugVisualizationHandler {
       }
     });
 
-    // TODO: Remove stale labels that are no longer active
-    // This would require tracking all active labels and removing ones not in the set
+    // Clean up stale labels
+    const existingLabelIds = this.htmlDebugLabels.getAllLabelIds();
+    existingLabelIds.forEach((labelId) => {
+      if (!activeLabels.has(labelId)) {
+        this.htmlDebugLabels.removeLabel(labelId);
+      }
+    });
   }
 
   /**
@@ -110,7 +119,10 @@ export class DebugVisualizationHandler {
     } else if (obj instanceof EnemyEntity) {
       objectId = obj.instanceId;
       objectType = 'enemy';
-    } else if (obj.getData('objectType') === 'projectile' && obj.getData('instanceId') !== undefined) {
+    } else if (
+      obj.getData('objectType') === 'projectile' &&
+      obj.getData('instanceId') !== undefined
+    ) {
       objectId = obj.getData('instanceId');
       objectType = 'projectile';
     } else if (obj.getData('objectType') === 'powerup' && obj.getData('instanceId') !== undefined) {
@@ -123,40 +135,40 @@ export class DebugVisualizationHandler {
     const config: DebugVisualizationConfig = {
       strokeColor: isInspected ? 0xffff00 : 0x00ff00, // Yellow if inspected, green otherwise
       labelColor: isInspected ? '#ffff00' : '#00ff00', // Yellow if inspected, green otherwise
-      lineWidth: 1
+      lineWidth: 1,
     };
-    
+
     // Generate a predictable label ID and store it on the object
-    const labelId = `debuglabel_${baseLabelId}`; 
+    const labelId = `debuglabel_${baseLabelId}`;
     obj.setData('debugLabelId', labelId); // Store the ID
 
     // Generate display name (shortened ID for label text)
     let displayName = baseLabelId;
     if (objectType === 'enemy' && objectId) {
-        const assetKey = (obj as EnemyEntity).texture.key;
-        const assetName = assetKey.split('_').pop() || assetKey;
-        displayName = `${assetName}_${objectId.substring(0, 4)}`;
+      const assetKey = (obj as EnemyEntity).texture.key;
+      const assetName = assetKey.split('_').pop() || assetKey;
+      displayName = `${assetName}_${objectId.substring(0, 4)}`;
     } else if (objectType === 'projectile' && objectId) {
-         displayName = `proj_${objectId.substring(0, 4)}`;
+      displayName = `proj_${objectId.substring(0, 4)}`;
     } else if (objectType === 'powerup' && objectId) {
-         const assetKey = (obj as Phaser.Physics.Arcade.Sprite).texture.key;
-         const assetName = assetKey.split('_').pop() || assetKey;
-         displayName = `${assetName}_${objectId}`;
+      const assetKey = (obj as Phaser.Physics.Arcade.Sprite).texture.key;
+      const assetName = assetKey.split('_').pop() || assetKey;
+      displayName = `${assetName}_${objectId}`;
     } else if (objectType === 'player') {
-         displayName = 'player';
+      displayName = 'player';
     }
-
 
     try {
       // Removed hit area visualization (red rectangles)
 
       // --- Draw Physics Body / Fallback Bounds (Green/Yellow Rectangle) & Label ---
       const body = obj.body as Phaser.Physics.Arcade.Body;
-      let labelPosX = 0, labelPosY = 0; // Variables to store label position
+      let labelPosX = 0,
+        labelPosY = 0; // Variables to store label position
 
       if (!body) {
         // Fallback if no physics body
-        this.debugGraphics.lineStyle(config.lineWidth ?? 1, config.strokeColor, 1); 
+        this.debugGraphics.lineStyle(config.lineWidth ?? 1, config.strokeColor, 1);
         let fallbackX, fallbackY, fallbackW, fallbackH;
         if (obj instanceof Phaser.GameObjects.Sprite || obj instanceof EnemyEntity) {
           const sprite = obj as Phaser.GameObjects.Sprite;
@@ -164,31 +176,30 @@ export class DebugVisualizationHandler {
           fallbackH = sprite.displayHeight;
           fallbackX = sprite.x - fallbackW / 2;
           fallbackY = sprite.y - fallbackH / 2;
-          labelPosX = sprite.x; 
-          labelPosY = fallbackY - 5; 
-        } else { 
-          const shape = obj as Phaser.GameObjects.Shape; 
+          labelPosX = sprite.x;
+          labelPosY = fallbackY - 5;
+        } else {
+          const shape = obj as Phaser.GameObjects.Shape;
           fallbackW = shape.width * shape.scaleX;
           fallbackH = shape.height * shape.scaleY;
-          fallbackX = shape.x - fallbackW / 2; 
+          fallbackX = shape.x - fallbackW / 2;
           fallbackY = shape.y - fallbackH / 2;
-          labelPosX = shape.x; 
-          labelPosY = fallbackY - 5; 
+          labelPosX = shape.x;
+          labelPosY = fallbackY - 5;
         }
         this.debugGraphics.strokeRect(fallbackX, fallbackY, fallbackW, fallbackH);
-
       } else {
         // Draw rectangle around physics body
-        this.debugGraphics.lineStyle(config.lineWidth ?? 1, config.strokeColor, 1); 
+        this.debugGraphics.lineStyle(config.lineWidth ?? 1, config.strokeColor, 1);
         this.debugGraphics.strokeRect(body.x, body.y, body.width, body.height);
-        labelPosX = body.center.x; 
-        labelPosY = body.y - 10; 
+        labelPosX = body.center.x;
+        labelPosY = body.y - 10;
       }
 
       // Add/Update HTML label for the object using the predictable labelId
       // Make the label text more descriptive for debugging
       const labelText = isInspected ? `⭐ ${displayName} ⭐` : displayName;
-      
+
       this.htmlDebugLabels.updateLabel(
         labelId, // Use the stored predictable ID
         labelText, // Use the generated display name with highlight if inspected
@@ -197,7 +208,6 @@ export class DebugVisualizationHandler {
         config.labelColor,
         obj // Pass the GameObject itself
       );
-
     } catch (error) {
       logger.warn(`Error drawing debug for ${baseLabelId}: ${error}`);
     }
@@ -226,7 +236,7 @@ export class DebugVisualizationHandler {
    */
   public destroy(): void {
     if (this.htmlDebugLabels) {
-        this.htmlDebugLabels.clearLabels();
+      this.htmlDebugLabels.clearLabels();
     }
     if (this.debugGraphics && this.debugGraphics.scene) {
       this.debugGraphics.clear();
