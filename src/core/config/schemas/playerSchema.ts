@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const playerSchema = z.object({
   initialHealth: z.number().int().positive().describe('Starting health points for the player.'),
-  moveSpeed: z
+  speed: z // Renamed from moveSpeed
     .number()
     .positive()
     .describe('Horizontal movement speed of the player in pixels per second.'),

@@ -138,6 +138,22 @@ class ConfigLoader {
     }
     return this.player;
   }
+
+  /**
+   * Resets the loaded state and configurations.
+   * FOR TESTING PURPOSES ONLY.
+   * @internal
+   */
+  public _resetForTesting(): void {
+    this.loaded = false;
+    this.loadingPromise = null;
+    this.weapons = null;
+    this.enemies = null;
+    this.powerups = null;
+    this.difficulty = null;
+    this.player = null;
+    console.log('[TESTING] ConfigLoader state reset.');
+  }
 }
 
 // Export a singleton instance

@@ -1,7 +1,7 @@
 # Player Configuration for Math Invasion v2
 
 initialHealth: 100
-moveSpeed: 200
+speed: 200
 invulnerabilityDurationMs: 1000 # Duration in milliseconds after taking damage
 # Add other player properties here as needed
 # e.g., startingX: 400, startingY: 500, spriteKey: 'player_ship'

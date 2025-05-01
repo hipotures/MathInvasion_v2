@@ -26,7 +26,7 @@ export default class PlayerManager {
   private velocityX: number = 0;
   private isMovingLeft: boolean = false;
   private isMovingRight: boolean = false;
-  private moveSpeed: number;
+  private speed: number; // Renamed from moveSpeed
   private health: number;
   private isInvulnerable: boolean = false;
   private invulnerabilityTimer: number = 0;
@@ -41,8 +41,8 @@ export default class PlayerManager {
     logger.log('PlayerManager initialized');
 
     this.health = this.playerConfig.initialHealth;
-    this.moveSpeed = this.playerConfig.moveSpeed;
-    logger.log(`Player initialized with Health: ${this.health}, Speed: ${this.moveSpeed}`);
+    this.speed = this.playerConfig.speed; // Renamed from moveSpeed
+    logger.log(`Player initialized with Health: ${this.health}, Speed: ${this.speed}`); // Use this.speed
 
     this.handleMoveLeftStart = this.handleMoveLeftStart.bind(this);
     this.handleMoveLeftStop = this.handleMoveLeftStop.bind(this);
@@ -156,11 +156,14 @@ export default class PlayerManager {
     }
 
     let targetVelocityX = 0;
-    if (this.isMovingLeft && !this.isMovingRight) {
-      targetVelocityX = -this.moveSpeed;
-    } else if (this.isMovingRight && !this.isMovingLeft) {
-      targetVelocityX = this.moveSpeed;
+    // Prioritize Right: If Right is pressed, move right.
+    if (this.isMovingRight) {
+      targetVelocityX = this.speed;
+      // Else if only Left is pressed, move left.
+    } else if (this.isMovingLeft) {
+      targetVelocityX = -this.speed;
     }
+    // Otherwise (neither pressed), targetVelocityX remains 0.
 
     // Only update and emit if velocity actually changes
     if (targetVelocityX !== this.velocityX) {
@@ -206,7 +209,7 @@ export default class PlayerManager {
     // - Regenerate health/shields
     // For now, movement state is driven purely by input events.
   }
- 
+
   public getPlayerState(): {
     x: number;
     y: number;
@@ -230,11 +233,11 @@ export default class PlayerManager {
       movementDirection: this.isMovingLeft ? 'left' : this.isMovingRight ? 'right' : 'none',
     };
   }
- 
+
   public getCreationTime(): number {
     return this.creationTime;
   }
- 
+
   public destroy(): void {
     this.eventBus.off(Events.MOVE_LEFT_START, this.handleMoveLeftStart);
     this.eventBus.off(Events.MOVE_LEFT_STOP, this.handleMoveLeftStop);

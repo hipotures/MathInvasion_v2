@@ -1,8 +1,7 @@
-# Active Context: Math Invasion v2
+# Active Context
 
-**Current Focus:** Milestone M7 - Balans, Testy, Optymalizacja i CI/CD
-
-**Recent Changes (M7 - Code Modularity Refactoring):**
+Process Update:
+- Continued process execution on 5/1/2025, 1:30 PM (Europe/Warsaw).
 *   Refactored several source and test files to improve modularity and adhere to the 300-line limit:
     *   `src/core/utils/HtmlDebugUI.ts`: Extracted element creation logic into `helpers/HtmlDebugElementFactory.ts`.
     *   `src/phaser/handlers/GameSceneDebugHandler.ts`: Extracted debug panel update logic into `debug/DebugPanelUpdater.ts`.
@@ -13,6 +12,8 @@
     *   `tests/core/managers/PlayerManager.test.ts`: Split into multiple files (`Initialization`, `DamageInvulnerability`, `Death`, `Movement`, `Cleanup`).
     *   `tests/core/managers/ProjectileManager.test.ts`: Split into multiple files (`Initialization`, `SpawningState`, `Destruction`, `Getters`, `Cleanup`).
 
+**Recent Changes (M7 - Config Fix):**
+*   Fixed validation error in `config/player.yml` by renaming `moveSpeed` to `speed` to match the `playerSchema.ts`.
 **Recent Changes (M7 - Debug Visibility Fix):**
 *   Fixed issue where newly spawned entities (enemies, projectiles, powerups) ignored the current debug mode state.
 *   Updated `EnemyEventHandler`, `ProjectileEventHandler`, and `GameSceneEventHandler` to check `debugState.isDebugMode` when creating sprites.
