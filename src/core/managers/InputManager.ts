@@ -1,14 +1,7 @@
-// Import singleton instances
-// import eventBus from '../events/EventBus'; // Removed - instance passed in constructor
 import logger from '../utils/Logger';
-// Import class type for annotations
 import { EventBus as EventBusType } from '../events/EventBus';
-import * as Events from '../constants/events'; // Import event constants
+import * as Events from '../constants/events';
 
-/**
- * Manages player input from various sources (keyboard, mouse, touch).
- * Translates raw input into game actions and emits events.
- */
 // TODO: Add SWITCH_WEAPON event later
 
 export default class InputManager {
@@ -21,21 +14,16 @@ export default class InputManager {
   constructor(eventBusInstance: EventBusType) {
     this.eventBus = eventBusInstance;
     logger.log('InputManager initialized');
-    // Bind methods to ensure 'this' context is correct
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handleKeyUp = this.handleKeyUp.bind(this);
-    this.handleGamePaused = this.handleGamePaused.bind(this); // Bind pause handlers
-    this.handleGameResumed = this.handleGameResumed.bind(this); // Bind pause handlers
-    // Add global event listeners
+    this.handleGamePaused = this.handleGamePaused.bind(this);
+    this.handleGameResumed = this.handleGameResumed.bind(this);
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
-    // Listen for pause events
     this.eventBus.on(Events.GAME_PAUSED, this.handleGamePaused);
     this.eventBus.on(Events.GAME_RESUMED, this.handleGameResumed);
     // TODO: Add listeners for mouse/touch later
   }
-
-  // Methods for processing input and emitting events
 
   public update(_deltaTime: number): void {
     // Prefix with underscore
@@ -75,7 +63,6 @@ export default class InputManager {
           this.eventBus.emit(Events.FIRE_START);
         }
         break;
-      // Weapon Switching Keys
       case '1':
         logger.debug('Weapon Switch Key 1 pressed');
         this.eventBus.emit(Events.WEAPON_SWITCH, 'bullet');
@@ -88,15 +75,14 @@ export default class InputManager {
         logger.debug('Weapon Switch Key 3 pressed');
         this.eventBus.emit(Events.WEAPON_SWITCH, 'slow_field');
         break;
-      // Weapon Upgrade Key
       case 'u':
       case 'U':
         logger.debug('Weapon Upgrade Key U pressed');
-        this.eventBus.emit(Events.REQUEST_WEAPON_UPGRADE); // No payload needed
+        this.eventBus.emit(Events.REQUEST_WEAPON_UPGRADE);
         break;
       case ';':
         logger.debug('Debug Toggle Key ; pressed');
-        this.eventBus.emit(Events.DEBUG_TOGGLE); // Toggle debug mode
+        this.eventBus.emit(Events.DEBUG_TOGGLE);
         break;
       case 'p':
       case 'P':
@@ -135,7 +121,6 @@ export default class InputManager {
     }
   }
 
-  /** Clean up event listeners when the manager is destroyed */
   public destroy(): void {
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
@@ -143,8 +128,6 @@ export default class InputManager {
     this.eventBus.off(Events.GAME_RESUMED, this.handleGameResumed);
     logger.log('InputManager destroyed and listeners removed');
   }
-
-  // --- Pause Event Handlers ---
 
   private handleGamePaused(): void {
     this.isPaused = true;

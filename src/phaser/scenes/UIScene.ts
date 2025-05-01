@@ -42,8 +42,7 @@ export default class UIScene extends Phaser.Scene {
     this.handlePlayerStateUpdate = this.handlePlayerStateUpdate.bind(this);
     this.handleScoreUpdate = this.handleScoreUpdate.bind(this);
     this.handleWaveUpdate = this.handleWaveUpdate.bind(this);
-    this.handleGamePaused = this.handleGamePaused.bind(this); // Bind pause handler
-    this.handleGameResumed = this.handleGameResumed.bind(this); // Bind resume handler
+    // No need to bind arrow functions: handleGamePaused, handleGameResumed
 
     // --- Event Listeners ---
     eventBus.on(Events.CURRENCY_UPDATED, this.handleCurrencyUpdate);
@@ -102,14 +101,26 @@ export default class UIScene extends Phaser.Scene {
     this.htmlUI.updateWave(data.waveNumber);
   }
 
-  private handleGamePaused(): void {
+  // Use arrow function to lexically bind 'this'
+  private handleGamePaused = (): void => {
     logger.debug('UIScene received GAME_PAUSED');
-    this.htmlUI.showPauseIndicator(); // Call method to show pause text
+    // Assuming the check passed based on previous logs, remove extra logging
+    if (this.htmlUI) {
+        this.htmlUI.showPauseIndicator();
+    } else {
+        logger.error(`UIScene: this.htmlUI is not available in handleGamePaused.`);
+    }
   }
 
-  private handleGameResumed(): void {
+  // Use arrow function to lexically bind 'this'
+  private handleGameResumed = (): void => {
     logger.debug('UIScene received GAME_RESUMED');
-    this.htmlUI.hidePauseIndicator(); // Call method to hide pause text
+     // Assuming the check passed based on previous logs, remove extra logging
+    if (this.htmlUI) {
+        this.htmlUI.hidePauseIndicator();
+    } else {
+        logger.error(`UIScene: this.htmlUI is not available in handleGameResumed.`);
+    }
   }
 
   // update(time: number, delta: number): void {

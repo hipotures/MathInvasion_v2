@@ -109,6 +109,12 @@ export class GameSceneEventHandler {
     const powerupSprite = this.scene.physics.add.sprite(data.x, data.y, assetKey);
     powerupSprite.setScale(0.05); // Set much smaller scale for powerups
     powerupSprite.setVelocityY(50); // Give it some downward movement
+    
+    // Set data properties for debug inspection
+    powerupSprite.setData('instanceId', data.instanceId);
+    powerupSprite.setData('objectType', 'powerup');
+    powerupSprite.setData('configId', data.configId);
+    
     // Optional: Add slight rotation or tween effect
     this.scene.tweens.add({
       targets: powerupSprite,

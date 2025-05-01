@@ -3,9 +3,6 @@ import { Logger } from '../../utils/Logger';
 import * as Events from '../../constants/events';
 import { PowerupEffectData } from '../PowerupManager';
 
-/**
- * Handles the application and removal of powerup effects specifically related to the player.
- */
 export class PlayerPowerupHandler {
   private isShieldActive: boolean = false;
 
@@ -30,7 +27,6 @@ export class PlayerPowerupHandler {
     this.eventBus.off(Events.POWERUP_EFFECT_REMOVED, this.handlePowerupEffectRemoved);
   }
 
-  // Handler for when a powerup effect is applied
   private handlePowerupEffectApplied(data: PowerupEffectData): void {
     if (data.effect === 'temporary_invulnerability') {
       this.isShieldActive = true;
@@ -43,7 +39,6 @@ export class PlayerPowerupHandler {
     // Handle other player-specific powerup effects here
   }
 
-  // Handler for when a powerup effect is removed
   private handlePowerupEffectRemoved(data: PowerupEffectData): void {
     if (data.effect === 'temporary_invulnerability') {
       this.isShieldActive = false;
@@ -55,15 +50,10 @@ export class PlayerPowerupHandler {
     // Handle removal of other player-specific powerup effects here
   }
 
-  /**
-   * Checks if the shield powerup is currently active.
-   * @returns True if the shield is active, false otherwise.
-   */
   public isShieldPowerupActive(): boolean {
     return this.isShieldActive;
   }
 
-  /** Cleans up listeners. */
   public destroy(): void {
     this.unregisterListeners();
     this.logger.log('PlayerPowerupHandler destroyed.');

@@ -2,7 +2,6 @@ import logger from '../../utils/Logger';
 import { type WeaponConfig } from '../../config/schemas/weaponSchema';
 import EconomyManager from '../EconomyManager';
 
-/** Result of an upgrade attempt */
 export interface UpgradeResult {
   success: boolean;
   newLevel?: number;
@@ -12,9 +11,6 @@ export interface UpgradeResult {
   message?: string; // Optional message for logging or UI feedback
 }
 
-/**
- * Handles the logic for calculating and applying weapon upgrades.
- */
 export class WeaponUpgrader {
   constructor(private economyManager: EconomyManager) {}
 
@@ -30,13 +26,11 @@ export class WeaponUpgrader {
       return { success: false, message: 'No upgrade configuration.' };
     }
 
-    // Calculate the cost for the *next* level (level + 1)
     const baseCost = currentWeaponConfig.baseCost;
     const costMultiplier = currentWeaponConfig.upgrade.costMultiplier;
     // Cost to upgrade *from* currentLevel *to* currentLevel + 1
     const upgradeCost = Math.round(baseCost * Math.pow(costMultiplier, currentLevel));
 
-    // Check currency
     const currentCurrency = this.economyManager.getCurrentCurrency();
     if (currentCurrency < upgradeCost) {
       const message = `Insufficient currency. Need: ${upgradeCost}, Have: ${currentCurrency}`;
@@ -44,7 +38,6 @@ export class WeaponUpgrader {
       return { success: false, message: message };
     }
 
-    // Spend currency
     if (!this.economyManager.spendCurrency(upgradeCost)) {
       // Should not happen if getCurrentCurrency check passed, but log just in case
       const message = `Failed to spend currency ${upgradeCost} despite having ${currentCurrency}.`;
@@ -52,7 +45,6 @@ export class WeaponUpgrader {
       return { success: false, message: message };
     }
 
-    // --- Upgrade successful, calculate new stats ---
     const newLevel = currentLevel + 1;
     const upgradeConfig = currentWeaponConfig.upgrade;
     const levelFactor = newLevel - 1; // Apply multiplier starting from level 2

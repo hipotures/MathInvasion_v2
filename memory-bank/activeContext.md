@@ -110,16 +110,57 @@
     *   Moved "ActiveObjects" section to the bottom.
     *   Set a fixed height (`calc(100vh - 20px)`).
     *   Reverted width to a fixed `360px` after attempts at dynamic sizing caused overlap issues.
-
-**Next Steps (Milestone M7 - Balans, Testy, Optymalizacja i CI/CD):**
-*   **Balancing:**
+ 
+ **Recent Changes (M7 - Enemy Spawning & Shooting Fixes):**
+ *   Modified `src/core/managers/helpers/EnemyWaveHandler.ts` (`spawnWave` method) to spawn wave enemies above the screen (`y: -50`).
+ *   Modified `src/phaser/scenes/GameScene.ts` (`spawnRandomEnemy` method) to also spawn random enemies above the screen (`y: -50`), fixing the issue where some enemies appeared directly on screen.
+ *   Modified `src/phaser/entities/EnemyEntity.ts` (constructor) to explicitly set initial `velocityY` to 0.
+ *   Modified `src/phaser/entities/EnemyEntity.ts` (`handleMovement` method) for all movement patterns to check if `this.y < -10`. If true, `velocityY` is forced to 0; otherwise, the pattern's downward velocity is applied. This ensures enemies only start moving down when very close to the screen edge.
+ *   Modified `src/phaser/entities/EnemyEntity.ts` (`handleShooting` method) to change the firing condition from `this.y >= 0` to `this.y >= 50`, preventing enemies from firing until they are at least 50 pixels down from the top edge.
+ 
+ **Recent Changes (M7 - Debug Inspection Feature):**
+ *   Added new events (`DEBUG_SHOW_INSPECTION_DETAILS`, `DEBUG_STOP_INSPECTING`) to `src/core/constants/events.ts`.
+ *   Created `src/core/utils/debug/DebugObjectInspector.ts` helper class to fetch and format object details.
+ *   Added getter methods to `PlayerManager`, `ProjectileManager`, `PowerupManager`, `EnemyManager` to expose necessary state for inspection.
+ *   Refactored `DebugObjectInspector` to accept the `Phaser.GameObjects.GameObject` directly, allowing it to access position/velocity from the object/body.
+ *   Modified `src/phaser/handlers/GameSceneDebugHandler.ts`:
+     *   Injected `DebugObjectInspector`.
+     *   Added click listeners to game objects in debug mode.
+     *   Implemented `handleObjectClick` to identify the clicked object, call the inspector, and emit `DEBUG_SHOW_INSPECTION_DETAILS` with formatted HTML.
+     *   Updated `drawDebugRectangle` to change highlight color (green -> yellow) for the inspected object.
+     *   Added logic to stop inspection when the inspected object is destroyed.
+ *   Modified `src/core/utils/HtmlDebugPanel.ts`:
+     *   Added `isInspecting` state.
+     *   Added listener for `DEBUG_SHOW_INSPECTION_DETAILS` to display the received HTML, hiding the default view.
+     *   Added listener for `DEBUG_STOP_INSPECTING` to clear the inspection view and restore the default view.
+ *   Modified `src/phaser/handlers/event/ProjectileEventHandler.ts` to store `instanceId` and `objectType` on projectile shapes using `setData`.
+ *   Modified `src/phaser/scenes/GameScene.ts` to instantiate `DebugObjectInspector` and inject it into `GameSceneDebugHandler`.
+ 
+ **Recent Changes (M7 - Debug Inspection Improvements):**
+ *   Enhanced the debug object inspection functionality to make it more user-friendly:
+     *   Modified `GameSceneDebugHandler` to add larger hit areas for sprites and shapes, making them easier to click.
+     *   Added padding of 20 pixels around sprites and shapes for better clickability.
+     *   Improved visual feedback by highlighting the currently inspected object in yellow (instead of green).
+     *   Added event listeners for `GAME_PAUSED` and `GAME_RESUMED` to ensure objects remain interactive when the game is paused.
+     *   Fixed issue where objects couldn't be clicked when the game was paused.
+     *   Added proper cleanup of event listeners when the scene is destroyed.
+     *   Added proper handling of object destruction events to stop inspecting if the inspected object is destroyed.
+     *   Updated `handleDebugModeChanged` to set object interactivity and stop inspecting when debug mode is disabled.
+ *   Modified `EnemyEntity` class to:
+     *   Add a static `isPaused` property to track game pause state.
+     *   Add static methods to initialize and clean up event listeners for pause/resume events.
+     *   Update the `preUpdate` method to check the `isPaused` flag before handling movement and shooting.
+ *   Updated `GameScene` to initialize and clean up the static event listeners for `EnemyEntity`.
+ 
+ **Next Steps (Milestone M7 - Balans, Testy, Optymalizacja i CI/CD):**
+ *   **Balancing:**
     *   Review and adjust values in `config/*.yml` (enemy health/speed/reward/score, weapon damage/cooldown/cost, powerup duration/effects, difficulty scaling) based on playtesting.
     *   Fine-tune enemy spawn patterns and wave composition.
     *   Adjust powerup drop rates.
 *   **Testing:**
-    *   Implement unit tests (Vitest/Jest) for core managers and utility functions. *(EconomyManager, PlayerManager, WeaponManager, ProjectileManager, PowerupManager, EnemyManager, InputManager, ConfigLoader, WeaponUpgrader, WeaponPowerupHandler, PlayerPowerupHandler, EnemyWaveHandler done)* -> **COMPLETED**.
+    *   Implement unit tests (Vitest/Jest) for core managers and utility functions. *(EconomyManager, PlayerManager, WeaponManager, ProjectileManager, PowerupManager, EnemyManager, InputManager, ConfigLoader, WeaponUpgrader, WeaponPowerupHandler, PlayerPowerupHandler, EnemyWaveHandler done)* -> **COMPLETED**. *(Note: Tests are currently failing after recent changes, fixing deferred until code stabilizes)*.
     *   Implement end-to-end tests (Playwright) for key gameplay flows (movement, shooting, upgrades, powerups, game over).
-*   **Optimization:**
+ *   **Optimization:**
     *   Profile game performance (FPS, memory usage) and identify bottlenecks.
     *   Optimize asset loading and management.
     *   Review physics interactions and collision checks for efficiency.

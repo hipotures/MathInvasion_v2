@@ -90,7 +90,11 @@ export class ProjectileEventHandler {
     // Add to group and map
     this.projectileGroup.add(projectileShape);
     this.projectileShapes.set(data.id, projectileShape);
-
+    // Store instanceId and type on the shape itself for easy retrieval during debug clicks
+    projectileShape.setData('instanceId', data.id);
+    projectileShape.setData('objectType', 'projectile'); // Add object type
+    projectileShape.setName(data.id); // Also set name for potential map key check
+ 
     // Set initial visibility based on debug mode
     projectileShape.setVisible(!debugState.isDebugMode);
 

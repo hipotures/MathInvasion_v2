@@ -29,10 +29,10 @@ vi.mock('../../../../src/core/utils/Logger', () => ({
 }));
 
 // Mock EventBus
-const mockEventBusEmit = vi.fn();
+const mockEventBusEmit = vi.fn(); // Define the mock function first
 vi.mock('../../../../src/core/events/EventBus', () => ({
   EventBus: vi.fn().mockImplementation(() => ({
-    emit: mockEventBusEmit,
+    emit: mockEventBusEmit, // Now use the defined mock function
     on: vi.fn(),
     off: vi.fn(),
     cleanup: vi.fn(),
@@ -199,10 +199,10 @@ describe('EnemyWaveHandler', () => {
       expect(handler.getCurrentWave()).toBe(3);
       // Spawning happens automatically on advanceWave
       // Check the calls made during the last advanceWave (which triggered wave 3 spawn)
-      expect(mockEnemyManagerSpawnEnemy).toHaveBeenCalledWith(
-        mockDifficultyConfig.bossId,
-        expect.any(Object)
-      );
+      expect(mockEnemyManagerSpawnEnemy).toHaveBeenCalledWith(mockDifficultyConfig.bossId, {
+        x: 400, // Assuming default boss spawn X
+        y: -50, // Check updated Y coordinate
+      });
       expect(mockEnemyManagerSpawnEnemy).toHaveBeenCalledTimes(1); // Only boss should spawn
     });
 
@@ -215,15 +215,15 @@ describe('EnemyWaveHandler', () => {
       // Check a few spawn positions based on grid logic (approximate)
       expect(mockEnemyManagerSpawnEnemy).toHaveBeenCalledWith('triangle', {
         x: expect.any(Number),
-        y: 100,
+        y: -50, // Check updated Y coordinate (startY: -50 + 0 * 50)
       }); // First row
       expect(mockEnemyManagerSpawnEnemy).toHaveBeenCalledWith('triangle', {
         x: expect.any(Number),
-        y: 150,
+        y: 0, // Check updated Y coordinate (startY: -50 + 1 * 50)
       }); // Second row
       expect(mockEnemyManagerSpawnEnemy).toHaveBeenCalledWith('triangle', {
         x: expect.any(Number),
-        y: 200,
+        y: 50, // Check updated Y coordinate (startY: -50 + 2 * 50)
       }); // Third row
     });
   });

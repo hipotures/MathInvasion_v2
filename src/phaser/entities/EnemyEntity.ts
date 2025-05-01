@@ -2,16 +2,45 @@ import Phaser from 'phaser';
 import { EnemyConfig } from '../../core/config/schemas/enemySchema';
 import Logger from '../../core/utils/Logger'; // Use default import for Logger instance
 import EventBus from '../../core/events/EventBus'; // Import EventBus instance
-import { ENEMY_REQUEST_FIRE, REQUEST_ENEMY_DESTRUCTION_EFFECT } from '../../core/constants/events'; // Import the new events
+import {
+  ENEMY_REQUEST_FIRE,
+  REQUEST_ENEMY_DESTRUCTION_EFFECT,
+  GAME_PAUSED,
+  GAME_RESUMED
+} from '../../core/constants/events'; // Import the new events
 
 // Placeholder Enemy Entity
 export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
+  // Static property to track game pause state
+  public static isPaused: boolean = false;
+  
   public instanceId: string;
   public configId: string;
   public enemyConfig: EnemyConfig;
   private shootCooldownTimer: number = 0;
   private maxHealth: number; // Store scaled max health
   private speedMultiplier: number; // Store speed multiplier
+  
+  // Static method to initialize event listeners
+  public static initializeEventListeners(): void {
+    // Set up listeners for game pause/resume events
+    EventBus.on(GAME_PAUSED, () => {
+      EnemyEntity.isPaused = true;
+      Logger.debug('EnemyEntity: Game paused state set to true');
+    });
+    
+    EventBus.on(GAME_RESUMED, () => {
+      EnemyEntity.isPaused = false;
+      Logger.debug('EnemyEntity: Game paused state set to false');
+    });
+  }
+  
+  // Static method to clean up event listeners
+  public static cleanupEventListeners(): void {
+    // Remove listeners when no longer needed
+    EventBus.off(GAME_PAUSED, () => {});
+    EventBus.off(GAME_RESUMED, () => {});
+  }
 
   constructor(
     scene: Phaser.Scene,
@@ -50,9 +79,12 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
     // Apply speed multiplier to initial velocity
     const initialSpeed = config.baseSpeed * this.speedMultiplier;
     this.setVelocityX(initialSpeed * (Math.random() < 0.5 ? -1 : 1));
-
-    // Set interactive if needed later
-    // this.setInteractive();
+    this.setVelocityY(0); // Explicitly set initial Y velocity to 0
+ 
+    // Set data properties for debug inspection
+    this.setData('instanceId', this.instanceId);
+    this.setData('objectType', 'enemy');
+    this.setData('configId', this.configId);
 
     Logger.debug(`EnemyEntity created: ${this.configId} (Instance: ${this.instanceId})`);
   }
@@ -100,11 +132,14 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // Handle movement
-    this.handleMovement(time, delta);
+    // Only process game logic if the game is not paused
+    if (!EnemyEntity.isPaused) {
+      // Handle movement
+      this.handleMovement(time, delta);
 
-    // Handle shooting
-    this.handleShooting(time, delta);
+      // Handle shooting
+      this.handleShooting(time, delta);
+    }
   }
 
   private handleMovement(time: number, _delta: number): void {
@@ -142,24 +177,38 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
           // If stopped mid-air for some reason, restart movement
           this.setVelocityX(speed * (Math.random() < 0.5 ? -1 : 1));
         }
-
-        // Add a slight downward drift
-        this.setVelocityY(speed * 0.1); // Adjust multiplier as needed
+ 
+        // Ensure Y velocity is 0 until close to screen, then apply drift
+        if (this.y < -10) {
+             this.setVelocityY(0);
+        } else {
+             this.setVelocityY(speed * 0.1); // Adjust multiplier as needed
+        }
         break;
-
+ 
       case 'boss_weaving': {
         // Implement sine wave horizontal movement
         const frequency = 0.001; // Controls how fast the weave is (adjust as needed)
         const amplitude = speed * 1.5; // Controls how wide the weave is (adjust as needed)
         const horizontalVelocity = Math.sin(time * frequency) * amplitude;
         this.setVelocityX(horizontalVelocity);
-        this.setVelocityY(speed * 0.5); // Maintain slower downward movement
+        // Ensure Y velocity is 0 until close to screen, then apply downward movement
+        if (this.y < -10) {
+            this.setVelocityY(0);
+        } else {
+            this.setVelocityY(speed * 0.5);
+        }
         break;
       }
       case 'bomber_dive': {
         // Fast downward movement, no horizontal movement for now
         if (this.body.velocity.x !== 0) this.setVelocityX(0);
-        this.setVelocityY(speed * 1.5); // Faster dive speed
+        // Ensure Y velocity is 0 until close to screen, then apply dive speed
+        if (this.y < -10) {
+            this.setVelocityY(0);
+        } else {
+            this.setVelocityY(speed * 1.5); // Faster dive speed
+        }
         break;
       }
       case 'strafe_horizontal': {
@@ -183,15 +232,24 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
           // If stopped mid-air, restart movement
           this.setVelocityX(speed * (Math.random() < 0.5 ? -1 : 1));
         }
-        // Slow downward drift
-        this.setVelocityY(speed * 0.05); // Very slow drift
+        // Ensure Y velocity is 0 until close to screen, then apply slow drift
+        if (this.y < -10) {
+            this.setVelocityY(0);
+        } else {
+            this.setVelocityY(speed * 0.05); // Very slow drift
+        }
         break;
       }
       default:
         // Default to simple downward movement if pattern is unknown
         Logger.warn(`Unknown movement pattern: ${this.enemyConfig.movementPattern}`);
         if (this.body.velocity.x !== 0) this.setVelocityX(0);
-        this.setVelocityY(speed);
+        // Ensure Y velocity is 0 until close to screen, then apply default speed
+        if (this.y < -10) {
+            this.setVelocityY(0);
+        } else {
+            this.setVelocityY(speed);
+        }
         break;
     }
   }
@@ -205,22 +263,28 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
     this.shootCooldownTimer -= _delta; // Use the renamed parameter
 
     if (this.shootCooldownTimer <= 0) {
-      // Ready to fire
-      Logger.debug(`Enemy ${this.instanceId} requesting fire.`);
-      // Ensure we have a valid scene context before accessing properties like 'x'
-      if (this.scene) {
+      // Ready to fire, but only if sufficiently on screen (y >= 50)
+      if (this.y >= 50) {
+        Logger.debug(`Enemy ${this.instanceId} requesting fire (y >= 50).`);
+        // Ensure we have a valid scene context before accessing properties like 'x'
+        if (this.scene) {
         EventBus.emit(ENEMY_REQUEST_FIRE, {
           instanceId: this.instanceId,
           x: this.x,
           y: this.getBottomCenter().y, // Fire from bottom center
-          shootConfig: this.enemyConfig.shootConfig,
-        });
+            shootConfig: this.enemyConfig.shootConfig,
+          });
+        } else {
+          Logger.error(`Enemy ${this.instanceId} tried to fire but scene context is missing.`);
+        }
+ 
+        // Reset cooldown only after a successful fire attempt (or decision not to fire)
+        this.shootCooldownTimer = this.enemyConfig.shootConfig.cooldownMs;
       } else {
-        Logger.error(`Enemy ${this.instanceId} tried to fire but scene context is missing.`);
+        // Still reset cooldown even if not far enough on screen, otherwise it might fire immediately upon reaching y=50
+        this.shootCooldownTimer = this.enemyConfig.shootConfig.cooldownMs;
+        Logger.debug(`Enemy ${this.instanceId} ready to fire but not far enough on screen (y=${this.y}). Cooldown reset.`);
       }
-
-      // Reset cooldown
-      this.shootCooldownTimer = this.enemyConfig.shootConfig.cooldownMs;
     }
   }
 }

@@ -3,49 +3,43 @@ import { Logger } from '../utils/Logger';
 import { PowerupsConfig, PowerupConfig } from '../config/schemas/powerupSchema';
 import * as Events from '../constants/events';
 
-// Interface for data when requesting a powerup spawn
 export interface RequestSpawnPowerupData {
   x: number;
   y: number;
   enemyId: string; // ID of the enemy that dropped it (for potential future logic)
 }
 
-// Interface for data when a powerup is spawned (for the scene)
 export interface PowerupSpawnedData {
-  instanceId: number; // Unique ID for this specific powerup instance
-  configId: string; // ID from the powerup config (e.g., 'shield')
+  instanceId: number;
+  configId: string;
   x: number;
   y: number;
-  visual: string; // Visual key from config
+  visual: string;
 }
 
-// Interface for data when a powerup is collected
 export interface PowerupCollectedData {
   instanceId: number;
 }
 
-// Interface for data when an effect is applied or removed
 export interface PowerupEffectData {
   configId: string;
-  effect: string; // Effect identifier from config
+  effect: string;
   multiplier?: number; // Optional multiplier
   durationMs: number;
 }
 
-// Internal state for an active powerup effect
 interface ActivePowerupEffect {
   config: PowerupConfig;
   timer: number; // Remaining duration in ms
   // Add other relevant state if needed
 }
 
-// Internal state for a spawned powerup instance on the map
 interface SpawnedPowerupInstance {
   instanceId: number;
   config: PowerupConfig;
   x: number;
   y: number;
-  creationTime: number; // Timestamp when spawned
+  creationTime: number;
 }
 
 export class PowerupManager {
@@ -69,7 +63,6 @@ export class PowerupManager {
   }
 
   public update(delta: number): void {
-    // Update timers for active effects
     const dtMillis = delta; // Assuming delta is in milliseconds from Phaser
     const expiredEffects: string[] = [];
 
@@ -92,15 +85,11 @@ export class PowerupManager {
   }
 
   private handleRequestSpawnPowerup(data: RequestSpawnPowerupData): void {
-    // The decision to drop *a* powerup was made by the EnemyEventHandler based on individual chances.
-    // Now, we just need to pick *which* powerup to spawn from the available list.
-    // A simple approach is to pick one randomly. More complex logic could weigh choices.
     if (!this.powerupsConfig || this.powerupsConfig.length === 0) {
       this.logger.warn('Received REQUEST_SPAWN_POWERUP but no powerup configurations are loaded.');
       return;
     }
 
-    // Randomly select a powerup config from the loaded list
     const randomIndex = Math.floor(Math.random() * this.powerupsConfig.length);
     const selectedPowerupConfig = this.powerupsConfig[randomIndex];
 
@@ -108,26 +97,25 @@ export class PowerupManager {
       const instanceId = this.nextInstanceId++;
       const spawnedInstance: SpawnedPowerupInstance = {
         instanceId,
-        config: selectedPowerupConfig, // Use the randomly selected config
+        config: selectedPowerupConfig,
         x: data.x,
         y: data.y,
-        creationTime: Date.now(), // Record creation time
+        creationTime: Date.now(),
       };
       this.spawnedPowerups.set(instanceId, spawnedInstance);
 
       const eventData: PowerupSpawnedData = {
         instanceId,
-        configId: selectedPowerupConfig.id, // Use selected config ID
+        configId: selectedPowerupConfig.id,
         x: data.x,
         y: data.y,
-        visual: selectedPowerupConfig.visual, // Use selected visual
+        visual: selectedPowerupConfig.visual,
       };
       this.eventBus.emit(Events.POWERUP_SPAWNED, eventData);
       this.logger.debug(
         `Powerup spawned: ${selectedPowerupConfig.name} (Instance ID: ${instanceId}) at (${data.x}, ${data.y})`
       );
     } else {
-      // This case should theoretically not happen if the config array is not empty, but good to have a fallback log.
       this.logger.error('Failed to select a powerup config despite having loaded configurations.');
     }
   }
@@ -140,7 +128,6 @@ export class PowerupManager {
       );
       this.applyEffect(spawnedInstance.config);
       this.spawnedPowerups.delete(data.instanceId);
-      // Note: The scene handler is responsible for destroying the sprite via POWERUP_COLLECTED event
     } else {
       this.logger.warn(`Collected powerup instance not found: ${data.instanceId}`);
     }
@@ -149,7 +136,6 @@ export class PowerupManager {
   private applyEffect(config: PowerupConfig): void {
     const effectType = config.effect;
 
-    // If an effect of the same type is already active, reset its timer
     const existingEffect = this.activeEffects.get(effectType);
     if (existingEffect) {
       this.logger.debug(`Resetting timer for active effect: ${effectType}`);
@@ -180,24 +166,22 @@ export class PowerupManager {
         configId: effect.config.id,
         effect: effect.config.effect,
         multiplier: effect.config.multiplier,
-        durationMs: effect.config.durationMs, // Pass original duration for reference
+        durationMs: effect.config.durationMs,
       };
       this.eventBus.emit(Events.POWERUP_EFFECT_REMOVED, eventData);
       this.activeEffects.delete(effectType);
-      // Also emit POWERUP_EXPIRED for potential UI updates?
       this.eventBus.emit(Events.POWERUP_EXPIRED, { configId: effect.config.id });
     }
   }
 
-  /**
-   * Retrieves the creation timestamp of a specific spawned powerup instance.
-   * @param instanceId The unique ID of the powerup instance.
-   * @returns The creation timestamp (milliseconds since epoch), or undefined if not found.
-   */
   public getPowerupCreationTime(instanceId: number): number | undefined {
     return this.spawnedPowerups.get(instanceId)?.creationTime;
   }
-
+ 
+  public getPowerupState(instanceId: number): SpawnedPowerupInstance | undefined {
+    return this.spawnedPowerups.get(instanceId);
+  }
+ 
   public destroy(): void {
     this.unregisterListeners();
     this.spawnedPowerups.clear();

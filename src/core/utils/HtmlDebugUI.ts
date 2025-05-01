@@ -1,18 +1,13 @@
-import logger from './Logger'; // Import the logger instance
+import logger from './Logger';
 import { HtmlDebugElementFactory } from './helpers/HtmlDebugElementFactory';
 
-/**
- * Utility class for creating and managing HTML UI elements in debug mode
- * This replaces the Phaser text elements with HTML elements when debug mode is enabled
- */
 export class HtmlDebugUI {
   private container: HTMLDivElement;
   private uiElements: Map<string, HTMLDivElement> = new Map();
   private isVisible = false;
-  private elementFactory: HtmlDebugElementFactory | null = null; // Initialize as null
+  private elementFactory: HtmlDebugElementFactory | null = null;
 
   constructor() {
-    // Create container for all UI elements
     this.container = document.createElement('div');
     this.container.style.position = 'absolute';
     this.container.style.top = '0';
@@ -23,13 +18,10 @@ export class HtmlDebugUI {
     this.container.style.zIndex = '998'; // Below debug labels
     this.container.style.display = 'none';
 
-    // Add to document
     document.body.appendChild(this.container);
 
-    // Create initial UI elements using the factory
     this.createUIElements();
 
-    // Add window resize listener to handle scaling
     window.addEventListener('resize', this.handleResize.bind(this));
   }
 
@@ -37,10 +29,9 @@ export class HtmlDebugUI {
    * Handle window resize to adjust element positions
    */
   private handleResize(): void {
-    // Recreate UI elements on resize using the factory
-    this.container.innerHTML = ''; // Clear existing elements
+    this.container.innerHTML = '';
     this.uiElements.clear();
-    this.createUIElements(); // Recreate using the factory
+    this.createUIElements();
   }
 
   /**
@@ -52,75 +43,69 @@ export class HtmlDebugUI {
       logger.error('Canvas element not found for HtmlDebugUI');
       return;
     }
-
-    // Instantiate the factory if it doesn't exist or canvas changed (though canvas change is unlikely here)
+  
     if (!this.elementFactory) {
-      // Pass the bound createUIElement method and canvas
       this.elementFactory = new HtmlDebugElementFactory(this.createUIElement.bind(this), canvas);
     }
-
-    // Delegate creation to the factory
+  
     this.elementFactory.createAllElements();
   }
 
   /**
-   * Generic method to create a single UI element and add it to the container and map.
-   * This method is passed to the HtmlDebugElementFactory.
-   * @param id Element ID
-   * @param text Initial text
-   * @param x X position
-   * @param y Y position
-   * @param color Text color
-   * @param align Text alignment
-   * @param bgColor Background color
-   */
-  private createUIElement(
-    id: string,
-    text: string,
-    x: number,
-    y: number,
-    color: string,
-    align: 'left' | 'center' | 'right' = 'left',
-    bgColor?: string
-  ): void {
-    const element = document.createElement('div');
-    element.style.position = 'absolute';
-    element.style.color = color;
-    element.style.fontFamily = 'Arial, sans-serif';
-    element.style.fontSize = '18px';
-    element.style.fontWeight = 'bold';
-    element.style.pointerEvents = 'none';
-    element.style.textShadow = '1px 1px 2px rgba(0, 0, 0, 0.8)';
-
-    if (bgColor) {
-      element.style.backgroundColor = bgColor;
-      element.style.padding = '5px 10px';
-      element.style.borderRadius = '4px';
-    }
-
-    // Set alignment
-    if (align === 'right') {
-      // Adjust positioning for right alignment relative to canvas edge
-      const canvas = document.querySelector('canvas');
-      const canvasRightEdge = canvas ? canvas.getBoundingClientRect().right : window.innerWidth;
-      // Position relative to the right edge of the canvas/window minus the provided x offset
-      element.style.right = `${window.innerWidth - canvasRightEdge + x}px`; // x is offset from right
-      element.style.textAlign = 'right';
-    } else if (align === 'center') {
-      element.style.left = `${x}px`;
-      element.style.transform = 'translateX(-50%)';
-      element.style.textAlign = 'center';
-    } else {
-      element.style.left = `${x}px`;
-    }
-
-    element.style.top = `${y}px`;
-    element.textContent = text;
-
-    this.container.appendChild(element);
-    this.uiElements.set(id, element);
-  }
-
+   /**
+    * Generic method to create a single UI element and add it to the container and map.
+    * This method is passed to the HtmlDebugElementFactory.
+    * @param id Element ID
+    * @param text Initial text
+    * @param x X position
+    * @param y Y position
+    * @param color Text color
+    * @param align Text alignment
+    * @param bgColor Background color
+    */
+   private createUIElement(
+     id: string,
+     text: string,
+     x: number,
+     y: number,
+     color: string,
+     align: 'left' | 'center' | 'right' = 'left',
+     bgColor?: string
+   ): void {
+     const element = document.createElement('div');
+     element.style.position = 'absolute';
+     element.style.color = color;
+     element.style.fontFamily = 'Arial, sans-serif';
+     element.style.fontSize = '18px';
+     element.style.fontWeight = 'bold';
+     element.style.pointerEvents = 'none';
+     element.style.textShadow = '1px 1px 2px rgba(0, 0, 0, 0.8)';
+   
+     if (bgColor) {
+       element.style.backgroundColor = bgColor;
+       element.style.padding = '5px 10px';
+       element.style.borderRadius = '4px';
+     }
+   
+     if (align === 'right') {
+       const canvas = document.querySelector('canvas');
+       const canvasRightEdge = canvas ? canvas.getBoundingClientRect().right : window.innerWidth;
+       element.style.right = `${window.innerWidth - canvasRightEdge + x}px`;
+       element.style.textAlign = 'right';
+     } else if (align === 'center') {
+       element.style.left = `${x}px`;
+       element.style.transform = 'translateX(-50%)';
+       element.style.textAlign = 'center';
+     } else {
+       element.style.left = `${x}px`;
+     }
+   
+     element.style.top = `${y}px`;
+     element.textContent = text;
+   
+     this.container.appendChild(element);
+     this.uiElements.set(id, element);
+   }
   /**
    * Set the visibility of all UI elements
    * @param visible Whether the elements should be visible
@@ -161,11 +146,11 @@ export class HtmlDebugUI {
    * @param health Health amount
    */
   public updateHealth(health: number): void {
-    let color = '#00ff00'; // Green
+    let color = '#00ff00';
     if (health < 30) {
-      color = '#ff0000'; // Red
+      color = '#ff0000';
     } else if (health < 60) {
-      color = '#ffff00'; // Yellow
+      color = '#ffff00';
     }
     this.updateElement('health', `Health: ${health}`, color);
   }
@@ -192,7 +177,7 @@ export class HtmlDebugUI {
    * @param level Weapon level
    */
   public updateWeaponStatus(weaponId: string, level: number): void {
-    const weaponName = weaponId.charAt(0).toUpperCase() + weaponId.slice(1); // Capitalize
+    const weaponName = weaponId.charAt(0).toUpperCase() + weaponId.slice(1);
     this.updateElement('weaponStatus', `Weapon: ${weaponName} Lvl: ${level}`);
   }
 
@@ -213,25 +198,25 @@ export class HtmlDebugUI {
    * @param weaponId Active weapon ID
    */
   public updateWeaponButtons(weaponId: string): void {
-    const activeColor = '#ffff00'; // Yellow for active
-    const inactiveColor = '#dddddd'; // Default grey
-    const activeBgColor = '#888800'; // Darker yellow bg
-    const inactiveBgColor = '#555555'; // Default grey bg
-
+    const activeColor = '#ffff00';
+    const inactiveColor = '#dddddd';
+    const activeBgColor = '#888800';
+    const inactiveBgColor = '#555555';
+  
     const button1 = this.uiElements.get('weaponButton1');
     const button2 = this.uiElements.get('weaponButton2');
     const button3 = this.uiElements.get('weaponButton3');
-
+  
     if (button1) {
       button1.style.color = weaponId === 'bullet' ? activeColor : inactiveColor;
       button1.style.backgroundColor = weaponId === 'bullet' ? activeBgColor : inactiveBgColor;
     }
-
+  
     if (button2) {
       button2.style.color = weaponId === 'laser' ? activeColor : inactiveColor;
       button2.style.backgroundColor = weaponId === 'laser' ? activeBgColor : inactiveBgColor;
     }
-
+  
     if (button3) {
       button3.style.color = weaponId === 'slow_field' ? activeColor : inactiveColor;
       button3.style.backgroundColor = weaponId === 'slow_field' ? activeBgColor : inactiveBgColor;
@@ -242,11 +227,8 @@ export class HtmlDebugUI {
    * Destroy all UI elements and the container
    */
   public destroy(): void {
-    // Remove resize listener
-    // Ensure the bound function reference is the same for removal
-    const boundHandleResize = this.handleResize.bind(this);
-    window.removeEventListener('resize', boundHandleResize);
-
+    window.removeEventListener('resize', this.handleResize.bind(this));
+  
     if (document.body.contains(this.container)) {
       document.body.removeChild(this.container);
     }

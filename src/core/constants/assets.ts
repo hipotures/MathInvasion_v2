@@ -7,7 +7,6 @@
 export const PLAYER_KEY = 'playerShip';
 
 // Projectile Assets
-// Removed BULLET_KEY, PROJECTILE_ENEMY_BULLET_KEY, PROJECTILE_ENEMY_BULLET_FAST_KEY, PROJECTILE_ENEMY_LASER_KEY
 export const PROJECTILE_DEATH_BOMB_KEY = 'deathBomb'; // Key for the hexagon bomber's death bomb
 
 // Enemy Assets

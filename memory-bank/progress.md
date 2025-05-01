@@ -22,6 +22,13 @@
         *   Added dynamic list of active objects with abbreviated parameters (T, X, Y, H, I, Vx, Vy, A) and legend.
         *   Implemented object age display (A) based on creation timestamps stored in managers.
         *   Adjusted panel layout (ActiveObjects at bottom, fixed height, fixed width 360px).
+      *   **Debug Inspection Improvements:**
+        *   Enhanced object clickability by adding larger hit areas with 20px padding around sprites and shapes.
+        *   Improved visual feedback with yellow highlighting for the currently inspected object.
+        *   Fixed issue where objects couldn't be clicked when the game was paused.
+        *   Added event listeners to ensure objects remain interactive during pause.
+        *   Implemented proper cleanup of event listeners and object interactivity.
+        *   Modified `EnemyEntity` to respect game pause state and prevent shooting while paused.
 *   **Milestone M6: PWA Setup (Implemented)**
 *   `vite-plugin-pwa` configured in `vite.config.ts` for service worker generation (caching assets, configs).
     *   Service worker registration handled in `src/main.ts` using `workbox-window`.

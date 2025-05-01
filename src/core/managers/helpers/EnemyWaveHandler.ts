@@ -2,16 +2,12 @@ import EventBus, { EventBus as EventBusType } from '../../events/EventBus';
 import Logger, { Logger as LoggerType } from '../../utils/Logger';
 import { DifficultyConfig } from '../../config/schemas/difficultySchema';
 import { WAVE_UPDATED } from '../../constants/events';
-import type { EnemyManager } from '../EnemyManager'; // Use type import
+import type { EnemyManager } from '../EnemyManager';
 
-/** Data for the WAVE_UPDATED event */
 interface WaveUpdateData {
   waveNumber: number;
 }
 
-/**
- * Handles wave progression, enemy scaling, and spawning patterns based on difficulty.
- */
 export class EnemyWaveHandler {
   private currentWave: number;
   private availableEnemyTypes: string[] = [];
@@ -25,21 +21,18 @@ export class EnemyWaveHandler {
     private eventBus: EventBusType = EventBus,
     private logger: LoggerType = Logger
   ) {
-    // Initialize currentWave based on config
     this.currentWave = this.difficultyConfig.initialWaveNumber - 1;
     this.logger.log('EnemyWaveHandler initialized');
     // DO NOT start the wave sequence immediately from constructor
   }
 
-  /** Starts the wave progression */
   public start(): void {
     this.logger.log('EnemyWaveHandler starting wave progression...');
     this.advanceWave();
   }
 
-  // --- Scaling Calculations ---
-
   private getWaveMultiplier(baseMultiplier: number): number {
+    // Calculate multiplier based on how many waves have passed since the initial one
     return Math.pow(
       baseMultiplier,
       Math.max(0, this.currentWave - this.difficultyConfig.initialWaveNumber)
@@ -64,12 +57,10 @@ export class EnemyWaveHandler {
   }
 
   private getScaledEnemyCount(): number {
-    const baseCount = 10; // Example base count
+    const baseCount = 10; // Example base count, could be configurable
     const multiplier = this.getWaveMultiplier(this.difficultyConfig.enemyCountMultiplierPerWave);
     return Math.round(baseCount * multiplier);
   }
-
-  // --- Wave Management ---
 
   private updateAvailableEnemyTypes(): void {
     const available = [...this.difficultyConfig.initialEnemyTypes];
@@ -92,9 +83,8 @@ export class EnemyWaveHandler {
     this.logger.debug(
       `Available enemy types for wave ${this.currentWave}: ${available.join(', ')}`
     );
-  }
+  } // Corrected closing brace position
 
-  /** Advances the wave number, updates available enemies, emits event, and spawns the wave */
   public advanceWave(): void {
     if (this.waveClearTimer !== null) {
       clearTimeout(this.waveClearTimer);
@@ -109,7 +99,6 @@ export class EnemyWaveHandler {
     this.spawnWave();
   }
 
-  /** Spawns enemies for the current wave based on difficulty settings */
   private spawnWave(): void {
     this.logger.log(`Spawning Wave ${this.currentWave}`);
     this.isWaveActive = true;
@@ -122,8 +111,7 @@ export class EnemyWaveHandler {
       this.logger.log(
         `Spawning Boss Wave ${this.currentWave} with boss: ${this.difficultyConfig.bossId}`
       );
-      // Use the main manager's spawn method
-      this.enemyManager.spawnEnemy(this.difficultyConfig.bossId, { x: 400, y: 100 });
+      this.enemyManager.spawnEnemy(this.difficultyConfig.bossId, { x: 400, y: -50 }); // Spawn above screen
     } else {
       this.logger.log(`Spawning enemies for regular wave ${this.currentWave} using standard_grid`);
       const gridConfig = {
@@ -132,7 +120,7 @@ export class EnemyWaveHandler {
         horizontalSpacing: 60,
         verticalSpacing: 50,
         startXOffset: 0,
-        startY: 100,
+        startY: -50, // Spawn above screen
         gameWidth: 800,
       };
       const totalGridWidth = (gridConfig.columns - 1) * gridConfig.horizontalSpacing;
@@ -149,7 +137,6 @@ export class EnemyWaveHandler {
           const configId = this.availableEnemyTypes[randomTypeIndex];
           const spawnX = gridStartX + col * gridConfig.horizontalSpacing;
           const spawnY = gridConfig.startY + row * gridConfig.verticalSpacing;
-          // Use the main manager's spawn method
           this.enemyManager.spawnEnemy(configId, { x: spawnX, y: spawnY });
           enemiesSpawned++;
         }
@@ -170,13 +157,14 @@ export class EnemyWaveHandler {
   public handleEnemyDestroyedInWave(instanceId: string): void {
     const wasInCurrentWave = this.enemiesInCurrentWave.delete(instanceId);
 
+    // Check if the wave is now clear
     if (wasInCurrentWave && this.isWaveActive && this.enemiesInCurrentWave.size === 0) {
       this.logger.log(`Wave ${this.currentWave} cleared.`);
       this.isWaveActive = false;
       const delayMs = this.difficultyConfig.timeBetweenWavesSec * 1000;
       this.logger.log(`Scheduling next wave advance in ${delayMs}ms`);
       if (this.waveClearTimer !== null) {
-        clearTimeout(this.waveClearTimer);
+        clearTimeout(this.waveClearTimer); // Clear any existing timer just in case
       }
       this.waveClearTimer = setTimeout(() => {
         this.advanceWave();
@@ -185,18 +173,15 @@ export class EnemyWaveHandler {
     }
   }
 
-  /** Emits the current wave number */
   private emitWaveUpdate(): void {
     const eventData: WaveUpdateData = { waveNumber: this.currentWave };
     this.eventBus.emit(WAVE_UPDATED, eventData);
   }
 
-  /** Gets the current wave number */
   public getCurrentWave(): number {
     return this.currentWave;
   }
 
-  /** Clean up timers */
   public destroy(): void {
     if (this.waveClearTimer !== null) {
       clearTimeout(this.waveClearTimer);

@@ -156,6 +156,7 @@ export class HtmlElementFactory {
     canvasWidth: number,
     canvasHeight: number
   ): void {
+    // Removed debug log
     this.createUIElement(
       'pauseIndicator',
       'PAUSED',
@@ -164,6 +165,7 @@ export class HtmlElementFactory {
       '#ff0000', // Red color
       'center'
     );
+    // Removed debug log
     // Initially hide it - this needs to be done in HtmlUI after creation
   }
 }

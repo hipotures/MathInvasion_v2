@@ -22,7 +22,7 @@ class ConfigLoader {
   private enemies: EnemiesConfig | null = null;
   private powerups: PowerupsConfig | null = null;
   private difficulty: DifficultyConfig | null = null;
-  private player: PlayerConfig | null = null; // Added player config property
+  private player: PlayerConfig | null = null;
 
   private loaded = false;
   private loadingPromise: Promise<void> | null = null;
@@ -57,7 +57,6 @@ class ConfigLoader {
           '../../../config/difficulty.yml',
           difficultyConfigSchema
         );
-        // Load player config
         this.player = await this.loadAndValidate('../../../config/player.yml', playerSchema);
         this.loaded = true;
         console.log('All configurations loaded and validated successfully.');
@@ -88,7 +87,6 @@ class ConfigLoader {
 
     try {
       const parsedData = yaml.load(rawContent);
-      // Validate the parsed data against the schema
       const validationResult = schema.safeParse(parsedData);
       if (!validationResult.success) {
         console.error(`Validation failed for ${filePath}:`, validationResult.error.errors);

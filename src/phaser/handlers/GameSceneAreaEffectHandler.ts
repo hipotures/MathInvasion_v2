@@ -33,7 +33,6 @@ interface ProjectileHitEnemyData {
 export class GameSceneAreaEffectHandler {
   private scene: Phaser.Scene;
   private playerSprite: Phaser.Physics.Arcade.Sprite;
-  // We don't need the enemy group directly, physics.overlapCirc finds bodies
 
   constructor(scene: Phaser.Scene, playerSprite: Phaser.Physics.Arcade.Sprite) {
     this.scene = scene;
@@ -50,57 +49,48 @@ export class GameSceneAreaEffectHandler {
       `Handling explosion for projectile ${data.id} at (${data.x}, ${data.y}) with radius ${data.radius}`
     );
 
-    // Add enhanced visual effect for explosion
-    // Start with a bright, small core
-    const explosionCore = this.scene.add.circle(data.x, data.y, data.radius * 0.1, 0xffffff, 1); // White core
-    const explosionRing = this.scene.add.circle(data.x, data.y, data.radius * 0.15, 0xff8800, 0.8); // Orange ring
+    const explosionCore = this.scene.add.circle(data.x, data.y, data.radius * 0.1, 0xffffff, 1);
+    const explosionRing = this.scene.add.circle(data.x, data.y, data.radius * 0.15, 0xff8800, 0.8);
 
-    // Tween the core: expand slightly and fade fast
     this.scene.tweens.add({
       targets: explosionCore,
-      radius: data.radius * 0.3, // Expand a bit
+      radius: data.radius * 0.3,
       alpha: 0,
-      duration: 100, // Very fast fade
+      duration: 100,
       ease: 'Quad.easeOut',
       onComplete: () => {
         explosionCore.destroy();
       },
     });
 
-    // Tween the ring: expand to full radius and fade slower
     this.scene.tweens.add({
       targets: explosionRing,
-      radius: data.radius, // Expand to full radius
+      radius: data.radius,
       alpha: 0,
-      duration: 250, // Slightly longer duration
+      duration: 250,
       ease: 'Quad.easeOut',
       onComplete: () => {
         explosionRing.destroy();
       },
     });
 
-    // Damage enemies within radius
-    // Note: physics.overlapCirc might be less performant than expected. Consider alternatives if issues arise.
     this.scene.physics
       .overlapCirc(
         data.x,
         data.y,
         data.radius,
-        true, // Check overlap with bodies' centers
-        false // Don't include touching bodies (optional, default is true)
+        true,
+        false
       )
       .forEach((body) => {
         const gameObject = body.gameObject;
-        // Check if it's an enemy and not already destroyed
         if (gameObject instanceof EnemyEntity && gameObject.active && gameObject.instanceId) {
           // TODO: Add check for bomb owner if friendly fire needs prevention
-          // if (data.owner === 'enemy') { ... }
           logger.debug(
             `Explosion ${data.id} hit enemy ${gameObject.instanceId} within radius ${data.radius}`
           );
-          // Emit event for EnemyManager to handle damage
           const hitData: ProjectileHitEnemyData = {
-            projectileId: data.id, // Use explosion ID as source
+            projectileId: data.id,
             enemyInstanceId: gameObject.instanceId,
             damage: data.damage,
           };
@@ -108,7 +98,6 @@ export class GameSceneAreaEffectHandler {
         }
       });
 
-    // Damage player if within radius and bomb owner is 'enemy'
     if (data.owner === 'enemy' && this.playerSprite.active) {
       const distanceToPlayer = Phaser.Math.Distance.Between(
         data.x,
@@ -118,9 +107,8 @@ export class GameSceneAreaEffectHandler {
       );
       if (distanceToPlayer <= data.radius) {
         logger.debug(`Explosion ${data.id} hit player within radius ${data.radius}`);
-        // Emit event for PlayerManager to handle damage
         const hitData: PlayerHitProjectileData = {
-          projectileId: data.id, // Use explosion ID as source
+          projectileId: data.id,
           damage: data.damage,
         };
         eventBus.emit(Events.PLAYER_HIT_PROJECTILE, hitData);

@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-// Optional schema for enemy shooting configuration
 const enemyShootConfigSchema = z
   .object({
     projectileType: z.string().min(1),
@@ -31,11 +30,9 @@ const enemyShootConfigSchema = z
       .describe(
         'Hex color of the dynamically generated projectile visual (e.g., "0xff0000" for red).'
       ),
-    // End new visual properties
   })
   .optional();
 
-// Define specific schemas for each ability type
 const healAuraAbilitySchema = z.object({
   type: z.literal('heal_aura'),
   range: z.number().positive(),
@@ -51,7 +48,7 @@ const spawnMinionsAbilitySchema = z.object({
 
 const deathBombAbilitySchema = z.object({
   type: z.literal('death_bomb'),
-  projectileType: z.string(), // Type of projectile to spawn on death
+  projectileType: z.string(),
   damage: z.number().positive(),
   radius: z.number().positive().optional(), // Optional radius for the explosion effect
   timeToExplodeMs: z.number().positive().optional(), // Optional delay before explosion (will default in logic)
@@ -65,7 +62,6 @@ const enemyAbilitySchema = z.discriminatedUnion('type', [
   // Add other ability schemas here as needed
 ]);
 
-// Schema for a single enemy entry
 const enemySchema = z.object({
   id: z.string().min(1),
   shape: z.string().min(1), // Could be an enum later: z.enum(['triangle', 'square', ...])
@@ -80,17 +76,15 @@ const enemySchema = z.object({
     'boss_weaving',
     'bomber_dive',
     'strafe_horizontal', // Added for Diamond Strafer
-  ]), // Use enum for patterns
+  ]),
   collisionRadius: z.number().positive(),
   canShoot: z.boolean(),
-  shootConfig: enemyShootConfigSchema, // Use the optional schema
-  abilities: z.array(enemyAbilitySchema).optional(), // Array of specific abilities
+  shootConfig: enemyShootConfigSchema,
+  abilities: z.array(enemyAbilitySchema).optional(),
 });
 
-// Schema for the entire enemies.yml file (an array of enemies)
 export const enemiesConfigSchema = z.array(enemySchema);
 
-// Infer the TypeScript type from the schema
 export type EnemyConfig = z.infer<typeof enemySchema>;
 export type EnemiesConfig = z.infer<typeof enemiesConfigSchema>;
 // Also export the shoot config type if needed elsewhere

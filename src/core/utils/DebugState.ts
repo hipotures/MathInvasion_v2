@@ -1,6 +1,3 @@
-/**
- * Singleton to manage the global debug state
- */
 class DebugState {
   private static instance: DebugState;
   private _isDebugMode: boolean = false;
@@ -25,7 +22,6 @@ class DebugState {
   }
 }
 
-// Export the singleton instance
 const debugState = DebugState.getInstance();
 export default debugState;
 

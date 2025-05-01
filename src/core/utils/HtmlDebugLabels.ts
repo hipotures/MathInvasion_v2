@@ -9,7 +9,6 @@ export class HtmlDebugLabels {
   private isVisible = false;
   
   constructor() {
-    // Create container for all labels
     this.container = document.createElement('div');
     this.container.style.position = 'absolute';
     this.container.style.top = '0';
@@ -21,10 +20,8 @@ export class HtmlDebugLabels {
     this.container.style.display = 'none';
     this.container.style.overflow = 'hidden'; // Prevent scrollbars
     
-    // Add to document
     document.body.appendChild(this.container);
     
-    // Add window resize listener to handle scaling
     window.addEventListener('resize', this.handleResize.bind(this));
   }
   
@@ -36,7 +33,6 @@ export class HtmlDebugLabels {
     const labels = Array.from(this.labels.entries());
     this.clearLabels();
     
-    // Re-add all labels with updated positions
     labels.forEach(([id, label]) => {
       const x = parseFloat(label.dataset.x || '0');
       const y = parseFloat(label.dataset.y || '0');
@@ -79,7 +75,6 @@ export class HtmlDebugLabels {
   public updateLabel(id: string, name: string, x: number, y: number, color = '#ffffff'): void {
     if (!this.isVisible) return;
     
-    // Get or create label
     let label = this.labels.get(id);
     if (!label) {
       label = this.createLabel(color);
@@ -87,11 +82,9 @@ export class HtmlDebugLabels {
       this.container.appendChild(label);
     }
     
-    // Store original coordinates for resize handling
-    label.dataset.x = x.toString();
+    label.dataset.x = x.toString(); // Store original coordinates for resize handling
     label.dataset.y = y.toString();
     
-    // Update label content and position
     label.textContent = name;
     
     // Calculate position based on game canvas size and position
@@ -153,10 +146,8 @@ export class HtmlDebugLabels {
    * Destroy all labels and the container
    */
   public destroy(): void {
-    // Remove resize listener
     window.removeEventListener('resize', this.handleResize.bind(this));
     
-    // Clear labels and remove container
     this.clearLabels();
     if (document.body.contains(this.container)) {
       document.body.removeChild(this.container);

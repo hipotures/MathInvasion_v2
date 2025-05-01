@@ -1,7 +1,3 @@
-/**
- * Represents the state of the player relevant for communication
- * between managers and potentially the graphics layer.
- */
 export interface PlayerState {
   x: number;
   y: number;

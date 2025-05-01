@@ -1,21 +1,20 @@
 import Phaser from 'phaser';
-import { registerSW } from 'virtual:pwa-register'; // Import PWA registration
+import { registerSW } from 'virtual:pwa-register';
 
-// Import the new scenes
 import GameScene from './phaser/scenes/GameScene';
 import UIScene from './phaser/scenes/UIScene';
-import configLoader from './core/config/ConfigLoader'; // Import config loader
-import logger from './core/utils/Logger'; // Import logger
-import FontLoader from './core/utils/FontLoader'; // Import font loader
-import './style.css'; // Keep basic styling
+import configLoader from './core/config/ConfigLoader';
+import logger from './core/utils/Logger';
+import FontLoader from './core/utils/FontLoader';
+import './style.css';
 
 // Phaser Game Configuration
 const config: Phaser.Types.Core.GameConfig = {
-  type: Phaser.AUTO, // Automatically choose WebGL or Canvas
-  width: 800, // Fixed game width
-  height: 600, // Fixed game height
+  type: Phaser.AUTO,
+  width: 800,
+  height: 600,
   physics: {
-    default: 'arcade', // Use Arcade Physics
+    default: 'arcade',
     arcade: {
       gravity: { x: 0, y: 0 }, // No gravity needed for this type of game
       debug: false, // Set to true for physics debugging visuals
@@ -27,7 +26,7 @@ const config: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.FIT, // FIT mode to maintain aspect ratio
     autoCenter: Phaser.Scale.CENTER_BOTH, // Center the game canvas
   },
-  backgroundColor: '#000000', // Add a background color
+  backgroundColor: '#000000',
   pixelArt: true, // Enable pixel art mode (prevents blurry sprites)
   roundPixels: true, // Round pixel positions to avoid sub-pixel rendering
 };
@@ -35,7 +34,6 @@ const config: Phaser.Types.Core.GameConfig = {
 // Wrap game initialization in an async function to await config loading
 async function initGame() {
   try {
-    // Add a visible message to the DOM before loading
     const appElement = document.querySelector<HTMLDivElement>('#app');
     if (appElement) {
       appElement.innerHTML = '<div style="color: white; padding: 20px; text-align: center;"><h2>Loading game...</h2></div>';
@@ -45,7 +43,6 @@ async function initGame() {
     await configLoader.loadAllConfigs();
     logger.log('Configurations loaded successfully.');
 
-    // Load web fonts
     logger.log('Loading web fonts...');
     try {
       await FontLoader.loadFonts();
@@ -54,7 +51,6 @@ async function initGame() {
       logger.warn('Failed to load web fonts, falling back to system fonts:', error);
     }
 
-    // Clear the loading message
     if (appElement) {
       appElement.innerHTML = '';
     }
@@ -63,10 +59,8 @@ async function initGame() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const game = new Phaser.Game(config);
     
-    // Log when the game is created
     logger.log('Phaser game instance created');
     
-    // Check if the canvas was created
     setTimeout(() => {
       const canvas = document.querySelector('canvas');
       if (canvas) {
@@ -80,7 +74,6 @@ async function initGame() {
 
   } catch (error) {
     logger.error('Failed to initialize game:', error);
-    // Display error to the user
     const appElement = document.querySelector<HTMLDivElement>('#app');
     if (appElement) {
       appElement.innerHTML = `<div style="color: red; padding: 20px;">
@@ -92,10 +85,8 @@ async function initGame() {
   }
 }
 
-// Start the game initialization process
 initGame();
 
-// Register the service worker
 registerSW({ immediate: true }); // immediate: true tries to register ASAP
 
 // --- Old synchronous initialization ---

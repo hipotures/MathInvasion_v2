@@ -1,18 +1,16 @@
 import { z } from 'zod';
 
-// Schema for the upgrade part of a weapon
 const weaponUpgradeSchema = z.object({
   costMultiplier: z.number().positive(),
   damageMultiplier: z.number().positive().optional(), // e.g., slow field has no damage
   cooldownMultiplier: z.number().positive().optional(), // e.g., laser has no cooldown
-  projectileSpeedMultiplier: z.number().positive().optional(), // Multiplier for projectile speed
+  projectileSpeedMultiplier: z.number().positive().optional(),
   rangeAdd: z.number().nonnegative(),
   slowFactorMultiplier: z.number().positive().optional(), // Only for slow field
   durationAddMs: z.number().positive().optional(), // Only for slow field
   // TODO: Consider adding visual upgrade multipliers here later (e.g., size, color shift)
 });
 
-// Schema for a single weapon entry
 const weaponSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -55,9 +53,7 @@ const weaponSchema = z.object({
   upgrade: weaponUpgradeSchema,
 });
 
-// Schema for the entire weapons.yml file (an array of weapons)
 export const weaponsConfigSchema = z.array(weaponSchema);
 
-// Infer the TypeScript type from the schema
 export type WeaponConfig = z.infer<typeof weaponSchema>;
 export type WeaponsConfig = z.infer<typeof weaponsConfigSchema>;

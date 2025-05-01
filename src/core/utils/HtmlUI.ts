@@ -121,6 +121,7 @@ export class HtmlUI {
 
     this.container.appendChild(element);
     this.uiElements.set(id, element);
+    // Removed debug log
   }
 
   /**
@@ -235,7 +236,11 @@ export class HtmlUI {
   public showPauseIndicator(): void {
     const element = this.uiElements.get('pauseIndicator');
     if (element) {
+      // Removed debug log
       element.style.display = 'block';
+    } else {
+      // Keep error log as it indicates a real problem if it happens now
+      logger.error(`HtmlUI: Element 'pauseIndicator' NOT FOUND in map when calling showPauseIndicator! Map size: ${this.uiElements.size}`);
     }
   }
 
@@ -245,7 +250,11 @@ export class HtmlUI {
   public hidePauseIndicator(): void {
     const element = this.uiElements.get('pauseIndicator');
     if (element) {
+      // Removed debug log
       element.style.display = 'none';
+    } else {
+      // Keep warn log as it might indicate a timing issue during resize
+      logger.warn(`HtmlUI: Element 'pauseIndicator' NOT FOUND in map when calling hidePauseIndicator! Map size: ${this.uiElements.size}`);
     }
   }
 
