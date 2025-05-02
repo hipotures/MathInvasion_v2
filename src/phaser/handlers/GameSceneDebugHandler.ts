@@ -32,6 +32,7 @@ export class GameSceneDebugHandler {
   private htmlDebugPanel: HtmlDebugPanel;
   private htmlDebugLabels: HtmlDebugLabels; // Instance is already here
   private debugPanelUpdater: DebugPanelUpdater;
+private physicsDebugGraphics: Phaser.GameObjects.Graphics | null = null; // Add this line
   
   // Specialized handlers
   private visualizationHandler: DebugVisualizationHandler;
@@ -65,6 +66,9 @@ export class GameSceneDebugHandler {
     this.projectileShapes = projectileShapes;
     this.powerupSprites = powerupSprites;
 
+// Create physics debug graphics
+    this.physicsDebugGraphics = this.scene.physics.world.createDebugGraphic();
+    if (this.physicsDebugGraphics) this.physicsDebugGraphics.setVisible(debugState.isDebugMode); // Set initial visibility
     // Create HTML debug panel and labels
     this.htmlDebugPanel = new HtmlDebugPanel();
     this.htmlDebugLabels = new HtmlDebugLabels();
@@ -141,6 +145,7 @@ export class GameSceneDebugHandler {
   public handleDebugModeChanged(data: { isDebugMode: boolean }): void {
     // Removed duplicate log message - DebugManager already logs this
 
+if (this.physicsDebugGraphics) this.physicsDebugGraphics.setVisible(data.isDebugMode); // Toggle physics debug visibility
     this.htmlDebugPanel.setVisible(data.isDebugMode);
     this.htmlDebugLabels.setVisible(data.isDebugMode);
     
@@ -156,6 +161,7 @@ export class GameSceneDebugHandler {
 
     if (data.isDebugMode) {
         this.updateDebugVisuals(); 
+if (this.physicsDebugGraphics) this.physicsDebugGraphics.clear(); // Clear physics debug graphics
     } else {
         // Cleanup when turning debug mode OFF
         this.htmlDebugLabels.clearLabels();
@@ -312,6 +318,7 @@ export class GameSceneDebugHandler {
   public destroy(): void {
     // Remove event listeners
     eventBus.off(Events.DEBUG_MODE_CHANGED, this.handleDebugModeChanged);
+if (this.physicsDebugGraphics) this.physicsDebugGraphics.destroy(); // Destroy physics debug graphics
     eventBus.off(Events.DEBUG_PERFORM_HIT_TEST, this.handleDebugHitTestRequest); 
     eventBus.off(Events.GAME_PAUSED, () => {}); 
     eventBus.off(Events.GAME_RESUMED, () => {});

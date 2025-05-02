@@ -26,13 +26,25 @@ export class DebugInspectionHandler {
     this.handleObjectDestroyed = this.handleObjectDestroyed.bind(this);
     
     // Listen for object destruction to stop inspecting if needed
-    eventBus.on(Events.ENEMY_DESTROYED, (eventData: { instanceId: string }) => 
+    eventBus.on(Events.ENEMY_DESTROYED, (eventData: { instanceId: string }) =>
       this.handleObjectDestroyed(eventData.instanceId, 'enemy'));
-    eventBus.on(Events.PROJECTILE_DESTROYED, (eventData: { id: string }) => 
+    eventBus.on(Events.PROJECTILE_DESTROYED, (eventData: { id: string }) =>
       this.handleObjectDestroyed(eventData.id, 'projectile'));
-    eventBus.on(Events.POWERUP_EXPIRED, (eventData: { instanceId: number }) => 
+    // Listen for powerup collection and out-of-bounds events
+    eventBus.on(Events.POWERUP_COLLECTED, (eventData: { instanceId: number }) =>
       this.handleObjectDestroyed(String(eventData.instanceId), 'powerup'));
-    eventBus.on(Events.PLAYER_DIED, () => 
+    eventBus.on(Events.POWERUP_OUT_OF_BOUNDS, (eventData: { instanceId: number }) =>
+      this.handleObjectDestroyed(String(eventData.instanceId), 'powerup'));
+    // Fix POWERUP_EXPIRED listener (data structure mismatch and logic)
+    eventBus.on(Events.POWERUP_EXPIRED, (eventData: { configId: string }) => {
+      // If we're inspecting a powerup, stop inspection when any powerup effect expires
+      // This is a fallback and may not be exact, but better than showing errors
+      if (this.inspectedObject.type === 'powerup') {
+        logger.debug(`Powerup effect expired (Config ID: ${eventData.configId}). Stopping inspection if a powerup was selected.`);
+        this.stopInspecting();
+      }
+    });
+    eventBus.on(Events.PLAYER_DIED, () =>
       this.handleObjectDestroyed('player', 'player'));
   }
 
@@ -168,11 +180,20 @@ export class DebugInspectionHandler {
     // Remove object destruction listeners
     eventBus.off(Events.ENEMY_DESTROYED, (eventData: { instanceId: string }) => 
       this.handleObjectDestroyed(eventData.instanceId, 'enemy'));
-    eventBus.off(Events.PROJECTILE_DESTROYED, (eventData: { id: string }) => 
+    eventBus.off(Events.PROJECTILE_DESTROYED, (eventData: { id: string }) =>
       this.handleObjectDestroyed(eventData.id, 'projectile'));
-    eventBus.off(Events.POWERUP_EXPIRED, (eventData: { instanceId: number }) => 
+    // Remove new listeners
+    eventBus.off(Events.POWERUP_COLLECTED, (eventData: { instanceId: number }) =>
       this.handleObjectDestroyed(String(eventData.instanceId), 'powerup'));
-    eventBus.off(Events.PLAYER_DIED, () => 
+    eventBus.off(Events.POWERUP_OUT_OF_BOUNDS, (eventData: { instanceId: number }) =>
+      this.handleObjectDestroyed(String(eventData.instanceId), 'powerup'));
+    // Remove fixed POWERUP_EXPIRED listener
+    eventBus.off(Events.POWERUP_EXPIRED, (eventData: { configId: string }) => {
+      if (this.inspectedObject.type === 'powerup') {
+        this.stopInspecting();
+      }
+    });
+    eventBus.off(Events.PLAYER_DIED, () =>
       this.handleObjectDestroyed('player', 'player'));
     
     // Ensure inspection is stopped

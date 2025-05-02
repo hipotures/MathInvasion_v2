@@ -118,7 +118,12 @@ export class ProjectileEventHandler {
     if (isBullet || data.visualShape === 'ellipse') {
       // Set circular collision body for bullets/ellipses
       const radius = Math.max(data.visualWidth, data.visualHeight) / 2;
-      body.setCircle(radius);
+      // Align collision circle with the visual shape
+      body.setCircle(
+        radius,
+        -radius + projectileShape.width / 2, // X offset
+        -radius + projectileShape.height / 2 // Y offset
+      );
     }
     // Rectangular bodies are the default, no need to explicitly set for lasers/rectangles
 

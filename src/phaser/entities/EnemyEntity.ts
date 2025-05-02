@@ -92,7 +92,12 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
     } else {
       this.setCollideWorldBounds(true);
     }
-    this.setCircle(config.collisionRadius);
+    // Align collision circle with the visual sprite
+    this.setCircle(
+      config.collisionRadius,
+      -config.collisionRadius + this.width / 2, // X offset to center collision
+      -config.collisionRadius + this.height / 2 // Y offset to center collision
+    );
     const initialSpeed = config.baseSpeed * this.baseSpeedMultiplier;
     this.setVelocityX(initialSpeed * (Math.random() < 0.5 ? -1 : 1));
     this.setVelocityY(0);

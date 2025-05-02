@@ -103,6 +103,16 @@ export class DebugObjectInspector {
         }
 
         if (isPowerup && powerupInstanceId !== undefined) {
+            // Check if the sprite is being destroyed (scene becomes undefined during destruction)
+            if (!gameObject.scene) {
+                Logger.debug(`Powerup sprite ${powerupInstanceId} is being destroyed. Returning status.`);
+                return {
+                    ID: String(powerupInstanceId),
+                    Type: 'powerup',
+                    Status: 'Destroyed/Collected',
+                    Message: 'This powerup no longer exists in the game world'
+                };
+            }
             objectId = String(powerupInstanceId); // Use ID from map or data
             objectType = 'powerup';
             // Try to get configId from data, might be undefined initially

@@ -150,7 +150,13 @@ export class GameSceneEventHandler {
     // Add to the group and map
     this.powerupGroup.add(powerupSprite);
     // Set circle AFTER adding to group
-    powerupSprite.setCircle(15); // Set a circular body with radius 15px (adjust as needed)
+    // Align collision circle with the visual sprite
+    const powerupRadius = 15; // Use the same radius
+    powerupSprite.setCircle(
+      powerupRadius,
+      -powerupRadius + powerupSprite.width / 2, // X offset
+      -powerupRadius + powerupSprite.height / 2 // Y offset
+    );
     this.powerupSprites.set(data.instanceId, powerupSprite);
 
 

@@ -72,7 +72,13 @@ export class GameSceneInitializer {
     this.gameObjects.playerSprite.setCollideWorldBounds(true);
     this.gameObjects.playerSprite.name = 'player'; // Set name for easier identification
     // Set circular collision shape for the player (adjust radius as needed)
-    this.gameObjects.playerSprite.setCircle(10); // Example radius of 10px
+    // Align collision circle with the visual sprite
+    const playerRadius = 10; // Example radius
+    this.gameObjects.playerSprite.setCircle(
+      playerRadius,
+      -playerRadius + this.gameObjects.playerSprite.width / 2, // X offset
+      -playerRadius + this.gameObjects.playerSprite.height / 2 // Y offset
+    );
 
     logger.debug('GameSceneInitializer: Player created');
   }
