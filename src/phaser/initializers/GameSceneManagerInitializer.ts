@@ -11,6 +11,8 @@ import { PowerupManager } from '../../core/managers/PowerupManager';
 import { WeaponUpgrader } from '../../core/managers/helpers/WeaponUpgrader'; // Import helper
 import { WeaponPowerupHandler } from '../../core/managers/helpers/WeaponPowerupHandler'; // Import helper
 import DebugManager from '../../core/managers/DebugManager'; // Import DebugManager
+import { PowerupDebugMenu } from '../../core/utils/debug/PowerupDebugMenu'; // Import PowerupDebugMenu
+import debugState from '../../core/utils/DebugState'; // Import debugState
 
 /**
  * Structure to hold the initialized managers for GameScene.
@@ -24,6 +26,7 @@ export interface GameManagers {
   enemyManager: EnemyManager;
   powerupManager: PowerupManager;
   debugManager: DebugManager; // Add DebugManager to the interface
+  powerupDebugMenu: PowerupDebugMenu; // Add PowerupDebugMenu to the interface
 }
 
 /**
@@ -56,6 +59,8 @@ export function initializeGameManagers(eventBus: EventBus, logger: Logger): Game
   const enemyManager = new EnemyManager(eventBus, logger); // Inject logger
   const powerupManager = new PowerupManager(eventBus, logger, powerupsConfig); // Inject logger & config
   const debugManager = new DebugManager(eventBus); // Create DebugManager
+  // Initialize PowerupDebugMenu after dependencies are created
+  const powerupDebugMenu = new PowerupDebugMenu(eventBus, powerupsConfig);
 
   // Initialize managers that require it
   powerupManager.init();
@@ -72,5 +77,6 @@ export function initializeGameManagers(eventBus: EventBus, logger: Logger): Game
     enemyManager,
     powerupManager,
     debugManager, // Add DebugManager to the returned object
+    powerupDebugMenu, // Add PowerupDebugMenu to the returned object
   };
 }

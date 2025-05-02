@@ -10,7 +10,7 @@ export class HtmlElementFactory {
     color: string,
     align?: 'left' | 'center' | 'right',
     bgColor?: string
-  ) => void;
+  ) => HTMLDivElement; // Expect return value
   private canvas: HTMLCanvasElement;
 
   constructor(
@@ -22,7 +22,7 @@ export class HtmlElementFactory {
       color: string,
       align?: 'left' | 'center' | 'right',
       bgColor?: string
-    ) => void,
+    ) => HTMLDivElement, // Expect return value
     canvas: HTMLCanvasElement
   ) {
     this.createUIElement = createUIElementMethod;
@@ -46,6 +46,8 @@ export class HtmlElementFactory {
     this.createWeaponStatusElement(canvasLeft, canvasTop, canvasWidth, canvasHeight);
     this.createWeaponUpgradeCostElement(canvasLeft, canvasTop, canvasWidth, canvasHeight);
     this.createWeaponButtons(canvasLeft, canvasTop, canvasWidth, canvasHeight);
+    // Create cooldown bars after buttons
+    this.createCooldownBars(canvasLeft, canvasTop, canvasWidth, canvasHeight);
     this.createPauseIndicatorElement(canvasLeft, canvasTop, canvasWidth, canvasHeight); // Add pause indicator
   }
 
@@ -149,6 +151,103 @@ export class HtmlElementFactory {
       '#555555'
     );
   }
+
+  // New method to create cooldown bars
+  private createCooldownBars(
+    canvasLeft: number,
+    canvasTop: number,
+    canvasWidth: number,
+    canvasHeight: number
+  ): void {
+    const barWidth = 100; // Match the intended button width
+    const barHeight = 5; // Height of the bar
+    const barYOffset = canvasTop + canvasHeight - 15; // Position below buttons
+
+    // Cooldown Bar 1 (Bullet)
+    // Assign the result of createUIElement to bar1Container
+    const bar1Container = this.createUIElement(
+      'cooldownBar1',
+      '', // No text
+      canvasLeft + canvasWidth * 0.3, // Center align with button 1
+      barYOffset,
+      '#ff0000', // Red (will be overridden by update)
+      'center' // Use center alignment logic
+      // No background color needed initially, just the bar itself
+    );
+
+    // Apply specific styles for the bar element after creation
+    if (bar1Container) { // Use the returned reference
+        bar1Container.style.width = `${barWidth}px`; // Set total width container
+        bar1Container.style.height = `${barHeight}px`;
+        bar1Container.style.backgroundColor = '#333333'; // Dark background for the container
+        bar1Container.style.padding = '0'; // Remove padding
+        bar1Container.style.borderRadius = '2px';
+        bar1Container.style.overflow = 'hidden'; // Hide inner bar overflow
+        // Create the inner filling bar
+        const innerBar1 = document.createElement('div');
+        innerBar1.style.width = '0%'; // Start empty
+        innerBar1.style.height = '100%';
+        innerBar1.style.backgroundColor = '#ff0000'; // Red fill
+        innerBar1.style.transition = 'width 0.1s linear';
+        bar1Container.appendChild(innerBar1); // Append to the returned container
+        // Adjust margin-left based on the actual barWidth
+        bar1Container.style.marginLeft = `-${barWidth / 2}px`;
+    }
+
+
+    // Cooldown Bar 2 (Laser)
+    // Assign the result of createUIElement to bar2Container
+    const bar2Container = this.createUIElement(
+      'cooldownBar2',
+      '',
+      canvasLeft + canvasWidth * 0.5, // Center align with button 2
+      barYOffset,
+      '#00ffff', // Cyan
+      'center'
+    );
+     if (bar2Container) { // Use the returned reference
+        bar2Container.style.width = `${barWidth}px`;
+        bar2Container.style.height = `${barHeight}px`;
+        bar2Container.style.backgroundColor = '#333333';
+        bar2Container.style.padding = '0';
+        bar2Container.style.borderRadius = '2px';
+        bar2Container.style.overflow = 'hidden';
+        const innerBar2 = document.createElement('div');
+        innerBar2.style.width = '0%';
+        innerBar2.style.height = '100%';
+        innerBar2.style.backgroundColor = '#00ffff'; // Cyan fill
+        innerBar2.style.transition = 'width 0.1s linear';
+        bar2Container.appendChild(innerBar2); // Append to the returned container
+        bar2Container.style.marginLeft = `-${barWidth / 2}px`;
+    }
+
+    // Cooldown Bar 3 (Slow)
+    // Assign the result of createUIElement to bar3Container
+    const bar3Container = this.createUIElement(
+      'cooldownBar3',
+      '',
+      canvasLeft + canvasWidth * 0.7, // Center align with button 3
+      barYOffset,
+      '#ffd700', // Gold
+      'center'
+    );
+     if (bar3Container) { // Use the returned reference
+        bar3Container.style.width = `${barWidth}px`;
+        bar3Container.style.height = `${barHeight}px`;
+        bar3Container.style.backgroundColor = '#333333';
+        bar3Container.style.padding = '0';
+        bar3Container.style.borderRadius = '2px';
+        bar3Container.style.overflow = 'hidden';
+        const innerBar3 = document.createElement('div');
+        innerBar3.style.width = '0%';
+        innerBar3.style.height = '100%';
+        innerBar3.style.backgroundColor = 'rgba(255, 215, 0, 0.7)'; // Gold fill
+        innerBar3.style.transition = 'width 0.1s linear';
+        bar3Container.appendChild(innerBar3); // Append to the returned container
+        bar3Container.style.marginLeft = `-${barWidth / 2}px`;
+    }
+  }
+
 
   private createPauseIndicatorElement(
     canvasLeft: number,

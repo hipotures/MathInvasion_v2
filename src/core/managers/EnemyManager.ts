@@ -4,13 +4,15 @@ import { EnemyConfig, EnemiesConfig } from '../config/schemas/enemySchema';
 import { DifficultyConfig } from '../config/schemas/difficultySchema';
 import ConfigLoader from '../config/ConfigLoader';
 import { EnemyWaveHandler } from './helpers/EnemyWaveHandler';
-import { ENEMY_SPAWNED } from '../constants/events';
-import { ENEMY_DESTROYED } from '../constants/events';
-import { ENEMY_HEALTH_UPDATED } from '../constants/events';
-import { PROJECTILE_HIT_ENEMY } from '../constants/events';
+import {
+    ENEMY_SPAWNED,
+    ENEMY_DESTROYED,
+    ENEMY_HEALTH_UPDATED,
+    PROJECTILE_HIT_ENEMY,
+    // APPLY_SLOW_EFFECT, // Manager no longer needs to listen directly
+} from '../constants/events';
 
 // Data expected for the PROJECTILE_HIT_ENEMY event
-// TODO: Consider moving this interface to a shared types or events file
 interface ProjectileHitEnemyData {
   projectileId: string;
   enemyInstanceId: string;
@@ -18,16 +20,15 @@ interface ProjectileHitEnemyData {
 }
 
 // Data expected for the ENEMY_DESTROYED event
-// Matches the payload structure emitted below
 interface EnemyDestroyedData {
   instanceId: string;
   configId: string;
   reward: number;
   scoreValue: number;
-  config: EnemyConfig; // Full config for other listeners (e.g., ability checks)
+  config: EnemyConfig;
 }
 
-// TODO: Define a proper EnemyInstance type/interface
+// Basic info tracked by the manager
 interface EnemyInstance {
   id: string;
   configId: string;
@@ -50,7 +51,7 @@ export class EnemyManager {
     this.difficultyConfig = this.loadDifficultyConfig();
 
     this.waveHandler = new EnemyWaveHandler(
-      this, // Pass reference to self
+      this,
       this.difficultyConfig,
       this.eventBus,
       this.logger
@@ -60,7 +61,7 @@ export class EnemyManager {
     this.logger.log('EnemyManager initialized');
     this.waveHandler.start();
   }
-  
+
   private loadEnemyConfigs(): Map<string, EnemyConfig> {
     try {
       const configs: EnemiesConfig = ConfigLoader.getEnemiesConfig();
@@ -87,59 +88,58 @@ export class EnemyManager {
     }
   }
 
-  // --- Spawning Logic (Delegates scaling to helper) ---
- 
   public spawnEnemy(configId: string, position: { x: number; y: number }): void {
     const config = this.enemyConfigs.get(configId);
     if (!config) {
       this.logger.warn(`Attempted to spawn unknown enemy config ID: ${configId}`);
       return;
     }
-  
+
     const scaledHealth = this.waveHandler.getScaledHealth(config.baseHealth);
-    const speedMultiplier = this.waveHandler.getScaledSpeedMultiplier();
+    const speedMultiplier = this.waveHandler.getScaledSpeedMultiplier(); // Base speed multiplier from wave
     const instanceId = `enemy-${this.nextInstanceId++}`;
-    const newEnemy: EnemyInstance = {
+    const newEnemy: EnemyInstance = { // Only store basic info
       id: instanceId,
       configId: config.id,
       health: scaledHealth,
       creationTime: Date.now(),
     };
-  
+
     this.enemies.set(instanceId, newEnemy);
     this.waveHandler.trackEnemyInWave(instanceId);
     this.logger.debug(
-      `Spawning enemy: ${configId} (Instance ID: ${instanceId}) at (${position.x}, ${position.y}) with ${scaledHealth} health (Speed x${speedMultiplier.toFixed(2)})`
+      `Spawning enemy: ${configId} (Instance ID: ${instanceId}) at (${position.x}, ${position.y}) with ${scaledHealth} health (Base Speed x${speedMultiplier.toFixed(2)})`
     );
-  
+
+    // Emit event for GameScene to create the EnemyEntity GameObject
+    // Pass the manager instance so the Entity can reference it if needed (though maybe not for slow anymore)
+    // Pass the base speed multiplier; the Entity will handle its own slow state.
     this.eventBus.emit(ENEMY_SPAWNED, {
       instanceId: newEnemy.id,
       config: config,
       position: position,
       initialHealth: scaledHealth,
       maxHealth: scaledHealth,
-      speedMultiplier: speedMultiplier,
+      speedMultiplier: speedMultiplier, // Pass the base multiplier
+      enemyManager: this, // Pass manager reference
     });
   }
 
-  // TODO: Implement method to handle enemy taking damage
   public handleDamage(instanceId: string, damage: number): void {
     const enemy = this.enemies.get(instanceId);
     if (!enemy) {
-      this.logger.warn(`Attempted to damage unknown enemy instance ID: ${instanceId}`);
       return;
     }
-  
+
     enemy.health -= damage;
-    this.logger.debug(`Enemy ${instanceId} took ${damage} damage. Health: ${enemy.health}`);
-  
+
     if (enemy.health <= 0) {
       this.destroyEnemy(instanceId);
     } else {
       const baseMaxHealth = this.enemyConfigs.get(enemy.configId)?.baseHealth;
       const scaledMaxHealth = baseMaxHealth
         ? this.waveHandler.getScaledHealth(baseMaxHealth)
-        : enemy.health;
+        : enemy.health; // Fallback, though should have baseMaxHealth
       this.eventBus.emit(ENEMY_HEALTH_UPDATED, {
         instanceId: enemy.id,
         currentHealth: enemy.health,
@@ -148,99 +148,79 @@ export class EnemyManager {
     }
   }
 
-  // TODO: Implement method to destroy an enemy
   public destroyEnemy(instanceId: string): void {
     const enemy = this.enemies.get(instanceId);
     if (!enemy) {
-      this.logger.warn(`Attempted to destroy unknown enemy instance ID: ${instanceId}`);
       return;
     }
-  
+
     const config = this.enemyConfigs.get(enemy.configId);
     const baseReward = config?.baseReward ?? 0;
     const scaledReward = this.waveHandler.getScaledReward(baseReward);
     const scoreValue = config?.scoreValue ?? 0;
-  
+
     this.enemies.delete(instanceId);
     this.logger.log(`Destroyed enemy: ${enemy.configId} (Instance ID: ${instanceId})`);
-  
+
     const eventData: EnemyDestroyedData = {
       instanceId: instanceId,
       configId: enemy.configId,
       reward: scaledReward,
       scoreValue: scoreValue,
-      config: config as EnemyConfig,
+      config: config as EnemyConfig, // Assume config exists if enemy existed
     };
     this.eventBus.emit(ENEMY_DESTROYED, eventData);
-  
+
     this.waveHandler.handleEnemyDestroyedInWave(instanceId);
   }
 
-  /**
-   * Retrieves the current health of a specific enemy instance.
-   * @param instanceId The unique ID of the enemy instance.
-   * @returns The current health of the enemy, or 0 if not found.
-   */
-  public getEnemyHealth(instanceId: string): number {
-    const enemy = this.enemies.get(instanceId);
-    if (!enemy) {
-      this.logger.warn(`getEnemyHealth called for unknown or destroyed enemy: ${instanceId}`);
-      return 0;
-    }
-    return enemy.health;
-  }
-
-  /**
-   * Retrieves the creation timestamp of a specific enemy instance.
-   * @param instanceId The unique ID of the enemy instance.
-   * @returns The creation timestamp (ms since epoch), or undefined if not found.
-   */
-  public getEnemyCreationTime(instanceId: string): number | undefined {
-    return this.enemies.get(instanceId)?.creationTime;
-  }
- 
-  /**
-   * Retrieves the configuration ID (e.g., 'triangle_scout') for a specific enemy instance.
-   * @param instanceId The unique ID of the enemy instance.
-   * @returns The configuration ID, or undefined if not found.
-   */
-  public getEnemyConfigId(instanceId: string): string | undefined {
-    return this.enemies.get(instanceId)?.configId;
-  }
- 
-  // Position and Velocity are not tracked directly by the manager.
-  // DebugObjectInspector must get this from the Phaser sprite/body.
+  // --- Event Handlers ---
 
   private handleProjectileHitEnemy(data: ProjectileHitEnemyData): void {
     const damage = data.damage;
-    this.logger.debug(
-      `Enemy ${data.enemyInstanceId} hit by projectile ${data.projectileId}. Applying ${damage} damage.`
-    );
+    // Removed redundant logging, handleDamage is sufficient
     this.handleDamage(data.enemyInstanceId, damage);
   }
+
+  // Removed handleApplySlowEffect - EnemyEntity will handle it
+
+  // --- Getters needed by Inspector ---
+  public getEnemyHealth(instanceId: string): number | undefined {
+      return this.enemies.get(instanceId)?.health;
+  }
+
+  public getEnemyCreationTime(instanceId: string): number | undefined {
+      return this.enemies.get(instanceId)?.creationTime;
+  }
+  // --- End Getters ---
 
   private registerEventListeners(): void {
     this.handleProjectileHitEnemy = this.handleProjectileHitEnemy.bind(this);
     this.eventBus.on(PROJECTILE_HIT_ENEMY, this.handleProjectileHitEnemy);
+    // Removed listener for APPLY_SLOW_EFFECT
   }
 
-  // TODO: Add methods for updating enemy state, movement patterns, etc.
- 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // --- Update Loop ---
   public update(delta: number): void {
+    // Manager update loop is now empty.
+    // EnemyEntity instances handle their own updates (movement, slow expiry).
+    // WaveHandler handles wave progression.
   }
 
-  /** Clean up event listeners and timers when the manager is destroyed */
+  // --- Cleanup ---
   public destroy(): void {
     this.eventBus.off(PROJECTILE_HIT_ENEMY, this.handleProjectileHitEnemy);
+    // Removed unregister for APPLY_SLOW_EFFECT
     this.waveHandler.destroy();
     this.enemies.clear();
     this.enemyConfigs.clear();
     this.logger.log('EnemyManager destroyed, listeners and timers removed');
   }
 
-  /** Gets the current wave number from the handler */
+  // --- Getters ---
   public getCurrentWave(): number {
     return this.waveHandler.getCurrentWave();
   }
+
+  // Removed getEffectiveSpeedMultiplier - no longer needed here
 }

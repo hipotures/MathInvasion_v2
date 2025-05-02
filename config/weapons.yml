@@ -20,10 +20,14 @@
 - id: laser
   name: Continuous Laser
   baseCost: 150
-  baseCooldownMs: 0 # Laser might have charge time instead
+  baseCooldownMs: 0 # Uses energy system instead
   baseDamagePerSec: 15
   baseRange: 400
   projectileType: laser_beam
+  # Energy System Properties
+  baseEnergyCapacity: 100 # Max energy
+  baseEnergyDrainPerSec: 20 # Energy consumed per second of firing
+  baseEnergyRefillPerSec: 15 # Energy refilled per second when not firing
   # Visuals
   visualShape: rectangle
   visualWidth: 3
@@ -31,18 +35,24 @@
   visualColor: '0x00ffff' # Cyan
   upgrade:
     costMultiplier: 1.5
-    damageMultiplier: 1.20
+    damageMultiplier: 1.20 # Affects baseDamagePerSec
     rangeAdd: 15
+    # Energy System Upgrades
+    energyCapacityMultiplier: 1.15 # Increase capacity by 15% per level
+    energyRefillMultiplier: 1.10 # Increase refill rate by 10% per level
+    # Drain could potentially decrease or stay constant
 - id: slow_field
   name: Slow Field
   baseCost: 100
-  baseCooldownMs: 1000
+  baseCooldownMs: 10000 # Base cooldown 10 seconds
   baseRange: 200
-  baseSlowFactor: 0.6
-  baseDurationMs: 2000
-  projectileType: none # Area effect - no visual config needed here
+  baseSlowFactor: 0.5 # Base slow halves speed
+  baseDurationMs: 10000 # Base duration 2 seconds
+  projectileType: field # Area effect - no visual config needed here
   upgrade:
-    costMultiplier: 1.3
-    slowFactorMultiplier: 0.95 # Lower is stronger slow
-    durationAddMs: 500
-    rangeAdd: 10
+    # Schema-compliant upgrade rules:
+    costMultiplier: 1.5 # Placeholder - Adjust as needed for balance
+    cooldownMultiplier: 0.9 # Approx 10% reduction per level
+    rangeAdd: 20 # Range +20 per level
+    durationAddMs: 200 # Duration +200ms per level
+    slowFactorMultiplier: 0.9 # Slow Factor *0.9 per level (stronger)

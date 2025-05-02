@@ -30,6 +30,8 @@ export const ENEMY_HEALTH_UPDATED = 'ENEMY_HEALTH_UPDATED'; // Emitted by EnemyM
 export const ENEMY_REQUEST_FIRE = 'ENEMY_REQUEST_FIRE'; // Emitted by EnemyEntity for Scene to handle spawn
 export const REQUEST_ENEMY_DESTRUCTION_EFFECT = 'REQUEST_ENEMY_DESTRUCTION_EFFECT'; // Emitted by EnemyEntity for Scene to handle visuals
 
+export const ENEMY_OFF_SCREEN = 'ENEMY_OFF_SCREEN'; // Emitted by EnemyEntity when it goes off-screen
+export const APPLY_SLOW_EFFECT = 'APPLY_SLOW_EFFECT'; // Emitted by AreaEffectHandler to apply slow to enemies
 export const CURRENCY_UPDATED = 'CURRENCY_UPDATED'; // Emitted by EconomyManager for UI
 export const SCORE_UPDATED = 'SCORE_UPDATED'; // Emitted by EconomyManager for UI
 export const WAVE_UPDATED = 'WAVE_UPDATED'; // Emitted when the wave number changes
@@ -47,9 +49,11 @@ export const REQUEST_SPAWN_POWERUP = 'REQUEST_SPAWN_POWERUP'; // Emitted by Enem
 export const POWERUP_SPAWNED = 'POWERUP_SPAWNED'; // Emitted by PowerupManager for Scene to create sprite
 export const POWERUP_COLLECTED = 'POWERUP_COLLECTED'; // Emitted by Scene collision handler
 export const POWERUP_EXPIRED = 'POWERUP_EXPIRED'; // Emitted by PowerupManager when effect duration ends
+export const POWERUP_OUT_OF_BOUNDS = 'powerupOutOfBounds'; // Added for cleanup
 export const POWERUP_EFFECT_APPLIED = 'POWERUP_EFFECT_APPLIED'; // Emitted by PowerupManager when effect starts
 export const POWERUP_EFFECT_REMOVED = 'POWERUP_EFFECT_REMOVED'; // Emitted by PowerupManager when effect ends
 
+export const REQUEST_AREA_EFFECT = 'REQUEST_AREA_EFFECT'; // Emitted by ProjectileEventHandler for AoE weapons
 export const TOGGLE_PAUSE = 'TOGGLE_PAUSE'; // Request to toggle pause state
 export const GAME_PAUSED = 'GAME_PAUSED'; // Emitted when the game is paused
 export const GAME_RESUMED = 'GAME_RESUMED'; // Emitted when the game is resumed

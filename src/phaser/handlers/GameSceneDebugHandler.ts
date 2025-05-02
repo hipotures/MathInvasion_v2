@@ -67,10 +67,14 @@ export class GameSceneDebugHandler {
 
     // Create HTML debug panel and labels
     this.htmlDebugPanel = new HtmlDebugPanel();
-    this.htmlDebugLabels = new HtmlDebugLabels(); 
+    this.htmlDebugLabels = new HtmlDebugLabels();
     this.htmlDebugLabels.setScene(scene); // Set the scene reference
 
-    // Instantiate the DebugPanelUpdater
+    // --- Instantiate InspectionHandler FIRST ---
+    this.inspectionHandler = new DebugInspectionHandler(debugObjectInspector);
+
+    // --- Instantiate DebugPanelUpdater SECOND ---
+    // Reverted: Does not need inspectionHandler or debugObjectInspector
     this.debugPanelUpdater = new DebugPanelUpdater(
       playerManager,
       weaponManager,
@@ -80,13 +84,18 @@ export class GameSceneDebugHandler {
       economyManager,
       debugManager,
       this.htmlDebugPanel,
+      // --- Added missing arguments ---
+      this.inspectionHandler,
+      debugObjectInspector,
+      // --- End added ---
+      // Pass the object maps needed by collectors within updater
       playerSprite,
       enemySprites,
-      this.projectileShapes,
+      projectileShapes,
       powerupSprites
     );
 
-    // Create the specialized handlers
+    // --- Create the REMAINING specialized handlers ---
     
     // Visualization handler for drawing debug visuals
     this.visualizationHandler = new DebugVisualizationHandler(
@@ -97,9 +106,6 @@ export class GameSceneDebugHandler {
       powerupSprites,
       this.htmlDebugLabels // Pass labels instance
     );
-    
-    // Inspection handler for object inspection
-    this.inspectionHandler = new DebugInspectionHandler(debugObjectInspector);
     
     // Interaction handler - Now ONLY sets interactive flag and cursor
     this.interactionHandler = new DebugInteractionHandler(

@@ -77,6 +77,12 @@ export class EnemyInspector {
 
       // --- Enemy Specific ---
       IsPaused: EnemyEntity.isPaused, // Access static property
+      // Add slow status from EnemyEntity getters
+      IsSlowed: enemyEntity.isSlowed(),
+      SlowFactor: enemyEntity.getSlowFactor().toFixed(2),
+      // Use scene time to calculate remaining duration
+      SlowExpires: enemyEntity.isSlowed() ? ((enemyEntity.getSlowExpiryTime() - enemyEntity.scene.time.now) / 1000).toFixed(1) + 's' : 'N/A',
+
 
       // --- Config Properties (Prefixed) ---
     };

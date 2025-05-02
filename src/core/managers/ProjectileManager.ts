@@ -30,6 +30,12 @@ export default class ProjectileManager {
   private explosionHandler: ProjectileExplosionHandler;
   private stateManager: ProjectileStateManager;
 
+  // For stale projectile detection
+  private lastPositions: Map<string, { x: number; y: number }> = new Map();
+  private staleCounters: Map<string, number> = new Map();
+  private readonly STALE_UPDATE_THRESHOLD = 60; // Number of updates before removing a stale projectile (e.g., ~1 second at 60fps)
+  private readonly POSITION_CHANGE_THRESHOLD = 0.1; // Minimum position change to be considered "moved"
+
   constructor(eventBusInstance: EventBusType, worldWidth: number = 800, worldHeight: number = 600) {
     this.eventBus = eventBusInstance;
     
@@ -59,6 +65,9 @@ export default class ProjectileManager {
     
     const projectile = this.factory.createProjectile(data);
     this.stateManager.addProjectile(projectile);
+    // Initialize tracking for stale detection
+    this.lastPositions.set(projectile.id, { x: projectile.x, y: projectile.y });
+    this.staleCounters.set(projectile.id, 0);
   }
 
   private handleProjectileHitEnemy(data: ProjectileHitEnemyData): void {
@@ -75,15 +84,51 @@ export default class ProjectileManager {
       const projectile = this.stateManager.getProjectile(id);
       if (!projectile) continue;
 
+      const lastPos = this.lastPositions.get(id);
+
+      // Update physics *before* checking staleness
+      const isInBounds = this.physicsHandler.updateProjectilePhysics(projectile, deltaTime);
+
+      if (!isInBounds) {
+        this.removeProjectile(id);
+        continue; // Already removed, skip further checks
+      }
+
+      // Check for staleness
+      if (lastPos) {
+        const dx = Math.abs(projectile.x - lastPos.x);
+        const dy = Math.abs(projectile.y - lastPos.y);
+
+        if (dx < this.POSITION_CHANGE_THRESHOLD && dy < this.POSITION_CHANGE_THRESHOLD) {
+          // Position hasn't changed significantly, increment stale counter
+          const currentStaleCount = (this.staleCounters.get(id) || 0) + 1;
+          this.staleCounters.set(id, currentStaleCount);
+
+          if (currentStaleCount >= this.STALE_UPDATE_THRESHOLD) {
+            logger.warn(`Removing stale projectile ${id} (no movement for ${currentStaleCount} updates).`);
+            this.removeProjectile(id);
+            continue; // Removed, skip explosion check
+          }
+        } else {
+          // Projectile moved, reset stale counter and update last position
+          this.staleCounters.set(id, 0);
+          this.lastPositions.set(id, { x: projectile.x, y: projectile.y });
+        }
+      } else {
+         // Should not happen if initialized correctly, but good to handle
+         this.lastPositions.set(id, { x: projectile.x, y: projectile.y });
+         this.staleCounters.set(id, 0);
+      }
+
+
+      // Check for explosion *after* staleness check
       if (this.explosionHandler.updateExplosionTimer(projectile, deltaTime)) {
         this.explosionHandler.triggerExplosion(projectile);
         this.removeProjectile(id);
         continue;
       }
 
-      if (!this.physicsHandler.updateProjectilePhysics(projectile, deltaTime)) {
-        this.removeProjectile(id);
-      }
+      // Note: Boundary check is handled above by physicsHandler returning false
     }
   }
 
@@ -91,6 +136,9 @@ export default class ProjectileManager {
     if (this.stateManager.hasProjectile(projectileId)) {
       logger.debug(`Removing projectile: ${projectileId}`);
       this.stateManager.removeProjectile(projectileId);
+      // Clean up tracking maps
+      this.lastPositions.delete(projectileId);
+      this.staleCounters.delete(projectileId);
       this.eventBus.emit(Events.PROJECTILE_DESTROYED, { id: projectileId });
     }
   }
@@ -123,6 +171,9 @@ export default class ProjectileManager {
     this.eventBus.off(Events.SPAWN_PROJECTILE, this.handleSpawnProjectile);
     this.eventBus.off(Events.PROJECTILE_HIT_ENEMY, this.handleProjectileHitEnemy);
     this.stateManager.clearAllProjectiles();
+    // Clear tracking maps on destroy
+    this.lastPositions.clear();
+    this.staleCounters.clear();
     logger.log('ProjectileManager destroyed and listeners removed');
   }
 

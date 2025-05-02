@@ -66,6 +66,8 @@
     *   Implemented Shield effect (`temporary_invulnerability`) in `PlayerManager`.
     *   Implemented Rapid Fire effect (`weapon_cooldown_reduction`) in `WeaponManager`.
     *   Implemented Cash Boost effect (`currency_multiplier`) in `EconomyManager`.
+    *   Fixed powerup collection using a manual overlap check in `GameScene.update` as a workaround for `physics.overlap` not firing.
+    *   Implemented cleanup for powerups falling off-screen (`GameScene.update` check + `POWERUP_OUT_OF_BOUNDS` event + `PowerupManager` handler).
 *   **Milestone M4: Rozbudowa Broni i UI (Complete)**
     *   **Wave Number Display:** Wave number is tracked by `EnemyManager`, emitted via `WAVE_UPDATED` event, and displayed in `UIScene`.
     *   **Weapon Upgrades (Cooldown, Damage, Speed):**

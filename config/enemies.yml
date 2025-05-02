@@ -6,7 +6,7 @@
   scoreValue: 10 # Added
   collisionDamage: 10 # Added
   movementPattern: invader_standard
-  collisionRadius: 15
+  collisionRadius: 5 # Adjusted from 15
   canShoot: false
 - id: square_tank
   shape: square
@@ -16,11 +16,11 @@
   scoreValue: 30 # Added
   collisionDamage: 20 # Added
   movementPattern: invader_standard
-  collisionRadius: 25
+  collisionRadius: 8 # Adjusted from 25
   canShoot: true
   shootConfig:
     projectileType: enemy_bullet
-    cooldownMs: 1500
+    cooldownMs: 4500 # Increased from 1500 (1500 * 3)
     damage: 5
     speed: 100
     # Visuals
@@ -36,7 +36,7 @@
   scoreValue: 40 # Added
   collisionDamage: 5 # Added (lower for support?)
   movementPattern: invader_support
-  collisionRadius: 20
+  collisionRadius: 7 # Adjusted from 20
   canShoot: false
   abilities:
     - type: heal_aura
@@ -50,7 +50,7 @@
   scoreValue: 50 # Added
   collisionDamage: 15
   movementPattern: bomber_dive # New pattern
-  collisionRadius: 22
+  collisionRadius: 7 # Adjusted from 22
   canShoot: false # Doesn't shoot normally
   abilities:
     - type: death_bomb
@@ -66,11 +66,11 @@
   scoreValue: 60 # Added
   collisionDamage: 15
   movementPattern: strafe_horizontal # New pattern
-  collisionRadius: 18
+  collisionRadius: 6 # Adjusted from 18
   canShoot: true
   shootConfig:
     projectileType: enemy_bullet_fast # Placeholder, maybe faster bullet
-    cooldownMs: 1000
+    cooldownMs: 3000 # Increased from 1000 (1000 * 3)
     damage: 8
     speed: 180
     # Visuals
@@ -86,11 +86,11 @@
   scoreValue: 200 # Added
   collisionDamage: 50 # Added (higher for boss)
   movementPattern: boss_weaving
-  collisionRadius: 50
+  collisionRadius: 15 # Adjusted from 50
   canShoot: true
   shootConfig:
     projectileType: enemy_laser
-    cooldownMs: 800
+    cooldownMs: 2400 # Increased from 800 (800 * 3)
     damagePerSec: 10
     range: 300
     # Visuals

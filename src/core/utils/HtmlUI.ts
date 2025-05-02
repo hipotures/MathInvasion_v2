@@ -84,7 +84,7 @@ export class HtmlUI {
     color: string,
     align: 'left' | 'center' | 'right' = 'left',
     bgColor?: string
-  ): void {
+  ): HTMLDivElement { // Change return type from void
     const element = document.createElement('div');
     element.style.position = 'absolute';
     element.style.color = color;
@@ -109,9 +109,12 @@ export class HtmlUI {
       element.style.right = `${window.innerWidth - canvasRightEdge + x}px`; // x is offset from right
       element.style.textAlign = 'right';
     } else if (align === 'center') {
+      // Revert to using transform for centering
       element.style.left = `${x}px`;
       element.style.transform = 'translateX(-50%)';
       element.style.textAlign = 'center';
+      // Remove margin-left if set previously
+      element.style.marginLeft = '';
     } else {
       element.style.left = `${x}px`;
     }
@@ -119,9 +122,22 @@ export class HtmlUI {
     element.style.top = `${y}px`;
     element.textContent = text;
 
+    // --- Remove Cooldown Bar logic and related styles from button ---
+    if (id.startsWith('weaponButton')) {
+      // Reset styles that might have been added
+      element.style.position = 'absolute'; // Revert to default absolute positioning
+      element.style.overflow = '';
+      element.style.width = ''; // Let it size naturally or based on padding
+      element.style.boxSizing = '';
+      element.style.whiteSpace = '';
+      // Allow pointer events on the button itself for selection
+      element.style.pointerEvents = 'auto';
+    }
+    // --- End Removal ---
+
     this.container.appendChild(element);
     this.uiElements.set(id, element);
-    // Removed debug log
+    return element; // Return the created element
   }
 
   /**
@@ -184,7 +200,7 @@ export class HtmlUI {
    * @param level Weapon level
    */
   public updateWeaponStatus(weaponId: string, level: number): void {
-    const weaponName = weaponId.charAt(0).toUpperCase() + weaponId.slice(1); // Capitalize
+    const weaponName = weaponId.charAt(0).toUpperCase() + weaponId.slice(1).replace('_', ' '); // Capitalize and replace underscore
     this.updateElement('weaponStatus', `Weapon: ${weaponName} Lvl: ${level}`);
   }
 
@@ -231,15 +247,59 @@ export class HtmlUI {
   }
 
   /**
+   * Updates the cooldown progress bar for a specific weapon button.
+   * @param weaponId The ID of the weapon ('bullet', 'laser', 'slow_field').
+   * @param progress Cooldown progress from 0.0 (ready) to 1.0 (full cooldown).
+   */
+  public updateWeaponCooldown(weaponId: string, progress: number): void {
+    let barId: string | null = null; // Use separate ID for the bar element
+    let barColor: string = '#ffcc00'; // Default gold/yellow
+
+    switch (weaponId) {
+      case 'bullet':
+        barId = 'cooldownBar1'; // New ID for bullet cooldown bar
+        barColor = '#ff0000'; // Red
+        break;
+      case 'laser':
+        barId = 'cooldownBar2'; // New ID for laser cooldown bar
+        barColor = '#00ffff'; // Cyan
+        break;
+      case 'slow_field':
+        barId = 'cooldownBar3'; // New ID for slow field cooldown bar
+        barColor = 'rgba(255, 215, 0, 0.7)'; // Gold with some transparency
+        break;
+    }
+
+    if (barId) {
+      const barContainer = this.uiElements.get(barId); // Get the container element for the bar
+      if (barContainer) {
+        // Find the inner div that actually shows the progress
+        const innerBar = barContainer.querySelector('div') as HTMLDivElement;
+        if (innerBar) {
+            // Clamp progress between 0 and 1
+            const clampedProgress = Math.max(0, Math.min(1, progress));
+            // Set the width of the inner bar based on progress
+            innerBar.style.width = `${clampedProgress * 100}%`;
+            // Set the color of the inner bar
+            innerBar.style.backgroundColor = barColor;
+        } else {
+             logger.warn(`Inner cooldown bar element not found within container: ${barId}`);
+        }
+      } else {
+        // This might happen briefly during resize/recreation
+        // logger.warn(`Cooldown bar container element not found for ID: ${barId}`);
+      }
+    }
+  }
+
+  /**
    * Shows the pause indicator element.
    */
   public showPauseIndicator(): void {
     const element = this.uiElements.get('pauseIndicator');
     if (element) {
-      // Removed debug log
       element.style.display = 'block';
     } else {
-      // Keep error log as it indicates a real problem if it happens now
       logger.error(`HtmlUI: Element 'pauseIndicator' NOT FOUND in map when calling showPauseIndicator! Map size: ${this.uiElements.size}`);
     }
   }
@@ -250,10 +310,8 @@ export class HtmlUI {
   public hidePauseIndicator(): void {
     const element = this.uiElements.get('pauseIndicator');
     if (element) {
-      // Removed debug log
       element.style.display = 'none';
     } else {
-      // Keep warn log as it might indicate a timing issue during resize
       logger.warn(`HtmlUI: Element 'pauseIndicator' NOT FOUND in map when calling hidePauseIndicator! Map size: ${this.uiElements.size}`);
     }
   }

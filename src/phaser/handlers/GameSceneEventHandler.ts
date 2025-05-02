@@ -12,6 +12,13 @@ import { ProjectileEventHandler, ProjectileShape } from './event/ProjectileEvent
 import { EnemyEventHandler } from './event/EnemyEventHandler';
 import { PowerupSpawnedData } from '../../core/managers/PowerupManager'; // Import PowerupSpawnedData
 
+// Define payload for applying the slow effect (ideally move to a shared types file)
+interface ApplySlowEffectData {
+    enemyInstanceIds: string[];
+    slowFactor: number;
+    durationMs: number;
+}
+
 // Define the structure for the REQUEST_ENEMY_DESTRUCTION_EFFECT event data
 interface EnemyDestructionEffectData {
   configId: string;
@@ -25,14 +32,14 @@ export class GameSceneEventHandler {
   private projectileEventHandler: ProjectileEventHandler;
   private enemyEventHandler: EnemyEventHandler;
 
-  // References needed by sub-handlers
+  // References needed by sub-handlers or this handler
   private enemySpawnerTimerRef?: Phaser.Time.TimerEvent;
-  // Add references needed for powerup handling
   private scene: Phaser.Scene;
   private powerupGroup: Phaser.GameObjects.Group;
   private powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite>;
-  // Add property for the projectile shapes map
   private projectileShapes: Map<string, ProjectileShape>;
+  // Declare enemySprites as a private property
+  private enemySprites: Map<string, EnemyEntity>;
 
   constructor(
     scene: Phaser.Scene,
@@ -40,15 +47,17 @@ export class GameSceneEventHandler {
     projectileGroup: Phaser.GameObjects.Group,
     enemyGroup: Phaser.GameObjects.Group,
     powerupGroup: Phaser.GameObjects.Group, // Add powerup group param
-    enemySprites: Map<string, EnemyEntity>,
-    // Update parameter type here
+    enemySprites: Map<string, EnemyEntity>, // Add enemySprites map param
     projectileShapes: Map<string, ProjectileShape>,
     powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite> // Add powerup sprites map param
   ) {
     this.scene = scene; // Store scene reference
-    this.powerupGroup = powerupGroup; // Store powerup group reference
-    this.powerupSprites = powerupSprites; // Store powerup sprites map reference
-    this.projectileShapes = projectileShapes; // Store projectile shapes map reference
+    // Store references needed by handlers
+    this.powerupGroup = powerupGroup;
+    this.powerupSprites = powerupSprites;
+    this.projectileShapes = projectileShapes;
+    // Assign the passed map to the class property
+    this.enemySprites = enemySprites;
 
     // Instantiate sub-handlers
     this.playerEventHandler = new PlayerEventHandler(scene, playerSprite);
@@ -56,22 +65,22 @@ export class GameSceneEventHandler {
       scene,
       playerSprite,
       projectileGroup,
-      // Pass the correctly typed map
       this.projectileShapes
     );
     this.enemyEventHandler = new EnemyEventHandler(scene, enemyGroup, enemySprites);
 
-    // Bind powerup handler
+    // Bind handlers managed by this class
     this.handlePowerupSpawned = this.handlePowerupSpawned.bind(this);
-    // Bind destruction effect handler
     this.handleEnemyDestructionEffect = this.handleEnemyDestructionEffect.bind(this);
+    this.handleApplySlowEffect = this.handleApplySlowEffect.bind(this); // Bind slow effect handler
 
-    // Register listeners
+    // Register listeners managed by this class
     eventBus.on(Events.POWERUP_SPAWNED, this.handlePowerupSpawned);
     eventBus.on(Events.REQUEST_ENEMY_DESTRUCTION_EFFECT, this.handleEnemyDestructionEffect);
+    eventBus.on(Events.APPLY_SLOW_EFFECT, this.handleApplySlowEffect); // Listen for slow effect
 
     logger.log(
-      'GameSceneEventHandler initialized with sub-handlers and powerup/destruction listeners.'
+      'GameSceneEventHandler initialized with sub-handlers and powerup/destruction/slow listeners.'
     );
   }
 
@@ -83,7 +92,6 @@ export class GameSceneEventHandler {
   }
 
   // --- Powerup Event Handler ---
-
   private handlePowerupSpawned(data: PowerupSpawnedData): void {
     logger.debug(
       `Handling POWERUP_SPAWNED event for instance ${data.instanceId} at (${data.x}, ${data.y})`
@@ -98,23 +106,38 @@ export class GameSceneEventHandler {
       case 'rapid_fire_icon':
         assetKey = Assets.POWERUP_RAPID_FIRE_KEY;
         break;
-      // Add case for 'cash_icon' if visual asset exists
+      case 'cash_icon':
+        assetKey = Assets.POWERUP_CASH_KEY; // Use the new asset key
+        break;
       default:
         logger.warn(`Unknown powerup visual identifier: ${data.visual}`);
-        // Use a default or fallback asset? For now, just return.
+        // Unknown type, don't create a sprite
         return;
     }
 
     // Create the powerup sprite
     const powerupSprite = this.scene.physics.add.sprite(data.x, data.y, assetKey);
-    powerupSprite.setScale(0.05); // Set much smaller scale for powerups
+    powerupSprite.setScale(0.05); // Revert to original small scale
+    // powerupSprite.setScale(0.5); // Increased scale for testing visibility
     powerupSprite.setVelocityY(50); // Give it some downward movement
-    
-    // Set data properties for debug inspection
+
+    // Ensure physics body is enabled and configured for overlap
+    if (powerupSprite.body) { // Check if body exists
+        const body = powerupSprite.body as Phaser.Physics.Arcade.Body;
+        body.enable = true; // Explicitly enable
+        body.setCollideWorldBounds(false); // Powerups don't need to collide with bounds
+        body.checkCollision.none = false; // Ensure collision checks aren't globally disabled
+        // Overlap doesn't strictly need these, but let's be explicit
+        body.checkCollision.up = false;
+        body.checkCollision.down = false;
+        body.checkCollision.left = false;
+        body.checkCollision.right = false;
+    }
+    // Set data properties for debug inspection BEFORE setting circle maybe?
     powerupSprite.setData('instanceId', data.instanceId);
     powerupSprite.setData('objectType', 'powerup');
     powerupSprite.setData('configId', data.configId);
-    
+
     // Optional: Add slight rotation or tween effect
     this.scene.tweens.add({
       targets: powerupSprite,
@@ -126,24 +149,42 @@ export class GameSceneEventHandler {
 
     // Add to the group and map
     this.powerupGroup.add(powerupSprite);
+    // Set circle AFTER adding to group
+    powerupSprite.setCircle(15); // Set a circular body with radius 15px (adjust as needed)
     this.powerupSprites.set(data.instanceId, powerupSprite);
 
-    // Set initial visibility based on debug mode
-    powerupSprite.setVisible(!debugState.isDebugMode);
+
+    // --- ADDED DETAILED LOG ---
+    const body = powerupSprite.body as Phaser.Physics.Arcade.Body;
+    logger.log(`[EventHandler] Powerup ${data.instanceId} created. Body details:`, {
+        exists: !!body,
+        enabled: body?.enable,
+        isCircle: body?.isCircle,
+        radius: body?.radius,
+        width: body?.width,
+        height: body?.height,
+        x: body?.x,
+        y: body?.y,
+        velocity: body?.velocity,
+        inGroup: this.powerupGroup.contains(powerupSprite)
+    });
+    // --- END ADDED DETAILED LOG ---
+
+
+    // Powerups should always be visible when spawned
+    // REMOVED: powerupSprite.setVisible(!debugState.isDebugMode);
 
     // Play spawn sound
     this.scene.sound.play(Assets.AUDIO_POWERUP_APPEAR_KEY);
   }
 
   // --- Enemy Destruction Effect Handler ---
-
   private handleEnemyDestructionEffect(data: EnemyDestructionEffectData): void {
     logger.debug(
       `Handling REQUEST_ENEMY_DESTRUCTION_EFFECT for ${data.configId} at (${data.x}, ${data.y})`
     );
 
     // Play sound based on enemy type (can be expanded)
-    // For now, use the generic small explosion sound
     this.scene.sound.play(Assets.AUDIO_EXPLOSION_SMALL_KEY);
 
     // Create visual effect based on enemy type (can be expanded)
@@ -153,8 +194,6 @@ export class GameSceneEventHandler {
       case 'pentagon_healer':
       case 'hexagon_bomber':
       case 'diamond_strafer': {
-        // TODO: Add simple particle effect or specific tween
-        logger.log(`Playing standard destruction effect for ${data.configId}`);
         // Example placeholder: small flash
         const flash = this.scene.add.circle(data.x, data.y, 10, 0xffffff, 0.8);
         this.scene.tweens.add({
@@ -168,8 +207,6 @@ export class GameSceneEventHandler {
         break;
       }
       case 'circle_boss': {
-        // TODO: Add larger, more impressive effect for boss
-        logger.log(`Playing BOSS destruction effect for ${data.configId}`);
         // Example placeholder: larger flash
         const bossFlash = this.scene.add.circle(data.x, data.y, 30, 0xffaa00, 1);
         this.scene.tweens.add({
@@ -199,17 +236,32 @@ export class GameSceneEventHandler {
     }
   }
 
+  // --- Slow Effect Handler ---
+  private handleApplySlowEffect(data: ApplySlowEffectData): void {
+    logger.debug(`Applying slow effect (Factor: ${data.slowFactor}, Duration: ${data.durationMs}ms) to enemies: ${data.enemyInstanceIds.join(', ')}`);
+    data.enemyInstanceIds.forEach(instanceId => {
+      const enemyEntity = this.enemySprites.get(instanceId);
+      // Check if the entity exists and has the applySlow method (which we still need to add)
+      if (enemyEntity && typeof (enemyEntity as any).applySlow === 'function') {
+         (enemyEntity as any).applySlow(data.slowFactor, data.durationMs);
+      } else if (enemyEntity) {
+         logger.warn(`EnemyEntity ${instanceId} does not have an applySlow method.`);
+      } else {
+         logger.warn(`Could not find active EnemyEntity for ID: ${instanceId} to apply slow effect.`);
+      }
+    });
+  }
+
   /** Clean up event listeners by destroying sub-handlers and removing own listeners */
   public destroy(): void {
     this.playerEventHandler.destroy();
     this.projectileEventHandler.destroy();
     this.enemyEventHandler.destroy();
     eventBus.off(Events.POWERUP_SPAWNED, this.handlePowerupSpawned);
-    eventBus.off(Events.REQUEST_ENEMY_DESTRUCTION_EFFECT, this.handleEnemyDestructionEffect); // Unregister destruction listener
+    eventBus.off(Events.REQUEST_ENEMY_DESTRUCTION_EFFECT, this.handleEnemyDestructionEffect);
+    eventBus.off(Events.APPLY_SLOW_EFFECT, this.handleApplySlowEffect); // Unregister slow listener
     logger.log(
       'GameSceneEventHandler destroyed, called destroy on sub-handlers and removed listeners.'
     );
   }
 }
-// Removed all individual handle methods as they now reside in sub-handlers (except powerup)
-// Removed all direct event listener registrations/unregistrations (except powerup)

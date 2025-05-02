@@ -12,7 +12,12 @@ import { EnemyEntity } from '../../../entities/EnemyEntity';
  */
 export class DebugInspectionHandler {
   private debugObjectInspector: DebugObjectInspector;
-  private inspectedObject: InspectionState = { id: null, type: null };
+  // Store the actual GameObject along with ID and type
+  private inspectedObject: {
+    id: string | null;
+    type: string | null;
+    gameObject: Phaser.GameObjects.GameObject | null;
+  } = { id: null, type: null, gameObject: null };
 
   constructor(debugObjectInspector: DebugObjectInspector) {
     this.debugObjectInspector = debugObjectInspector;
@@ -85,8 +90,8 @@ export class DebugInspectionHandler {
       this.stopInspecting(false); // Don't emit stop event yet, just clear state
     }
 
-    // Set new inspected object (for highlighting)
-    this.inspectedObject = { id: objectId, type: objectType };
+    // Set new inspected object (for highlighting and re-fetching data)
+    this.inspectedObject = { id: objectId, type: objectType, gameObject: gameObject };
 
     // Get raw details object from the inspector
     // Pass the gameObject directly to the inspector method
@@ -104,7 +109,8 @@ export class DebugInspectionHandler {
       eventBus.emit(Events.DEBUG_SHOW_INSPECTION_DETAILS, errorEventData);
       // Optionally, log a more specific error message here if needed
       logger.warn(`Could not get details for ${objectType} ${objectId}. Emitting null data.`);
-      this.inspectedObject = { id: null, type: null }; // Clear inspection state if data fetch failed
+      // Clear inspection state if data fetch failed
+      this.inspectedObject = { id: null, type: null, gameObject: null };
     }
 
     return true;
@@ -118,8 +124,8 @@ export class DebugInspectionHandler {
     if (!this.inspectedObject.id) return; // Nothing to stop
 
     logger.debug(`Stopping debug inspection for ${this.inspectedObject.type} ID: ${this.inspectedObject.id}`);
-    const previouslyInspected = this.inspectedObject;
-    this.inspectedObject = { id: null, type: null };
+    const previouslyInspected = { ...this.inspectedObject }; // Clone before clearing
+    this.inspectedObject = { id: null, type: null, gameObject: null }; // Clear state
 
     if (emitEvent) {
       eventBus.emit(Events.DEBUG_STOP_INSPECTING);
@@ -140,10 +146,19 @@ export class DebugInspectionHandler {
 
   /**
    * Gets the current inspection state
-   * @returns The current inspection state
+   * @returns The current inspection state (ID and Type only)
    */
   public getInspectionState(): InspectionState {
-    return { ...this.inspectedObject };
+    // Return only ID and Type for compatibility with visualization handler
+    return { id: this.inspectedObject.id, type: this.inspectedObject.type };
+  }
+
+  /**
+   * Gets the currently inspected GameObject
+   * @returns The GameObject or null if none is inspected
+   */
+  public getInspectedGameObject(): Phaser.GameObjects.GameObject | null {
+    return this.inspectedObject.gameObject;
   }
 
   /**

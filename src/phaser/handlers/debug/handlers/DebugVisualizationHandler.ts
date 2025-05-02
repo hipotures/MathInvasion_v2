@@ -189,11 +189,29 @@ export class DebugVisualizationHandler {
         }
         this.debugGraphics.strokeRect(fallbackX, fallbackY, fallbackW, fallbackH);
       } else {
-        // Draw rectangle around physics body
-        this.debugGraphics.lineStyle(config.lineWidth ?? 1, config.strokeColor, 1);
-        this.debugGraphics.strokeRect(body.x, body.y, body.width, body.height);
-        labelPosX = body.center.x;
-        labelPosY = body.y - 10;
+        // Check if body exists, is enabled, and dimensions are valid before drawing
+        // Reverted the isPhysicsPaused check as it hid all bounds when paused
+        if (body && body.enable && body.width > 0 && body.height > 0) {
+            // Draw the actual collision shape (circle or rectangle)
+            this.debugGraphics.lineStyle(config.lineWidth ?? 1, config.strokeColor, 1);
+            if (body.isCircle) {
+                // Draw circle for circular bodies
+                this.debugGraphics.strokeCircle(body.center.x, body.center.y, body.radius);
+            } else {
+                // Draw rectangle for rectangular bodies
+                this.debugGraphics.strokeRect(body.x, body.y, body.width, body.height);
+            }
+            labelPosX = body.center.x;
+            labelPosY = body.y - 10; // Position label above the body
+        } else {
+            // Body exists but dimensions might be invalid (e.g., when paused during spawn)
+            // Skip drawing the bounds, but still position the label based on sprite
+            // logger.warn(`Skipping debug bounds draw for ${baseLabelId} due to invalid body dimensions.`);
+            labelPosX = obj.x;
+            // Position label above the sprite using displayHeight
+            const spriteHeight = (obj as Phaser.GameObjects.Sprite).displayHeight || 10;
+            labelPosY = obj.y - (spriteHeight / 2) - 10;
+        }
       }
 
       // Add/Update HTML label for the object using the predictable labelId

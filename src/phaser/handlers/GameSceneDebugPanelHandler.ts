@@ -73,8 +73,11 @@ export class GameSceneDebugPanelHandler {
     });
     titleText.setOrigin(0.5, 0);
     this.debugPanel.add(titleText);
+
+    // Set a high depth to render above other game elements
+    this.debugPanel.setDepth(1000);
   }
-  
+
   public setVisible(visible: boolean): void {
     this.debugPanel.setVisible(visible);
   }

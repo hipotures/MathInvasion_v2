@@ -4,13 +4,25 @@ import logger from '../../../core/utils/Logger';
 import debugState from '../../../core/utils/DebugState'; // Import the shared debug state
 import { WeaponConfig } from '../../../core/config/schemas/weaponSchema';
 import { EnemyShootConfig } from '../../../core/config/schemas/enemySchema'; // Import EnemyShootConfig (Removed unused EnemyConfig)
-import * as Events from '../../../core/constants/events';
+import * as Events from '../../../core/constants/events'; // Correct path
 // import * as Assets from '../../../core/constants/assets'; // No longer needed for projectile textures
-// Import the new event data interface
+// Import the event data interfaces correctly
 import {
   ProjectileCreatedEventData,
   SpawnProjectileData,
-} from '../../../core/managers/ProjectileManager';
+} from '../../../core/managers/projectiles/types/ProjectileTypes'; // Correct path
+
+// Define payload for the new AoE event
+interface RequestAreaEffectData {
+  weaponId: string;
+  x: number;
+  y: number;
+  range: number;
+  durationMs: number;
+  // Specific effect properties
+  slowFactor?: number;
+  // Add other potential AoE effects here (e.g., damageOverTime)
+}
 
 // Keep this for handleEnemyRequestFire parameter type
 interface EnemyRequestFireData {
@@ -64,37 +76,61 @@ export class ProjectileEventHandler {
     let projectileShape: ProjectileShape;
     const color = Phaser.Display.Color.HexStringToColor(data.visualColor).color; // Parse hex string
 
-    // Create shape based on config
-    if (data.visualShape === 'ellipse') {
-      projectileShape = this.scene.add.ellipse(
-        data.x,
-        data.y,
-        data.visualWidth,
-        data.visualHeight,
-        color
-      ) as ProjectileShape; // Cast needed as add.ellipse returns base Shape
-    } else {
-      // Default to rectangle
+    // Create shape based on config and projectile type
+    const isLaser = data.type.includes('laser') || data.type.includes('beam');
+    const isBullet = data.type.includes('bullet');
+
+    if (isLaser) {
+      // Rectangle for lasers/beams
       projectileShape = this.scene.add.rectangle(
         data.x,
         data.y,
         data.visualWidth,
         data.visualHeight,
         color
-      ) as ProjectileShape; // Cast needed as add.rectangle returns base Shape
+      ) as ProjectileShape;
+    } else if (isBullet || data.visualShape === 'ellipse') {
+      // Circle for bullets or explicitly ellipse shapes
+      // Use half of the largest dimension as radius for the circle
+      const radius = Math.max(data.visualWidth, data.visualHeight) / 2;
+      projectileShape = this.scene.add.circle(
+        data.x,
+        data.y,
+        radius,
+        color
+      ) as ProjectileShape;
+    } else {
+      // Default to rectangle for other shapes
+      projectileShape = this.scene.add.rectangle(
+        data.x,
+        data.y,
+        data.visualWidth,
+        data.visualHeight,
+        color
+      ) as ProjectileShape;
     }
 
     // Enable physics
     this.physics.add.existing(projectileShape);
 
+    // Set appropriate collision shape based on type
+    const body = projectileShape.body as Phaser.Physics.Arcade.Body;
+    if (isBullet || data.visualShape === 'ellipse') {
+      // Set circular collision body for bullets/ellipses
+      const radius = Math.max(data.visualWidth, data.visualHeight) / 2;
+      body.setCircle(radius);
+    }
+    // Rectangular bodies are the default, no need to explicitly set for lasers/rectangles
+
     // Add to group and map
     this.projectileGroup.add(projectileShape);
     this.projectileShapes.set(data.id, projectileShape);
-    // Store instanceId and type on the shape itself for easy retrieval during debug clicks
+    // Store instanceId, type, and owner on the shape itself for easy retrieval
     projectileShape.setData('instanceId', data.id);
-    projectileShape.setData('objectType', 'projectile'); // Add object type
+    projectileShape.setData('objectType', 'projectile');
+    projectileShape.setData('owner', data.owner); // Store owner for collision checks
     projectileShape.setName(data.id); // Also set name for potential map key check
- 
+
     // Set initial visibility based on debug mode
     projectileShape.setVisible(!debugState.isDebugMode);
 
@@ -128,22 +164,51 @@ export class ProjectileEventHandler {
   }): void {
     if (!this.playerSprite?.active) return;
     const { weaponConfig, damage, projectileSpeed } = data;
-    const spawnPoint = this.playerSprite.getTopCenter();
-    const velocityY = -projectileSpeed;
 
-    // Create the payload for SPAWN_PROJECTILE event
-    const spawnData: SpawnProjectileData = {
-      // Use imported type
-      type: weaponConfig.projectileType, // Keep original type
-      x: spawnPoint.x,
-      y: spawnPoint.y,
-      velocityX: 0,
-      velocityY: velocityY,
-      damage: damage,
-      owner: 'player',
-      weaponConfig: weaponConfig, // Pass the weapon config
-    };
-    eventBus.emit(Events.SPAWN_PROJECTILE, spawnData);
+    // Check if it's the slow_field weapon by ID
+    if (weaponConfig.id === 'slow_field') {
+      // It's the slow field - emit REQUEST_AREA_EFFECT
+      logger.debug(`Requesting Area Effect: ${weaponConfig.id}`);
+
+      // TODO: This calculation ideally happens in WeaponManager or WeaponUpgrader and is passed in `data`.
+      // For now, we'll use base values from config as a placeholder.
+      // This needs refinement to use upgraded values.
+      // Add checks for undefined and provide defaults or log errors
+      const currentRange = weaponConfig.baseRange ?? 0; // Use 0 if undefined
+      const currentDuration = weaponConfig.baseDurationMs ?? 0; // Use 0 if undefined
+      const currentSlowFactor = weaponConfig.baseSlowFactor; // Keep as potentially undefined
+
+      if (currentRange <= 0 || currentDuration <= 0 || currentSlowFactor === undefined) {
+         logger.error(`Slow field config missing or invalid base values: Range=${currentRange}, Duration=${currentDuration}, Factor=${currentSlowFactor}`);
+         return; // Don't emit if config is invalid
+      }
+
+      const aoeData: RequestAreaEffectData = {
+        weaponId: weaponConfig.id,
+        x: this.playerSprite.x, // Center on player
+        y: this.playerSprite.y, // Center on player
+        range: currentRange,
+        durationMs: currentDuration,
+        slowFactor: currentSlowFactor, // Pass the factor itself
+      };
+      eventBus.emit(Events.REQUEST_AREA_EFFECT, aoeData);
+
+    } else { // Handle all other weapons as standard projectiles
+      // It's a standard projectile weapon
+      const spawnPoint = this.playerSprite.getTopCenter();
+      const velocityY = -projectileSpeed; // projectileSpeed is now guaranteed non-zero (due to WeaponManager workaround)
+      const spawnData: SpawnProjectileData = {
+        type: weaponConfig.projectileType,
+        x: spawnPoint.x,
+        y: spawnPoint.y,
+        velocityX: 0, // Player projectiles always fire straight up for now
+        velocityY: velocityY,
+        damage: damage,
+        owner: 'player',
+        weaponConfig: weaponConfig, // Pass weapon config for visual properties
+      };
+      eventBus.emit(Events.SPAWN_PROJECTILE, spawnData);
+    }
   }
 
   public handleEnemyRequestFire(data: EnemyRequestFireData): void {

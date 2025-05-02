@@ -8,6 +8,9 @@ const weaponUpgradeSchema = z.object({
   rangeAdd: z.number().nonnegative(),
   slowFactorMultiplier: z.number().positive().optional(), // Only for slow field
   durationAddMs: z.number().positive().optional(), // Only for slow field
+  // Energy System Upgrades (Optional)
+  energyCapacityMultiplier: z.number().positive().optional(),
+  energyRefillMultiplier: z.number().positive().optional(),
   // TODO: Consider adding visual upgrade multipliers here later (e.g., size, color shift)
 });
 
@@ -50,6 +53,10 @@ const weaponSchema = z.object({
   // End new visual properties
   baseSlowFactor: z.number().positive().optional(), // Optional for non-slowing weapons
   baseDurationMs: z.number().positive().optional(), // Optional for non-slowing weapons
+  // Energy System (Optional)
+  baseEnergyCapacity: z.number().positive().optional(),
+  baseEnergyDrainPerSec: z.number().positive().optional(),
+  baseEnergyRefillPerSec: z.number().positive().optional(),
   upgrade: weaponUpgradeSchema,
 });
 

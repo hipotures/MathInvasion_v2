@@ -23,7 +23,7 @@ export const VITE_LOGO_KEY = 'viteLogo'; // Assuming this was the previous place
 // Powerup Visual Assets
 export const POWERUP_SHIELD_KEY = 'powerupShield';
 export const POWERUP_RAPID_FIRE_KEY = 'powerupRapidFire';
-// Add key for cash boost visual if needed
+export const POWERUP_CASH_KEY = 'powerupCash'; // Added key for cash boost visual
 
 // Audio Assets
 export const AUDIO_EXPLOSION_SMALL_KEY = 'explosionSmall';

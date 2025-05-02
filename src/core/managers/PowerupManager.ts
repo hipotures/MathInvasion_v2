@@ -7,6 +7,7 @@ export interface RequestSpawnPowerupData {
   x: number;
   y: number;
   enemyId: string; // ID of the enemy that dropped it (for potential future logic)
+  powerupId?: string; // Optional ID to specify which powerup to spawn
 }
 
 export interface PowerupSpawnedData {
@@ -18,6 +19,11 @@ export interface PowerupSpawnedData {
 }
 
 export interface PowerupCollectedData {
+  instanceId: number;
+}
+
+// Interface for the new event payload
+export interface PowerupOutOfBoundsData {
   instanceId: number;
 }
 
@@ -81,6 +87,7 @@ export class PowerupManager {
   private registerListeners(): void {
     this.eventBus.on(Events.REQUEST_SPAWN_POWERUP, this.handleRequestSpawnPowerup.bind(this));
     this.eventBus.on(Events.POWERUP_COLLECTED, this.handlePowerupCollected.bind(this));
+    this.eventBus.on(Events.POWERUP_OUT_OF_BOUNDS, this.handlePowerupOutOfBounds.bind(this)); // Added listener
     // Add listener for ENEMY_DESTROYED if drop logic is handled here
   }
 
@@ -90,9 +97,24 @@ export class PowerupManager {
       return;
     }
 
-    const randomIndex = Math.floor(Math.random() * this.powerupsConfig.length);
-    const selectedPowerupConfig = this.powerupsConfig[randomIndex];
+    let selectedPowerupConfig: PowerupConfig | undefined;
 
+    // If a specific powerupId is provided, use that one
+    if (data.powerupId) {
+      selectedPowerupConfig = this.powerupsConfig.find(p => p.id === data.powerupId);
+      if (!selectedPowerupConfig) {
+        this.logger.warn(`Specified powerupId ${data.powerupId} not found. Selecting random powerup.`);
+      }
+    }
+
+    // If no specific powerup was found or requested, select a random one
+    if (!selectedPowerupConfig) {
+      const randomIndex = Math.floor(Math.random() * this.powerupsConfig.length);
+      selectedPowerupConfig = this.powerupsConfig[randomIndex];
+    }
+
+
+    // Ensure a config was actually selected (should always happen if config exists)
     if (selectedPowerupConfig) {
       const instanceId = this.nextInstanceId++;
       const spawnedInstance: SpawnedPowerupInstance = {
@@ -122,6 +144,7 @@ export class PowerupManager {
 
   private handlePowerupCollected(data: PowerupCollectedData): void {
     const spawnedInstance = this.spawnedPowerups.get(data.instanceId);
+    // Removed diagnostic log
     if (spawnedInstance) {
       this.logger.log(
         `Powerup collected: ${spawnedInstance.config.name} (Instance ID: ${data.instanceId})`
@@ -133,10 +156,21 @@ export class PowerupManager {
     }
   }
 
+  private handlePowerupOutOfBounds(data: PowerupOutOfBoundsData): void { // Use specific interface
+    if (this.spawnedPowerups.has(data.instanceId)) {
+      this.logger.debug(`Removing out-of-bounds powerup instance: ${data.instanceId}`);
+      this.spawnedPowerups.delete(data.instanceId);
+    } else {
+      // This might happen if collected and went OOB in the same frame, less likely
+      this.logger.warn(`Received POWERUP_OUT_OF_BOUNDS for unknown instance: ${data.instanceId}`);
+    }
+  }
+
   private applyEffect(config: PowerupConfig): void {
     const effectType = config.effect;
 
     const existingEffect = this.activeEffects.get(effectType);
+    // Removed diagnostic log
     if (existingEffect) {
       this.logger.debug(`Resetting timer for active effect: ${effectType}`);
       existingEffect.timer = config.durationMs;
@@ -177,11 +211,11 @@ export class PowerupManager {
   public getPowerupCreationTime(instanceId: number): number | undefined {
     return this.spawnedPowerups.get(instanceId)?.creationTime;
   }
- 
+
   public getPowerupState(instanceId: number): SpawnedPowerupInstance | undefined {
     return this.spawnedPowerups.get(instanceId);
   }
- 
+
   public destroy(): void {
     this.unregisterListeners();
     this.spawnedPowerups.clear();
@@ -192,5 +226,6 @@ export class PowerupManager {
   private unregisterListeners(): void {
     this.eventBus.off(Events.REQUEST_SPAWN_POWERUP, this.handleRequestSpawnPowerup.bind(this));
     this.eventBus.off(Events.POWERUP_COLLECTED, this.handlePowerupCollected.bind(this));
+    this.eventBus.off(Events.POWERUP_OUT_OF_BOUNDS, this.handlePowerupOutOfBounds.bind(this)); // Added unregister
   }
 }

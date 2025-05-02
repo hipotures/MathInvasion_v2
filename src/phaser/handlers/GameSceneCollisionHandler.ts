@@ -151,17 +151,37 @@ export class GameSceneCollisionHandler {
 
     logger.debug(`Projectile ${projectileId} hit enemy ${enemyEntity.instanceId}`);
 
-    const damage = this.projectileManager.getProjectileDamage(projectileId) ?? 0;
-    const eventData: ProjectileHitEnemyData = {
-      projectileId: projectileId,
-      enemyInstanceId: enemyEntity.instanceId,
-      damage: damage,
-    };
-    eventBus.emit(Events.PROJECTILE_HIT_ENEMY, eventData);
+    // Get projectile state to fetch damage
+    const projectileState = this.projectileManager.getProjectileState(projectileId);
+    if (!projectileState) {
+      logger.warn(`Could not get state for projectile ${projectileId} during collision.`);
+      // Still destroy the shape if possible
+      if (projectileShape?.active) projectileShape.destroy();
+      this.projectileShapes.delete(projectileId);
+      return;
+    }
 
-    // Destroy the projectile shape immediately
-    projectileShape.destroy();
-    this.projectileShapes.delete(projectileId); // Delete from the correct map
+    // --- Simplified Logic: Apply damage and destroy ALL projectiles on hit ---
+    const damage = projectileState.damage ?? 0; // Use damage directly (assuming laser damagePerSec is stored here too)
+    
+    // Check if damage is valid before emitting
+    if (damage > 0) {
+        const eventData: ProjectileHitEnemyData = {
+            projectileId: projectileId,
+            enemyInstanceId: enemyEntity.instanceId,
+            damage: damage, // Pass the damage value
+        };
+        eventBus.emit(Events.PROJECTILE_HIT_ENEMY, eventData);
+    } else {
+        logger.warn(`Projectile ${projectileId} hit enemy ${enemyEntity.instanceId} but damage was ${damage}. No event emitted.`);
+    }
+
+    // Destroy the projectile shape immediately (applies to both bullets and lasers now)
+    if (projectileShape?.active) {
+        // logger.debug(`Destroying projectile ${projectileId} after hitting enemy.`); // Can be noisy
+        projectileShape.destroy();
+    }
+    this.projectileShapes.delete(projectileId); // Delete from the tracking map
   }
 
   public handlePlayerProjectileCollision(object1: unknown, object2: unknown): void {
@@ -225,6 +245,8 @@ export class GameSceneCollisionHandler {
   }
 
   public handlePlayerPowerupCollision(object1: unknown, object2: unknown): void {
+    // Removed diagnostic log
+
     // Determine which object is the player and which is the powerup sprite
     let powerupSprite: Phaser.Physics.Arcade.Sprite | null = null;
 
@@ -258,6 +280,9 @@ export class GameSceneCollisionHandler {
     }
 
     const instanceId = instanceIdEntry[0];
+    // --- ADDED LOG ---
+    logger.log(`[CollisionHandler] Overlap detected! Player vs Powerup Instance ID: ${instanceId}`); // Use .log
+    // --- END ADDED LOG ---
     logger.debug(`Player collected powerup instance: ${instanceId}`);
 
     // Emit the POWERUP_COLLECTED event for the PowerupManager

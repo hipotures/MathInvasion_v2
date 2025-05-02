@@ -175,10 +175,26 @@ Process Update:
 |     3. Updated `GameSceneDebugHandler.ts` to use the object type and ID to find the exact corresponding object.
 |     4. Disabled canvas pointer events during both pause and debug mode to prevent the canvas from intercepting clicks.
 |     5. Removed the red outlines (hit areas) that didn't represent actual physical boundaries.
-|     6. Consolidated debug mode logging to a single concise message.
+|     5. Consolidated debug mode logging to a single concise message.
 | *   **Current Status:** Debug click interaction now works reliably when paused. Clicking on a specific debug label selects the exact corresponding game object, even when multiple objects have similar display names.
 |
-| **Recent Changes (M7 - Debug Label Cleanup):**
+| **Recent Changes (M7 - Powerup Collection & Cleanup):**
+| *   **Problem:** Powerups were not being collected on collision with the player, and powerups falling off-screen were not being removed.
+| *   **Troubleshooting:**
+|     *   Confirmed collision setup (`physics.overlap`) existed in `GameSceneCollisionManager`.
+|     *   Confirmed collision handler (`handlePlayerPowerupCollision`) existed in `GameSceneCollisionHandler` and emitted `POWERUP_COLLECTED`.
+|     *   Confirmed `PowerupManager` listened for `POWERUP_COLLECTED` and called `applyEffect`.
+|     *   Confirmed powerup sprites had physics bodies enabled and were added to the correct group.
+|     *   Added extensive logging, revealing that the `physics.overlap` callback was never firing despite manual checks in `GameScene.update` confirming mathematical overlap.
+| *   **Solution (Collection):** Implemented a workaround by removing the standard `physics.overlap` setup and using the manual check logic within `GameScene.update` (`triggerManualPowerupOverlap` helper) to directly call `collisionHandler.handlePlayerPowerupCollision` when an overlap is detected.
+| *   **Solution (Cleanup):**
+|     *   Added `POWERUP_OUT_OF_BOUNDS` event constant.
+|     *   Added `checkPowerupsOutOfBounds` helper method to `GameScene.update` to check sprite Y position against screen bounds.
+|     *   When a powerup is out of bounds, the helper emits `POWERUP_OUT_OF_BOUNDS`, removes the sprite from the scene's map, and destroys the sprite.
+|     *   Updated `PowerupManager` to listen for `POWERUP_OUT_OF_BOUNDS` and remove the instance from its internal `spawnedPowerups` map.
+| *   **Current Status:** Powerup collection and off-screen cleanup are now working correctly using the manual overlap check workaround. Removed diagnostic logs.
+|
+| | **Recent Changes (M7 - Debug Label Cleanup):**
 | *   Fixed issue where HTML debug labels remained on screen after their associated game objects were destroyed or went off-screen.
 | *   Added `getAllLabelIds()` method to `HtmlDebugLabels.ts`.
 | *   Updated `DebugVisualizationHandler.ts` to track active labels and remove stale ones using `htmlDebugLabels.removeLabel()`.

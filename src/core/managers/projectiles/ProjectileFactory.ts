@@ -49,6 +49,14 @@ export class ProjectileFactory {
       },
     };
 
+    // Add velocity validation
+    const MIN_VELOCITY_THRESHOLD = 1; // Pixels per second
+    if (Math.abs(newProjectile.velocityX) < MIN_VELOCITY_THRESHOLD && Math.abs(newProjectile.velocityY) < MIN_VELOCITY_THRESHOLD) {
+      logger.warn(`Projectile ${newId} created with near-zero velocity: vX=${newProjectile.velocityX.toFixed(2)}, vY=${newProjectile.velocityY.toFixed(2)}`);
+      // Consider adding a default minimum velocity or destroying it immediately if this is invalid
+      // For now, just logging.
+    }
+
     this.emitProjectileCreatedEvent(newProjectile, visualProperties);
 
     return newProjectile;
