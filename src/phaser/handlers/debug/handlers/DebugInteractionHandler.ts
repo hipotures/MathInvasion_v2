@@ -15,7 +15,7 @@ export class DebugInteractionHandler {
   private playerSprite: Phaser.Physics.Arcade.Sprite;
   private enemySprites: Map<string, EnemyEntity>;
   private projectileShapes: Map<string, ProjectileShape>;
-  private powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite>;
+  private powerupSprites: Map<string, Phaser.Physics.Arcade.Sprite>; // Changed key type to string
 
   // Default configuration for interactivity
   private defaultConfig: InteractivityConfig = {
@@ -33,10 +33,10 @@ export class DebugInteractionHandler {
     playerSprite: Phaser.Physics.Arcade.Sprite,
     enemySprites: Map<string, EnemyEntity>,
     projectileShapes: Map<string, ProjectileShape>,
-    powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite>,
+    powerupSprites: Map<string, Phaser.Physics.Arcade.Sprite>, // Changed key type to string
     onObjectClick: (gameObject: Phaser.GameObjects.GameObject) => void
     // REMOVED: onSceneClick parameter
-    // onSceneClick: (pointer: Phaser.Input.Pointer) => void 
+    // onSceneClick: (pointer: Phaser.Input.Pointer) => void
   ) {
     this.scene = scene; // Keep scene reference?
     this.playerSprite = playerSprite;
@@ -61,8 +61,12 @@ export class DebugInteractionHandler {
     const processObject = (obj: Phaser.GameObjects.GameObject | undefined | null) => {
         if (obj && obj.active) {
              if (interactive) {
+                // --- Restored call ---
                 this.setupObjectInteractivity(obj);
+                // logger.debug(`[Debug Text Select] Skipping setupObjectInteractivity for ${obj.name || obj.getData('instanceId')}`);
+                // --- End Restoration ---
              } else {
+                // Still remove interactivity when debug mode turns off
                 this.removeObjectInteractivity(obj);
              }
         }

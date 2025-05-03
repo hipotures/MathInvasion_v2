@@ -1,0 +1,20 @@
+# Display and UI Configuration
+aspect_ratio:
+  default: '9:16'
+  supported: [
+      # Only portrait aspect ratio
+      '9:16',
+    ]
+
+base_resolution:
+  width: 720
+  height: 1280 # For 9:16 aspect ratio
+
+max_resolution:
+  width: 900
+  height: 1600 # Maximum resolution to prevent game from getting too large
+
+ui_scaling:
+  enabled: true
+  min_scale: 0.75
+  max_scale: 1.5

@@ -1,335 +1,251 @@
-import logger from './Logger'; // Import the logger instance
-import { HtmlElementFactory } from './helpers/HtmlElementFactory'; // Import the new factory
+import logger from './Logger';
+import { HtmlUIFactory } from './factory/HtmlUIFactory'; // Import the factory
+import { type CooldownBarData } from './types/HtmlUI.types'; // Import types
+import * as UIComponents from './components/HtmlUIComponents'; // Import all component functions
+import eventBus from '../events/EventBus';
 
 /**
- * Utility class for creating and managing HTML UI elements
- * This uses the browser's DOM rendering instead of Phaser's text rendering
- * for better font scaling at high resolutions
+ * Utility class for creating and managing HTML UI elements using the browser's DOM.
+ * Orchestrates the HtmlUIFactory and HtmlUIComponents.
  */
 export class HtmlUI {
-  private container: HTMLDivElement;
-  private uiElements: Map<string, HTMLDivElement> = new Map();
-  private elementFactory: HtmlElementFactory | null = null; // Add factory instance
+    private container: HTMLDivElement;
+    private weaponButtonContainer: HTMLDivElement | null = null;
+    private uiElements: Map<string, HTMLDivElement> = new Map();
+    private cooldownBars: Map<string, CooldownBarData> = new Map(); // Store cooldown bar data
+    private factory: HtmlUIFactory | null = null;
+    private gameCanvas: HTMLCanvasElement | null = null;
 
-  constructor() {
-    // Create container for all UI elements
-    this.container = document.createElement('div');
-    this.container.style.position = 'absolute';
-    this.container.style.top = '0';
-    this.container.style.left = '0';
-    this.container.style.width = '100%';
-    this.container.style.height = '100%';
-    this.container.style.pointerEvents = 'none'; // Don't interfere with game input
-    this.container.style.zIndex = '998'; // Below debug labels
+    constructor() {
+        // Create container for all UI elements
+        this.container = document.createElement('div');
+        this.container.style.position = 'absolute';
+        this.container.style.top = '0';
+        this.container.style.left = '0';
+        this.container.style.width = '100%';
+        this.container.style.height = '100%';
+        this.container.style.pointerEvents = 'none'; // Don't interfere with game input by default
+        this.container.style.zIndex = '998'; // Below debug labels
 
-    // Add to document
-    document.body.appendChild(this.container);
+        // Add container to document
+        document.body.appendChild(this.container);
 
-    // Create initial UI elements using the factory
-    this.createUIElements();
-
-    // Add window resize listener to handle scaling
-    window.addEventListener('resize', this.handleResize.bind(this));
-  }
-
-  /**
-   * Handle window resize to adjust element positions
-   */
-  private handleResize(): void {
-    // Recreate UI elements on resize using the factory
-    this.container.innerHTML = ''; // Clear existing elements
-    this.uiElements.clear();
-    this.createUIElements(); // Recreate using the factory
-  }
-
-  /**
-   * Create all UI elements using the factory.
-   */
-  private createUIElements(): void {
-    const canvas = document.querySelector('canvas');
-    if (!canvas) {
-      logger.error('Canvas element not found for HtmlUI');
-      return;
-    }
-
-    // Instantiate the factory if it doesn't exist
-    if (!this.elementFactory) {
-      // Pass the bound createUIElement method and canvas
-      this.elementFactory = new HtmlElementFactory(this.createUIElement.bind(this), canvas);
-    }
-
-    // Delegate creation to the factory
-    this.elementFactory.createAllElements();
-
-    // Ensure pause indicator is hidden initially
-    this.hidePauseIndicator();
-  }
-
-  /**
-   * Generic method to create a single UI element and add it to the container and map.
-   * This method is passed to the HtmlElementFactory.
-   * @param id Element ID
-   * @param text Initial text
-   * @param x X position
-   * @param y Y position
-   * @param color Text color
-   * @param align Text alignment
-   * @param bgColor Background color
-   */
-  private createUIElement(
-    id: string,
-    text: string,
-    x: number,
-    y: number,
-    color: string,
-    align: 'left' | 'center' | 'right' = 'left',
-    bgColor?: string
-  ): HTMLDivElement { // Change return type from void
-    const element = document.createElement('div');
-    element.style.position = 'absolute';
-    element.style.color = color;
-    element.style.fontFamily = 'Arial, sans-serif';
-    element.style.fontSize = '18px';
-    element.style.fontWeight = 'bold';
-    element.style.pointerEvents = 'none';
-    element.style.textShadow = '1px 1px 2px rgba(0, 0, 0, 0.8)';
-
-    if (bgColor) {
-      element.style.backgroundColor = bgColor;
-      element.style.padding = '5px 10px';
-      element.style.borderRadius = '4px';
-    }
-
-    // Set alignment
-    if (align === 'right') {
-      // Adjust positioning for right alignment relative to canvas edge
-      const canvas = document.querySelector('canvas');
-      const canvasRightEdge = canvas ? canvas.getBoundingClientRect().right : window.innerWidth;
-      // Position relative to the right edge of the canvas/window minus the provided x offset
-      element.style.right = `${window.innerWidth - canvasRightEdge + x}px`; // x is offset from right
-      element.style.textAlign = 'right';
-    } else if (align === 'center') {
-      // Revert to using transform for centering
-      element.style.left = `${x}px`;
-      element.style.transform = 'translateX(-50%)';
-      element.style.textAlign = 'center';
-      // Remove margin-left if set previously
-      element.style.marginLeft = '';
-    } else {
-      element.style.left = `${x}px`;
-    }
-
-    element.style.top = `${y}px`;
-    element.textContent = text;
-
-    // --- Remove Cooldown Bar logic and related styles from button ---
-    if (id.startsWith('weaponButton')) {
-      // Reset styles that might have been added
-      element.style.position = 'absolute'; // Revert to default absolute positioning
-      element.style.overflow = '';
-      element.style.width = ''; // Let it size naturally or based on padding
-      element.style.boxSizing = '';
-      element.style.whiteSpace = '';
-      // Allow pointer events on the button itself for selection
-      element.style.pointerEvents = 'auto';
-    }
-    // --- End Removal ---
-
-    this.container.appendChild(element);
-    this.uiElements.set(id, element);
-    return element; // Return the created element
-  }
-
-  /**
-   * Update a UI element's text
-   * @param id Element ID
-   * @param text New text
-   * @param color Optional new color
-   */
-  public updateElement(id: string, text: string, color?: string): void {
-    const element = this.uiElements.get(id);
-    if (element) {
-      element.textContent = text;
-      if (color) {
-        element.style.color = color;
-      }
-    }
-  }
-
-  /**
-   * Update currency display
-   * @param amount Currency amount
-   */
-  public updateCurrency(amount: number): void {
-    this.updateElement('currency', `Currency: ${amount}`);
-  }
-
-  /**
-   * Update health display
-   * @param health Health amount
-   */
-  public updateHealth(health: number): void {
-    let color = '#00ff00'; // Green
-    if (health < 30) {
-      color = '#ff0000'; // Red
-    } else if (health < 60) {
-      color = '#ffff00'; // Yellow
-    }
-    this.updateElement('health', `Health: ${health}`, color);
-  }
-
-  /**
-   * Update score display
-   * @param score Score amount
-   */
-  public updateScore(score: number): void {
-    this.updateElement('score', `Score: ${score}`);
-  }
-
-  /**
-   * Update wave display
-   * @param wave Wave number
-   */
-  public updateWave(wave: number): void {
-    this.updateElement('wave', `Wave: ${wave}`);
-  }
-
-  /**
-   * Update weapon status display
-   * @param weaponId Weapon ID
-   * @param level Weapon level
-   */
-  public updateWeaponStatus(weaponId: string, level: number): void {
-    const weaponName = weaponId.charAt(0).toUpperCase() + weaponId.slice(1).replace('_', ' '); // Capitalize and replace underscore
-    this.updateElement('weaponStatus', `Weapon: ${weaponName} Lvl: ${level}`);
-  }
-
-  /**
-   * Update weapon upgrade cost display
-   * @param cost Upgrade cost
-   */
-  public updateWeaponUpgradeCost(cost: number | null): void {
-    if (cost !== null) {
-      this.updateElement('weaponUpgradeCost', `Upgrade Cost: ${cost}`);
-    } else {
-      this.updateElement('weaponUpgradeCost', 'Max Level');
-    }
-  }
-
-  /**
-   * Update weapon button appearance
-   * @param weaponId Active weapon ID
-   */
-  public updateWeaponButtons(weaponId: string): void {
-    const activeColor = '#ffff00'; // Yellow for active
-    const inactiveColor = '#dddddd'; // Default grey
-    const activeBgColor = '#888800'; // Darker yellow bg
-    const inactiveBgColor = '#555555'; // Default grey bg
-
-    const button1 = this.uiElements.get('weaponButton1');
-    const button2 = this.uiElements.get('weaponButton2');
-    const button3 = this.uiElements.get('weaponButton3');
-
-    if (button1) {
-      button1.style.color = weaponId === 'bullet' ? activeColor : inactiveColor;
-      button1.style.backgroundColor = weaponId === 'bullet' ? activeBgColor : inactiveBgColor;
-    }
-
-    if (button2) {
-      button2.style.color = weaponId === 'laser' ? activeColor : inactiveColor;
-      button2.style.backgroundColor = weaponId === 'laser' ? activeBgColor : inactiveBgColor;
-    }
-
-    if (button3) {
-      button3.style.color = weaponId === 'slow_field' ? activeColor : inactiveColor;
-      button3.style.backgroundColor = weaponId === 'slow_field' ? activeBgColor : inactiveBgColor;
-    }
-  }
-
-  /**
-   * Updates the cooldown progress bar for a specific weapon button.
-   * @param weaponId The ID of the weapon ('bullet', 'laser', 'slow_field').
-   * @param progress Cooldown progress from 0.0 (ready) to 1.0 (full cooldown).
-   */
-  public updateWeaponCooldown(weaponId: string, progress: number): void {
-    let barId: string | null = null; // Use separate ID for the bar element
-    let barColor: string = '#ffcc00'; // Default gold/yellow
-
-    switch (weaponId) {
-      case 'bullet':
-        barId = 'cooldownBar1'; // New ID for bullet cooldown bar
-        barColor = '#ff0000'; // Red
-        break;
-      case 'laser':
-        barId = 'cooldownBar2'; // New ID for laser cooldown bar
-        barColor = '#00ffff'; // Cyan
-        break;
-      case 'slow_field':
-        barId = 'cooldownBar3'; // New ID for slow field cooldown bar
-        barColor = 'rgba(255, 215, 0, 0.7)'; // Gold with some transparency
-        break;
-    }
-
-    if (barId) {
-      const barContainer = this.uiElements.get(barId); // Get the container element for the bar
-      if (barContainer) {
-        // Find the inner div that actually shows the progress
-        const innerBar = barContainer.querySelector('div') as HTMLDivElement;
-        if (innerBar) {
-            // Clamp progress between 0 and 1
-            const clampedProgress = Math.max(0, Math.min(1, progress));
-            // Set the width of the inner bar based on progress
-            innerBar.style.width = `${clampedProgress * 100}%`;
-            // Set the color of the inner bar
-            innerBar.style.backgroundColor = barColor;
-        } else {
-             logger.warn(`Inner cooldown bar element not found within container: ${barId}`);
+        // Find canvas and initialize factory
+        this.gameCanvas = document.querySelector('canvas');
+        if (!this.gameCanvas) {
+            logger.error('Canvas element not found for HtmlUI initialization');
+            return; // Cannot proceed without canvas
         }
-      } else {
-        // This might happen briefly during resize/recreation
-        // logger.warn(`Cooldown bar container element not found for ID: ${barId}`);
-      }
-    }
-  }
+        this.factory = new HtmlUIFactory(this.gameCanvas);
 
-  /**
-   * Shows the pause indicator element.
-   */
-  public showPauseIndicator(): void {
-    const element = this.uiElements.get('pauseIndicator');
-    if (element) {
-      element.style.display = 'block';
-    } else {
-      logger.error(`HtmlUI: Element 'pauseIndicator' NOT FOUND in map when calling showPauseIndicator! Map size: ${this.uiElements.size}`);
-    }
-  }
+        // Create initial UI elements using the factory
+        this.recreateUIElements();
 
-  /**
-   * Hides the pause indicator element.
-   */
-  public hidePauseIndicator(): void {
-    const element = this.uiElements.get('pauseIndicator');
-    if (element) {
-      element.style.display = 'none';
-    } else {
-      logger.warn(`HtmlUI: Element 'pauseIndicator' NOT FOUND in map when calling hidePauseIndicator! Map size: ${this.uiElements.size}`);
+        // Add window resize listener
+        window.addEventListener('resize', this.handleResize.bind(this));
+        
+        // Listen for canvas resize events
+        eventBus.on('CANVAS_RESIZED', this.handleCanvasResized.bind(this));
     }
-  }
 
-  /**
-   * Destroy all UI elements and the container
-   */
-  public destroy(): void {
-    // Remove resize listener
-    // Ensure the bound function reference is the same for removal
-    const boundHandleResize = this.handleResize.bind(this);
-    window.removeEventListener('resize', boundHandleResize);
-
-    if (document.body.contains(this.container)) {
-      document.body.removeChild(this.container);
+    /**
+     * Handle window resize to reposition elements.
+     */
+    private handleResize(): void {
+        if (this.factory) {
+            // Use the factory's handleCanvasResize method to reposition elements
+            this.factory.handleCanvasResize();
+        }
+        
+        // Reposition weapon buttons
+        this.positionWeaponButtons();
     }
-    this.uiElements.clear();
-  }
+    
+    /**
+     * Handle canvas resize events from the game
+     */
+    private handleCanvasResized(data: { width: number, height: number }): void {
+        if (this.factory) {
+            // Use the factory's handleCanvasResize method to reposition elements
+            this.factory.handleCanvasResize();
+        }
+        
+        // Reposition weapon buttons
+        this.positionWeaponButtons();
+    }
+
+    /**
+     * Clears existing elements and recreates them using the factory.
+     * Also re-appends them to the container.
+     */
+    private recreateUIElements(): void {
+        if (!this.factory) return;
+
+        // Clear existing elements from DOM and maps
+        this.container.innerHTML = '';
+        this.uiElements.clear();
+        this.cooldownBars.clear();
+
+        // Use factory to create all elements
+        const { elements, cooldownBars } = this.factory.createAllElements();
+        this.uiElements = elements;
+        this.cooldownBars = cooldownBars;
+
+        // Create a separate container for weapon buttons
+        this.createWeaponButtonContainer();
+
+        // Append other UI elements to the container
+        this.uiElements.forEach((element, id) => {
+            // Skip weapon buttons - they go in their own container
+            if (id === 'weaponButton1' || id === 'weaponButton2' || id === 'weaponButton3') {
+                return;
+            }
+            
+            this.container.appendChild(element);
+        });
+
+        // Ensure pause indicator is hidden initially after creation/recreation
+        this.hidePauseIndicator();
+    }
+    
+    /**
+     * Creates a fixed container for weapon buttons at the bottom of the canvas
+     */
+    private createWeaponButtonContainer(): void {
+        if (!this.gameCanvas) return;
+        
+        // Remove existing container if any
+        if (this.weaponButtonContainer && document.body.contains(this.weaponButtonContainer)) {
+            document.body.removeChild(this.weaponButtonContainer);
+        }
+        
+        // Create new container
+        this.weaponButtonContainer = document.createElement('div');
+        this.weaponButtonContainer.id = 'weaponButtonContainer';
+        this.weaponButtonContainer.style.position = 'fixed';
+        this.weaponButtonContainer.style.display = 'flex';
+        this.weaponButtonContainer.style.flexDirection = 'row';
+        this.weaponButtonContainer.style.justifyContent = 'center';
+        this.weaponButtonContainer.style.gap = '10px';
+        this.weaponButtonContainer.style.zIndex = '999';
+        this.weaponButtonContainer.style.pointerEvents = 'auto';
+        
+        // Add weapon buttons to container
+        const weaponButtons = [
+            this.uiElements.get('weaponButton1'),
+            this.uiElements.get('weaponButton2'),
+            this.uiElements.get('weaponButton3')
+        ];
+        
+        weaponButtons.forEach(button => {
+            if (button) {
+                this.weaponButtonContainer!.appendChild(button);
+            }
+        });
+        
+        // Add to document and position
+        document.body.appendChild(this.weaponButtonContainer);
+        this.positionWeaponButtons();
+    }
+    
+    /**
+     * Position the weapon buttons at the bottom of the canvas
+     */
+    private positionWeaponButtons(): void {
+        if (!this.gameCanvas || !this.weaponButtonContainer) return;
+        
+        const canvasRect = this.gameCanvas.getBoundingClientRect();
+        
+        // Position at the very bottom of the canvas with a small margin
+        const bottomOffset = 20; // Fixed 20px from bottom
+        
+        // Position relative to canvas
+        this.weaponButtonContainer.style.bottom = `${bottomOffset}px`;
+        this.weaponButtonContainer.style.left = `${canvasRect.left + (canvasRect.width / 2)}px`;
+        this.weaponButtonContainer.style.transform = 'translateX(-50%)';
+        
+        logger.debug(`Positioned weapon buttons at ${bottomOffset}px from bottom`);
+    }
+
+    // --- Public Update Methods (Delegating to UIComponents) ---
+
+    public updateCurrency(amount: number): void {
+        UIComponents.updateCurrency(this.uiElements, amount);
+    }
+
+    public updateHealth(health: number): void {
+        UIComponents.updateHealth(this.uiElements, health);
+    }
+
+    public updateScore(score: number): void {
+        UIComponents.updateScore(this.uiElements, score);
+    }
+
+    public updateWave(wave: number): void {
+        UIComponents.updateWave(this.uiElements, wave);
+    }
+
+    // This method is now redundant as level info is shown in the buttons
+    // Keeping it for backward compatibility but it won't be used
+    public updateWeaponStatus(weaponId: string, level: number): void {
+        // No-op - we're not using the separate weapon status display anymore
+    }
+    
+    /**
+     * Updates the level and upgrade cost display for all weapon buttons.
+     */
+    public updateWeaponLevels(levels: {[weaponId: string]: number}, costs: {[weaponId: string]: number | null} = {}): void {
+        UIComponents.updateWeaponLevels(this.uiElements, levels, costs);
+    }
+
+    /**
+     * This method is kept for backward compatibility but is now a no-op.
+     * Upgrade costs are now displayed directly in the weapon buttons.
+     */
+    public updateWeaponUpgradeCost(cost: number | null): void {
+        // No-op - costs are now displayed in the weapon buttons
+    }
+
+    public updateWeaponButtons(activeWeaponId: string): void {
+        UIComponents.updateWeaponButtons(this.uiElements, activeWeaponId);
+    }
+
+    public updateWeaponCooldown(weaponId: string, progress: number): void {
+        UIComponents.updateWeaponCooldown(this.cooldownBars, weaponId, progress);
+    }
+
+    public showPauseIndicator(): void {
+        UIComponents.showPauseIndicator(this.uiElements);
+    }
+
+    public hidePauseIndicator(): void {
+        UIComponents.hidePauseIndicator(this.uiElements);
+    }
+
+    /**
+     * Destroy all UI elements and the container, remove listeners.
+     */
+    public destroy(): void {
+        window.removeEventListener('resize', this.handleResize.bind(this));
+        eventBus.off('CANVAS_RESIZED', this.handleCanvasResized.bind(this));
+
+        // Remove the main container
+        if (document.body.contains(this.container)) {
+            document.body.removeChild(this.container);
+        }
+        
+        // Remove weapon button container
+        if (this.weaponButtonContainer && document.body.contains(this.weaponButtonContainer)) {
+            document.body.removeChild(this.weaponButtonContainer);
+        }
+        
+        this.uiElements.clear();
+        this.cooldownBars.clear();
+        this.gameCanvas = null;
+        this.factory = null; // Release factory reference
+        logger.log('HtmlUI destroyed.');
+    }
 }
 
-export default HtmlUI; // Keep default export
+// Export as default for backward compatibility
+export default HtmlUI;

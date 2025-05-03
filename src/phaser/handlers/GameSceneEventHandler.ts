@@ -36,7 +36,7 @@ export class GameSceneEventHandler {
   private enemySpawnerTimerRef?: Phaser.Time.TimerEvent;
   private scene: Phaser.Scene;
   private powerupGroup: Phaser.GameObjects.Group;
-  private powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite>;
+  private powerupSprites: Map<string, Phaser.Physics.Arcade.Sprite>; // Changed key to string
   private projectileShapes: Map<string, ProjectileShape>;
   // Declare enemySprites as a private property
   private enemySprites: Map<string, EnemyEntity>;
@@ -49,7 +49,7 @@ export class GameSceneEventHandler {
     powerupGroup: Phaser.GameObjects.Group, // Add powerup group param
     enemySprites: Map<string, EnemyEntity>, // Add enemySprites map param
     projectileShapes: Map<string, ProjectileShape>,
-    powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite> // Add powerup sprites map param
+    powerupSprites: Map<string, Phaser.Physics.Arcade.Sprite> // Changed key to string
   ) {
     this.scene = scene; // Store scene reference
     // Store references needed by handlers

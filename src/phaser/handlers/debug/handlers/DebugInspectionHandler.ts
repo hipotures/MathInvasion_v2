@@ -106,8 +106,8 @@ export class DebugInspectionHandler {
     this.inspectedObject = { id: objectId, type: objectType, gameObject: gameObject };
 
     // Get raw details object from the inspector
-    // Pass the gameObject directly to the inspector method
-    const rawData = this.debugObjectInspector.getObjectDetails(gameObject);
+    // Pass the gameObject directly and the current time (Date.now())
+    const rawData = this.debugObjectInspector.getObjectDetails(gameObject, Date.now());
 
     // Emit event with the raw data object for the panel
     if (rawData) {

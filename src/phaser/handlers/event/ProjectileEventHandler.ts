@@ -73,78 +73,141 @@ export class ProjectileEventHandler {
 
   // Update parameter type to use the new interface
   public handleProjectileCreated(data: ProjectileCreatedEventData): void {
+    logger.debug(`ProjectileEventHandler: Creating projectile ID ${data.id} of type ${data.type} at position (${data.x}, ${data.y})`);
+    logger.debug(`ProjectileEventHandler: Projectile visual properties - shape: ${data.visualShape}, color: ${data.visualColor}, dimensions: ${data.visualWidth}x${data.visualHeight}`);
+    
     let projectileShape: ProjectileShape;
     const color = Phaser.Display.Color.HexStringToColor(data.visualColor).color; // Parse hex string
+
+    // Apply scaling factor to make projectiles visible at current resolution
+    // Reverted back to 1.0 as requested after fixing visibility issues
+    const projectileScaleFactor = 1.0; // Normal size
+    
+    // Calculate scaled dimensions
+    const scaledWidth = data.visualWidth * projectileScaleFactor;
+    const scaledHeight = data.visualHeight * projectileScaleFactor;
+    
+    logger.debug(`ProjectileEventHandler: Using scaled dimensions: ${scaledWidth}x${scaledHeight} (scale factor: ${projectileScaleFactor})`);
 
     // Create shape based on config and projectile type
     const isLaser = data.type.includes('laser') || data.type.includes('beam');
     const isBullet = data.type.includes('bullet');
 
-    if (isLaser) {
-      // Rectangle for lasers/beams
-      projectileShape = this.scene.add.rectangle(
-        data.x,
-        data.y,
-        data.visualWidth,
-        data.visualHeight,
-        color
-      ) as ProjectileShape;
-    } else if (isBullet || data.visualShape === 'ellipse') {
-      // Circle for bullets or explicitly ellipse shapes
-      // Use half of the largest dimension as radius for the circle
-      const radius = Math.max(data.visualWidth, data.visualHeight) / 2;
-      projectileShape = this.scene.add.circle(
-        data.x,
-        data.y,
-        radius,
-        color
-      ) as ProjectileShape;
-    } else {
-      // Default to rectangle for other shapes
-      projectileShape = this.scene.add.rectangle(
-        data.x,
-        data.y,
-        data.visualWidth,
-        data.visualHeight,
-        color
-      ) as ProjectileShape;
+    try {
+      if (isLaser) {
+        // Rectangle for lasers/beams
+        projectileShape = this.scene.add.rectangle(
+          data.x,
+          data.y,
+          scaledWidth,
+          scaledHeight,
+          color
+        ) as ProjectileShape;
+        
+        logger.debug(`ProjectileEventHandler: Created laser projectile with dimensions: ${scaledWidth}x${scaledHeight}`);
+      } else if (isBullet || data.visualShape === 'ellipse') {
+        // Circle for bullets or explicitly ellipse shapes
+        // Use half of the largest dimension as radius for the circle
+        const scaledRadius = Math.max(scaledWidth, scaledHeight) / 2;
+        projectileShape = this.scene.add.circle(
+          data.x,
+          data.y,
+          scaledRadius,
+          color
+        ) as ProjectileShape;
+        
+        logger.debug(`ProjectileEventHandler: Created bullet projectile with radius: ${scaledRadius}`);
+      } else {
+        // Default to rectangle for other shapes
+        projectileShape = this.scene.add.rectangle(
+          data.x,
+          data.y,
+          scaledWidth,
+          scaledHeight,
+          color
+        ) as ProjectileShape;
+        
+        logger.debug(`ProjectileEventHandler: Created default rectangle projectile with dimensions: ${scaledWidth}x${scaledHeight}`);
+      }
+      
+      // Verify the shape was created
+      if (!projectileShape) {
+        logger.error(`ProjectileEventHandler: Failed to create projectile shape for ID ${data.id}`);
+        return;
+      }
+      
+      logger.debug(`ProjectileEventHandler: Shape created successfully at (${projectileShape.x}, ${projectileShape.y})`);
+    } catch (error) {
+      logger.error(`ProjectileEventHandler: Error creating projectile shape: ${error}`);
+      return;
     }
 
-    // Enable physics
-    this.physics.add.existing(projectileShape);
+    try {
+      // Enable physics
+      logger.debug(`ProjectileEventHandler: Adding physics to projectile ${data.id}`);
+      this.physics.add.existing(projectileShape);
+      
+      if (!projectileShape.body) {
+        logger.error(`ProjectileEventHandler: Failed to create physics body for projectile ${data.id}`);
+        return;
+      }
+      
+      logger.debug(`ProjectileEventHandler: Physics body created successfully`);
 
-    // Set appropriate collision shape based on type
-    const body = projectileShape.body as Phaser.Physics.Arcade.Body;
-    if (isBullet || data.visualShape === 'ellipse') {
-      // Set circular collision body for bullets/ellipses
-      const radius = Math.max(data.visualWidth, data.visualHeight) / 2;
-      // Align collision circle with the visual shape
-      body.setCircle(
-        radius,
-        -radius + projectileShape.width / 2, // X offset
-        -radius + projectileShape.height / 2 // Y offset
-      );
-    }
-    // Rectangular bodies are the default, no need to explicitly set for lasers/rectangles
+      // Set appropriate collision shape based on type
+      const body = projectileShape.body as Phaser.Physics.Arcade.Body;
+      if (isBullet || data.visualShape === 'ellipse') {
+        // Set circular collision body for bullets/ellipses
+        const scaledRadius = Math.max(scaledWidth, scaledHeight) / 2;
+        // Align collision circle with the visual shape
+        body.setCircle(
+          scaledRadius,
+          -scaledRadius + projectileShape.width / 2, // X offset
+          -scaledRadius + projectileShape.height / 2 // Y offset
+        );
+        logger.debug(`ProjectileEventHandler: Set circular collision body with radius ${scaledRadius}`);
+      } else {
+        logger.debug(`ProjectileEventHandler: Using default rectangular collision body`);
+      }
+      // Rectangular bodies are the default, no need to explicitly set for lasers/rectangles
 
-    // Add to group and map
-    this.projectileGroup.add(projectileShape);
-    this.projectileShapes.set(data.id, projectileShape);
-    // Store instanceId, type, and owner on the shape itself for easy retrieval
-    projectileShape.setData('instanceId', data.id);
-    projectileShape.setData('objectType', 'projectile');
-    projectileShape.setData('owner', data.owner); // Store owner for collision checks
-    projectileShape.setName(data.id); // Also set name for potential map key check
+      // Add to group and map
+      logger.debug(`ProjectileEventHandler: Adding projectile to group and map`);
+      this.projectileGroup.add(projectileShape);
+      this.projectileShapes.set(data.id, projectileShape);
+      
+      // Store instanceId, type, and owner on the shape itself for easy retrieval
+      projectileShape.setData('instanceId', data.id);
+      projectileShape.setData('objectType', 'projectile');
+      projectileShape.setData('owner', data.owner); // Store owner for collision checks
+      projectileShape.setName(data.id); // Also set name for potential map key check
 
-    // Set initial visibility based on debug mode
-    projectileShape.setVisible(!debugState.isDebugMode);
+      // Always show projectiles, even in debug mode
+      projectileShape.setVisible(true);
+      logger.debug(`ProjectileEventHandler: Set projectile visibility to true`);
+      
+      // Set depth to ensure projectiles render above other game elements
+      projectileShape.setDepth(20); // Increased depth to ensure visibility
+      logger.debug(`ProjectileEventHandler: Set projectile depth to 20`);
 
-    // Apply initial velocity - Ensure body exists before setting velocity
-    if (projectileShape.body) {
-      // No need to cast here as physics.add.existing guarantees an Arcade Body
-      projectileShape.body.setVelocity(data.velocityX, data.velocityY);
-    } else {
-      logger.error(`Failed to get physics body for projectile shape: ID ${data.id}`);
+      // Apply initial velocity - Ensure body exists before setting velocity
+      if (projectileShape.body) {
+        // No need to cast here as physics.add.existing guarantees an Arcade Body
+        projectileShape.body.setVelocity(data.velocityX, data.velocityY);
+        logger.debug(`ProjectileEventHandler: Set projectile velocity to (${data.velocityX}, ${data.velocityY})`);
+      } else {
+        logger.error(`ProjectileEventHandler: Failed to get physics body for projectile shape: ID ${data.id}`);
+      }
+      
+      // Log final state of projectile
+      logger.debug(`ProjectileEventHandler: Projectile ${data.id} creation complete. Position: (${projectileShape.x}, ${projectileShape.y}), Visible: ${projectileShape.visible}, Active: ${projectileShape.active}`);
+      
+      // Check if projectile is in the group
+      logger.debug(`ProjectileEventHandler: Projectile group size: ${this.projectileGroup.getLength()}`);
+      logger.debug(`ProjectileEventHandler: Projectile map size: ${this.projectileShapes.size}`);
+      
+    } catch (error) {
+      logger.error(`ProjectileEventHandler: Error during projectile physics/group setup: ${error}`);
     }
   }
 
@@ -167,8 +230,17 @@ export class ProjectileEventHandler {
     damage: number;
     projectileSpeed: number;
   }): void {
-    if (!this.playerSprite?.active) return;
+    if (!this.playerSprite?.active) {
+      logger.warn(`ProjectileEventHandler: Player sprite not active, cannot fire weapon`);
+      return;
+    }
     const { weaponConfig, damage, projectileSpeed } = data;
+
+    // Add detailed logging for all weapon types
+    logger.debug(`ProjectileEventHandler: Handling fire request for weapon: ${weaponConfig.id}`);
+    logger.debug(`ProjectileEventHandler: Weapon details - damage: ${damage}, projectileSpeed: ${projectileSpeed}`);
+    logger.debug(`ProjectileEventHandler: Projectile type: ${weaponConfig.projectileType}`);
+    logger.debug(`ProjectileEventHandler: Player position: (${this.playerSprite.x}, ${this.playerSprite.y})`);
 
     // Check if it's the slow_field weapon by ID
     if (weaponConfig.id === 'slow_field') {
@@ -202,17 +274,35 @@ export class ProjectileEventHandler {
       // It's a standard projectile weapon
       const spawnPoint = this.playerSprite.getTopCenter();
       const velocityY = -projectileSpeed; // projectileSpeed is now guaranteed non-zero (due to WeaponManager workaround)
+      
+      logger.debug(`ProjectileEventHandler: Creating player projectile at (${spawnPoint.x}, ${spawnPoint.y}) with velocity ${velocityY}`);
+      logger.debug(`ProjectileEventHandler: Player sprite position: (${this.playerSprite.x}, ${this.playerSprite.y}), width: ${this.playerSprite.width}, height: ${this.playerSprite.height}`);
+      logger.debug(`ProjectileEventHandler: Player sprite scale: ${this.playerSprite.scaleX}x${this.playerSprite.scaleY}`);
+      logger.debug(`ProjectileEventHandler: Player sprite origin: (${this.playerSprite.originX}, ${this.playerSprite.originY})`);
+      
+      // Try using a fixed position above the player instead of getTopCenter()
+      const fixedX = this.playerSprite.x;
+      const fixedY = this.playerSprite.y - (this.playerSprite.height * this.playerSprite.scaleY) / 2;
+      logger.debug(`ProjectileEventHandler: Fixed spawn position: (${fixedX}, ${fixedY})`);
+      
       const spawnData: SpawnProjectileData = {
         type: weaponConfig.projectileType,
-        x: spawnPoint.x,
-        y: spawnPoint.y,
+        x: fixedX, // Use fixed position instead of spawnPoint.x
+        y: fixedY, // Use fixed position instead of spawnPoint.y
         velocityX: 0, // Player projectiles always fire straight up for now
         velocityY: velocityY,
         damage: damage,
         owner: 'player',
         weaponConfig: weaponConfig, // Pass weapon config for visual properties
       };
-      eventBus.emit(Events.SPAWN_PROJECTILE, spawnData);
+      
+      logger.debug(`ProjectileEventHandler: Emitting SPAWN_PROJECTILE event with type: ${spawnData.type}`);
+      try {
+        eventBus.emit(Events.SPAWN_PROJECTILE, spawnData);
+        logger.debug(`ProjectileEventHandler: SPAWN_PROJECTILE event emitted successfully`);
+      } catch (error) {
+        logger.error(`ProjectileEventHandler: Error emitting SPAWN_PROJECTILE event: ${error}`);
+      }
     }
   }
 

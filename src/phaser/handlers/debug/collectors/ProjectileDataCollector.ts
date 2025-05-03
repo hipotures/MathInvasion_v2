@@ -16,11 +16,12 @@ export class ProjectileDataCollector implements DataCollector<ActiveObjectData[]
 
   /**
    * Collects debug data for all active projectiles
+   * @param currentTime The current timestamp (potentially frozen during pause) to use for age calculation.
    * @returns Array of projectile debug data
    */
-  public collectData(): ActiveObjectData[] {
+  public collectData(currentTime: number): ActiveObjectData[] {
     const projectileData: ActiveObjectData[] = [];
-    const now = Date.now();
+    // Use the provided currentTime for age calculation
 
     this.projectileShapes.forEach((projectile, id) => {
       // ProjectileShape might be Graphics or Sprite, handle accordingly
@@ -33,8 +34,8 @@ export class ProjectileDataCollector implements DataCollector<ActiveObjectData[]
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((projectile as any).active) {
-        const creationTime = this.projectileManager.getProjectileCreationTime(id as string) ?? now; // Assuming id is string here
-        const age = Math.floor((now - creationTime) / 1000);
+        const creationTime = this.projectileManager.getProjectileCreationTime(id as string) ?? currentTime; // Assuming id is string here
+        const age = Math.floor((currentTime - creationTime) / 1000);
 
         projectileData.push({
           ID: id,

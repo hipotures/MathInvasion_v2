@@ -124,6 +124,8 @@ export class EnemyEventHandler {
           owner: 'enemy',
           radius: deathBombAbility.radius ?? 50,
           timeToExplodeMs: deathBombAbility.timeToExplodeMs ?? 500,
+          // Add the missing config - pass the ability object itself
+          enemyShootConfig: deathBombAbility
         });
       }
 

@@ -34,7 +34,7 @@ export interface GameObjects {
   powerupGroup: Phaser.GameObjects.Group;
   enemySprites: Map<string, EnemyEntity>;
   projectileShapes: Map<string, ProjectileShape>;
-  powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite>;
+  powerupSprites: Map<string, Phaser.Physics.Arcade.Sprite>; // Changed key to string
 }
 
 /**
@@ -80,4 +80,22 @@ export interface SpawnerConfig {
     width: number;
     height: number;
   };
+}
+/**
+ * Interface for all game-specific handlers
+ */
+export interface GameHandlers {
+  collisionHandler: import('../../handlers/GameSceneCollisionHandler').GameSceneCollisionHandler;
+  eventHandler: import('../../handlers/GameSceneEventHandler').GameSceneEventHandler;
+  areaEffectHandler: import('../../handlers/GameSceneAreaEffectHandler').GameSceneAreaEffectHandler;
+  debugHandler: import('../../handlers/GameSceneDebugHandler').GameSceneDebugHandler;
+}
+
+/**
+ * Interface for core scene components (event manager, collision manager, spawner)
+ */
+export interface GameComponents {
+  eventManager: import('../components/GameSceneEventManager').GameSceneEventManager;
+  collisionManager: import('../components/GameSceneCollisionManager').GameSceneCollisionManager;
+  spawner: import('../components/GameSceneSpawner').GameSceneSpawner;
 }

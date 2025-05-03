@@ -14,22 +14,26 @@ export class PowerupInspector {
    * @param id The unique ID of the powerup instance
    * @param powerupSprite The powerup sprite to inspect
    * @param configId The config ID of the powerup
+   * @param currentTime The current timestamp (potentially frozen during pause) to use for age calculation.
    * @returns Powerup inspection data or null if data cannot be retrieved
    */
   // Return a simple key-value object instead of the structured PowerupInspectionData
   public getPowerupDetails(
     id: string,
     powerupSprite: Phaser.Physics.Arcade.Sprite,
-    configId: string // Config ID from sprite data
+    configId: string, // Config ID from sprite data
+    currentTime: number
   ): { [key: string]: any } | null {
-    const numericId = parseInt(id, 10); // ID is still numeric for the manager map
-    if (isNaN(numericId)) {
-      Logger.warn(`Invalid powerup ID for inspection: ${id}`);
-      return null;
-    }
+    // No longer need to extract numeric part, PowerupManager now uses string ID 'powerup_X'
+    // const numericPart = id.startsWith('powerup_') ? id.substring(8) : id;
+    // const numericId = parseInt(numericPart, 10);
+    // if (isNaN(numericId)) {
+    //   Logger.warn(`Invalid powerup ID for inspection (could not parse number): ${id}`);
+    //   return null;
+    // }
 
-    // Attempt to get state, but don't fail entirely if missing (might have been collected)
-    const powerupState = this.powerupManager.getPowerupState(numericId);
+    // Attempt to get state using the string ID 'powerup_X'
+    const powerupState = this.powerupManager.getPowerupState(id); // Pass the string ID directly
     const body = powerupSprite.body as Phaser.Physics.Arcade.Body | null;
 
     // Use config from manager state if available, otherwise use configId passed from sprite data
@@ -86,7 +90,7 @@ export class PowerupInspector {
 
     // --- Manager State Properties (Only if state exists) ---
     if (powerupState) {
-        details.AgeSeconds = this.calculateAge(powerupState.creationTime);
+        details.AgeSeconds = this.calculateAge(powerupState.creationTime, currentTime); // Pass currentTime
     } else {
         details.ManagerState = 'Not Found (Collected?)';
     }
@@ -113,12 +117,14 @@ export class PowerupInspector {
   }
 
   /**
-   * Calculates the age of an entity based on its creation time
+   * Calculates the age of an entity based on its creation time and the provided current time
    * @param creationTime The creation time of the entity
+   * @param currentTime The current timestamp (potentially frozen during pause)
    * @returns The age as a string, or 'N/A' if creation time is undefined
    */
-  private calculateAge(creationTime?: number): string {
+  private calculateAge(creationTime: number | undefined, currentTime: number): string {
     if (creationTime === undefined) return 'N/A';
-    return ((Date.now() - creationTime) / 1000).toFixed(1);
+    // Use currentTime instead of Date.now()
+    return ((currentTime - creationTime) / 1000).toFixed(1);
   }
 }

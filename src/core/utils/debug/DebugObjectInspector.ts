@@ -32,7 +32,7 @@ export class DebugObjectInspector {
   private projectileInspector: ProjectileInspector;
   private powerupInspector: PowerupInspector;
   private dataFormatter: DebugDataFormatter;
-  private powerupSpritesRef: Map<number, Phaser.Physics.Arcade.Sprite>; // Add reference
+  private powerupSpritesRef: Map<string, Phaser.Physics.Arcade.Sprite>; // Changed key to string
 
   constructor(
     private playerManager: PlayerManager,
@@ -41,7 +41,7 @@ export class DebugObjectInspector {
     private projectileManager: ProjectileManager,
     private powerupManager: PowerupManager,
     private economyManager: EconomyManager, // EconomyManager might not be needed directly here, but good to have access
-    powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite> // Inject the map
+    powerupSprites: Map<string, Phaser.Physics.Arcade.Sprite> // Changed key to string
   ) {
     Logger.log('DebugObjectInspector initialized');
     this.powerupSpritesRef = powerupSprites; // Store the reference
@@ -57,10 +57,11 @@ export class DebugObjectInspector {
   /**
    * Fetches the raw details for a specific game object.
    * @param gameObject The Phaser GameObject to inspect.
+   * @param currentTime The current timestamp (potentially frozen during pause) to use for age calculation.
    * @returns A flat object containing the details, or a minimal error object if identification fails.
    */
   // Use 'unknown' instead of 'any' for the return type's value, or define a more specific interface/union if possible
-  public getObjectDetails(gameObject: Phaser.GameObjects.GameObject): { [key: string]: unknown } | null {
+  public getObjectDetails(gameObject: Phaser.GameObjects.GameObject, currentTime: number): { [key: string]: unknown } | null {
     // Determine objectId and objectType from the gameObject
     let objectId: string | null = null;
     let objectType: 'player' | 'enemy' | 'projectile' | 'powerup' | null = null;
@@ -85,7 +86,7 @@ export class DebugObjectInspector {
         const instanceIdFromData = gameObject.getData('instanceId');
         const objectTypeFromData = gameObject.getData('objectType');
         let isPowerup = false;
-        let powerupInstanceId: number | undefined;
+        let powerupInstanceId: string | undefined; // Changed type to string | undefined
 
         // Primary check: Is it in the powerupSprites map?
         for (const [id, sprite] of this.powerupSpritesRef.entries()) {
@@ -98,11 +99,14 @@ export class DebugObjectInspector {
 
         // Fallback check: Use getData if not found in map (or if map isn't populated yet)
         if (!isPowerup && objectTypeFromData === 'powerup' && instanceIdFromData !== undefined) {
-             isPowerup = true;
-             powerupInstanceId = Number(instanceIdFromData); // Convert if needed
+             const numericId = Number(instanceIdFromData); // Get the numeric ID from data
+             if (!isNaN(numericId)) {
+                 isPowerup = true;
+                 powerupInstanceId = `powerup_${numericId}`; // Create the string ID
+             }
         }
 
-        if (isPowerup && powerupInstanceId !== undefined) {
+        if (isPowerup && powerupInstanceId !== undefined) { // powerupInstanceId is now string 'powerup_X'
             // Check if the sprite is being destroyed (scene becomes undefined during destruction)
             if (!gameObject.scene) {
                 Logger.debug(`Powerup sprite ${powerupInstanceId} is being destroyed. Returning status.`);
@@ -113,7 +117,7 @@ export class DebugObjectInspector {
                     Message: 'This powerup no longer exists in the game world'
                 };
             }
-            objectId = String(powerupInstanceId); // Use ID from map or data
+            objectId = powerupInstanceId; // Already a string 'powerup_X'
             objectType = 'powerup';
             // Try to get configId from data, might be undefined initially
             specificData = { configId: gameObject.getData('configId') };
@@ -138,27 +142,29 @@ export class DebugObjectInspector {
     try {
       switch (objectType) {
         case 'player':
-          // Pass the player sprite (assuming gameObject is the player sprite)
-          data = this.playerInspector.getPlayerDetails(gameObject as Phaser.Physics.Arcade.Sprite);
+          // Pass the player sprite and currentTime
+          data = this.playerInspector.getPlayerDetails(gameObject as Phaser.Physics.Arcade.Sprite, currentTime);
           break;
         case 'enemy':
-          // Pass the EnemyEntity instance
-          data = this.enemyInspector.getEnemyDetails(objectId, gameObject as EnemyEntity);
+          // Pass the EnemyEntity instance and currentTime
+          data = this.enemyInspector.getEnemyDetails(objectId, gameObject as EnemyEntity, currentTime);
           break;
         case 'projectile':
-          // Pass the ProjectileShape instance
+          // Pass the ProjectileShape instance and currentTime
           data = this.projectileInspector.getProjectileDetails(
             objectId,
             gameObject as ProjectileShape,
-            specificData.projectileType ?? 'unknown' // Provide fallback
+            specificData.projectileType ?? 'unknown', // Provide fallback
+            currentTime
           );
           break;
         case 'powerup':
-          // Pass the powerup sprite instance
+          // Pass the powerup sprite instance and currentTime
           data = this.powerupInspector.getPowerupDetails(
             objectId,
             gameObject as Phaser.Physics.Arcade.Sprite,
-            specificData.configId ?? 'unknown' // Provide fallback
+            specificData.configId ?? 'unknown', // Provide fallback
+            currentTime
           );
           break;
       }

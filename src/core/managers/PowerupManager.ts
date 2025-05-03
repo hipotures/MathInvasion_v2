@@ -11,7 +11,7 @@ export interface RequestSpawnPowerupData {
 }
 
 export interface PowerupSpawnedData {
-  instanceId: number;
+  instanceId: string; // Changed to string
   configId: string;
   x: number;
   y: number;
@@ -19,12 +19,12 @@ export interface PowerupSpawnedData {
 }
 
 export interface PowerupCollectedData {
-  instanceId: number;
+  instanceId: string; // Changed to string
 }
 
 // Interface for the new event payload
 export interface PowerupOutOfBoundsData {
-  instanceId: number;
+  instanceId: string; // Changed to string
 }
 
 export interface PowerupEffectData {
@@ -41,7 +41,7 @@ interface ActivePowerupEffect {
 }
 
 interface SpawnedPowerupInstance {
-  instanceId: number;
+  instanceId: string; // Changed to string
   config: PowerupConfig;
   x: number;
   y: number;
@@ -52,9 +52,9 @@ export class PowerupManager {
   private eventBus: EventBus;
   private logger: Logger;
   private powerupsConfig: PowerupsConfig;
-  private spawnedPowerups: Map<number, SpawnedPowerupInstance> = new Map();
+  private spawnedPowerups: Map<string, SpawnedPowerupInstance> = new Map(); // Changed key to string
   private activeEffects: Map<string, ActivePowerupEffect> = new Map(); // Keyed by effect type
-  private nextInstanceId = 0;
+  private nextNumericInstanceId = 0; // Renamed for clarity
 
   constructor(eventBus: EventBus, logger: Logger, powerupsConfig: PowerupsConfig) {
     this.eventBus = eventBus;
@@ -116,9 +116,10 @@ export class PowerupManager {
 
     // Ensure a config was actually selected (should always happen if config exists)
     if (selectedPowerupConfig) {
-      const instanceId = this.nextInstanceId++;
+      const numericId = this.nextNumericInstanceId++;
+      const instanceId = `powerup_${numericId}`; // Create string ID
       const spawnedInstance: SpawnedPowerupInstance = {
-        instanceId,
+        instanceId, // Use string ID
         config: selectedPowerupConfig,
         x: data.x,
         y: data.y,
@@ -143,6 +144,7 @@ export class PowerupManager {
   }
 
   private handlePowerupCollected(data: PowerupCollectedData): void {
+    // data.instanceId is now string 'powerup_X'
     const spawnedInstance = this.spawnedPowerups.get(data.instanceId);
     // Removed diagnostic log
     if (spawnedInstance) {
@@ -157,6 +159,7 @@ export class PowerupManager {
   }
 
   private handlePowerupOutOfBounds(data: PowerupOutOfBoundsData): void { // Use specific interface
+    // data.instanceId is now string 'powerup_X'
     if (this.spawnedPowerups.has(data.instanceId)) {
       this.logger.debug(`Removing out-of-bounds powerup instance: ${data.instanceId}`);
       this.spawnedPowerups.delete(data.instanceId);
@@ -208,11 +211,13 @@ export class PowerupManager {
     }
   }
 
-  public getPowerupCreationTime(instanceId: number): number | undefined {
+  // Accept string ID 'powerup_X'
+  public getPowerupCreationTime(instanceId: string): number | undefined {
     return this.spawnedPowerups.get(instanceId)?.creationTime;
   }
 
-  public getPowerupState(instanceId: number): SpawnedPowerupInstance | undefined {
+  // Accept string ID 'powerup_X'
+  public getPowerupState(instanceId: string): SpawnedPowerupInstance | undefined {
     return this.spawnedPowerups.get(instanceId);
   }
 

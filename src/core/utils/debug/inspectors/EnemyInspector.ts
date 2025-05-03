@@ -15,10 +15,11 @@ export class EnemyInspector {
    * Gets detailed inspection data for an enemy
    * @param id The unique ID of the enemy instance
    * @param enemyEntity The enemy entity to inspect
+   * @param currentTime The current timestamp (potentially frozen during pause) to use for age calculation.
    * @returns Enemy inspection data or null if data cannot be retrieved
    */
   // Return a simple key-value object instead of the structured EnemyInspectionData
-  public getEnemyDetails(id: string, enemyEntity: EnemyEntity): { [key: string]: any } | null {
+  public getEnemyDetails(id: string, enemyEntity: EnemyEntity, currentTime: number): { [key: string]: any } | null {
     const configId = enemyEntity.configId; // Get from entity
     const health = this.enemyManager.getEnemyHealth(id); // Get from manager
     const creationTime = this.enemyManager.getEnemyCreationTime(id); // Get from manager
@@ -73,7 +74,7 @@ export class EnemyInspector {
 
       // --- Manager State Properties ---
       Health: health,
-      AgeSeconds: this.calculateAge(creationTime),
+      AgeSeconds: this.calculateAge(creationTime, currentTime), // Pass currentTime
 
       // --- Enemy Specific ---
       IsPaused: EnemyEntity.isPaused, // Access static property
@@ -109,12 +110,14 @@ export class EnemyInspector {
   }
 
   /**
-   * Calculates the age of an entity based on its creation time
+   * Calculates the age of an entity based on its creation time and the provided current time
    * @param creationTime The creation time of the entity
+   * @param currentTime The current timestamp (potentially frozen during pause)
    * @returns The age as a string, or 'N/A' if creation time is undefined
    */
-  private calculateAge(creationTime?: number): string {
+  private calculateAge(creationTime: number | undefined, currentTime: number): string {
     if (creationTime === undefined) return 'N/A';
-    return ((Date.now() - creationTime) / 1000).toFixed(1);
+    // Use currentTime instead of Date.now()
+    return ((currentTime - creationTime) / 1000).toFixed(1);
   }
 }

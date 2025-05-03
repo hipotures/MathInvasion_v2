@@ -40,8 +40,13 @@ export class GameSceneInitializer {
    * Initializes all game managers
    */
   private initializeManagers(): void {
-    // Use the initializer function
-    this.gameManagers = initializeGameManagers(eventBus, logger);
+    // Get scene dimensions
+    const sceneWidth = this.scene.cameras.main.width;
+    const sceneHeight = this.scene.cameras.main.height;
+    logger.debug(`GameSceneInitializer: Scene dimensions - ${sceneWidth}x${sceneHeight}`);
+
+    // Use the initializer function, passing scene dimensions
+    this.gameManagers = initializeGameManagers(eventBus, logger, sceneWidth, sceneHeight);
 
     // Initialize game objects container
     this.gameObjects = {
@@ -51,7 +56,7 @@ export class GameSceneInitializer {
       powerupGroup: {} as Phaser.GameObjects.Group, // Will be set in createGroups
       enemySprites: new Map<string, EnemyEntity>(),
       projectileShapes: new Map<string, ProjectileShape>(), // Use the imported type alias
-      powerupSprites: new Map<number, Phaser.Physics.Arcade.Sprite>()
+      powerupSprites: new Map<string, Phaser.Physics.Arcade.Sprite>() // Changed key to string
     };
   }
 
@@ -60,7 +65,8 @@ export class GameSceneInitializer {
    */
   private createPlayer(): void {
     const screenCenterX = this.scene.cameras.main.worldView.x + this.scene.cameras.main.width / 2;
-    const playerY = this.scene.cameras.main.height - 50;
+    // Position player higher up in portrait mode to avoid overlapping with buttons
+    const playerY = this.scene.cameras.main.height - 150;
 
     this.gameObjects.playerSprite = this.scene.physics.add.sprite(
       screenCenterX,

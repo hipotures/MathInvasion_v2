@@ -15,13 +15,15 @@ export class ProjectileInspector {
    * @param id The unique ID of the projectile
    * @param projectileShape The projectile shape to inspect
    * @param projectileType The type of the projectile
+   * @param currentTime The current timestamp (potentially frozen during pause) to use for age calculation.
    * @returns Projectile inspection data or null if data cannot be retrieved
    */
   // Return a simple key-value object instead of the structured ProjectileInspectionData
   public getProjectileDetails(
     id: string,
     projectileShape: ProjectileShape,
-    projectileType: string // Type might be redundant if stored in state
+    projectileType: string, // Type might be redundant if stored in state
+    currentTime: number
   ): { [key: string]: any } | null {
     const projectileState = this.projectileManager.getProjectileState(id); // Get manager state
     const body = projectileShape.body as Phaser.Physics.Arcade.Body | null;
@@ -71,7 +73,7 @@ export class ProjectileInspector {
       Damage: projectileState.damage,
       Radius: projectileState.radius,
       TimeToExplodeMs: projectileState.timeToExplodeMs?.toFixed(0),
-      AgeSeconds: this.calculateAge(projectileState.creationTime),
+      AgeSeconds: this.calculateAge(projectileState.creationTime, currentTime), // Pass currentTime
       
       // --- Config Properties (Placeholder) ---
       // Config is tricky here as it depends on the weapon/enemy that fired it.
@@ -85,12 +87,14 @@ export class ProjectileInspector {
   }
 
   /**
-   * Calculates the age of an entity based on its creation time
+   * Calculates the age of an entity based on its creation time and the provided current time
    * @param creationTime The creation time of the entity
+   * @param currentTime The current timestamp (potentially frozen during pause)
    * @returns The age as a string, or 'N/A' if creation time is undefined
    */
-  private calculateAge(creationTime?: number): string {
+  private calculateAge(creationTime: number | undefined, currentTime: number): string {
     if (creationTime === undefined) return 'N/A';
-    return ((Date.now() - creationTime) / 1000).toFixed(1);
+    // Use currentTime instead of Date.now()
+    return ((currentTime - creationTime) / 1000).toFixed(1);
   }
 }

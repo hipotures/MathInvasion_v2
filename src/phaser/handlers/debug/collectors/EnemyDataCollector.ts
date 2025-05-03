@@ -16,17 +16,18 @@ export class EnemyDataCollector implements DataCollector<ActiveObjectData[]> {
 
   /**
    * Collects debug data for all active enemies
+   * @param currentTime The current timestamp (potentially frozen during pause) to use for age calculation.
    * @returns Array of enemy debug data
    */
-  public collectData(): ActiveObjectData[] {
+  public collectData(currentTime: number): ActiveObjectData[] {
     const enemyData: ActiveObjectData[] = [];
-    const now = Date.now();
+    // Use the provided currentTime for age calculation
 
     this.enemySprites.forEach((enemyEntity, id) => {
       if (enemyEntity.active) {
         const health = this.enemyManager.getEnemyHealth(enemyEntity.instanceId);
-        const creationTime = this.enemyManager.getEnemyCreationTime(enemyEntity.instanceId) ?? now;
-        const age = Math.floor((now - creationTime) / 1000);
+        const creationTime = this.enemyManager.getEnemyCreationTime(enemyEntity.instanceId) ?? currentTime;
+        const age = Math.floor((currentTime - creationTime) / 1000);
 
         enemyData.push({
           ID: enemyEntity.instanceId,

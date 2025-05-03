@@ -22,12 +22,16 @@ export class HtmlDebugPanel {
     this.container.style.fontSize = '14px';
     this.container.style.padding = '10px';
     this.container.style.border = '1px solid #00ff00';
-    this.container.style.zIndex = '1000';
+    this.container.style.zIndex = '1001'; // Increased z-index
     this.container.style.display = 'none';
     this.container.style.height = 'calc(100vh - 20px)';
+    // Restore overflow
     this.container.style.overflowY = 'auto';
     this.container.style.borderRadius = '5px';
     this.container.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
+    // Use setProperty to add !important
+    // REMOVED: this.container.style.setProperty('user-select', 'text', 'important'); // Keep on children only
+    this.container.style.setProperty('pointer-events', 'auto', 'important'); // Add pointer-events
 
     // Keep the title
     const title = document.createElement('div');
@@ -40,6 +44,17 @@ export class HtmlDebugPanel {
     title.style.borderBottom = '1px solid #00ff00';
     title.style.paddingBottom = '5px';
     this.container.appendChild(title);
+
+    // --- REMOVED Event Listeners from Container for Debugging ---
+    // --- End REMOVED Container Event Listeners ---
+
+    // --- REMOVED WINDOW Mousedown Listener for Debugging ---
+    // window.addEventListener('mousedown', (e) => {
+    //     console.log(`[WINDOW Mousedown Capture] Target:`, e.target, ` | Bubbles: ${e.bubbles}`, ` | DefaultPrevented: ${e.defaultPrevented}`);
+    // }, true); // Use CAPTURE phase
+    // --- End REMOVED WINDOW Mousedown Listener ---
+
+    // --- Test Input and Button Removed ---
 
     document.body.appendChild(this.container);
 
@@ -92,10 +107,11 @@ export class HtmlDebugPanel {
    */
   private clearPanelContent(): void {
      // Remove all children except the title (first child)
-     while (this.container.children.length > 1) {
+     const numStaticElements = 1; // Title
+     while (this.container.children.length > numStaticElements) {
        this.container.removeChild(this.container.lastChild!);
      }
-     // Clear the section map as sections are removed
+     // Clear the section map as dynamic sections are removed
      this.contentSections.clear(); 
   }
 
@@ -105,24 +121,24 @@ export class HtmlDebugPanel {
    */
   private renderOverviewData(data: Record<string, any>): void {
     Object.entries(data).forEach(([category, categoryData]) => {
-      let section = this.contentSections.get(category); // Check if section exists (it shouldn't after clearPanelContent)
-      if (!section) {
-        section = this.createCategorySection(category);
-        this.contentSections.set(category, section); // Store the new section
-        this.container.appendChild(section);
-      }
-      // Section content rendering logic (similar to before)
-      this.renderSectionContent(section, category, categoryData);
+      // Create and append the header directly to the container
+      const header = this.createCategoryHeader(category); // Renamed function
+      this.container.appendChild(header);
+
+      // Render content directly into the container, passing the container itself
+      this.renderSectionContent(this.container, category, categoryData);
     });
+    // No need for contentSections map anymore with this structure
+    this.contentSections.clear();
   }
 
   /**
-   * Renders the content for a specific overview section.
-   * @param section The HTML element for the section.
+   * Renders the content for a specific overview section directly into the parent container.
+   * @param parentContainer The HTML element to append content to (main container).
    * @param category The category name.
    * @param categoryData The data for the category.
    */
-  private renderSectionContent(section: HTMLDivElement, category: string, categoryData: any): void {
+  private renderSectionContent(parentContainer: HTMLDivElement, category: string, categoryData: any): void {
      // Special handling for ActiveObjects category
       if (category === 'ActiveObjects' && typeof categoryData === 'object' && categoryData !== null) {
         const { legend, objects } = categoryData as {
@@ -139,14 +155,23 @@ export class HtmlDebugPanel {
           .map(([key, desc]) => `${key}=${desc}`)
           .join(', ');
         legendDiv.textContent = `Legend: ${legendText}`;
-        section.appendChild(legendDiv);
+        parentContainer.appendChild(legendDiv); // Append to parentContainer
 
         objects.forEach((obj) => {
           const entry = document.createElement('div');
           entry.style.marginLeft = '10px';
-          entry.style.marginBottom = '3px'; 
-          entry.style.fontSize = '13px'; 
-          entry.style.whiteSpace = 'nowrap';
+          entry.style.marginBottom = '3px';
+          entry.style.fontSize = '13px';
+          entry.style.whiteSpace = 'pre-wrap'; // Changed from 'nowrap'
+          entry.style.setProperty('user-select', 'text', 'important'); // Apply here
+          entry.style.setProperty('-webkit-user-select', 'text', 'important'); // Add vendor prefix
+          entry.style.setProperty('pointer-events', 'auto', 'important'); // Add pointer-events
+
+          // --- REMOVED Event Listeners from entry for Debugging ---
+          // entry.addEventListener('mousedown', (e) => console.log(`[DebugPanel] Mousedown on entry:`, e.target));
+          // entry.addEventListener('mousemove', (e) => console.log(`[DebugPanel] Mousemove on entry:`, e.target));
+          // entry.addEventListener('mouseup', (e) => console.log(`[DebugPanel] Mouseup on entry:`, e.target));
+          // --- End REMOVED Event Listeners ---
 
           const objectString = Object.entries(obj)
             .map(([key, value]) => {
@@ -163,7 +188,7 @@ export class HtmlDebugPanel {
             .join(' ');
 
           entry.textContent = objectString;
-          section.appendChild(entry);
+          parentContainer.appendChild(entry); // Append to parentContainer
         });
       } else if (typeof categoryData === 'object' && categoryData !== null) {
         // Generic handling for other categories (Game, Weapon)
@@ -172,6 +197,15 @@ export class HtmlDebugPanel {
           entry.style.marginLeft = '10px';
           entry.style.marginBottom = '5px';
           entry.style.fontSize = '14px';
+          entry.style.setProperty('user-select', 'text', 'important'); // Apply here
+          entry.style.setProperty('-webkit-user-select', 'text', 'important'); // Add vendor prefix
+          entry.style.setProperty('pointer-events', 'auto', 'important'); // Add pointer-events
+
+          // --- REMOVED Event Listeners from entry for Debugging ---
+          // entry.addEventListener('mousedown', (e) => console.log(`[DebugPanel] Mousedown on entry:`, e.target));
+          // entry.addEventListener('mousemove', (e) => console.log(`[DebugPanel] Mousemove on entry:`, e.target));
+          // entry.addEventListener('mouseup', (e) => console.log(`[DebugPanel] Mouseup on entry:`, e.target));
+          // --- End REMOVED Event Listeners ---
 
           let displayValue = value;
           if (typeof value === 'object' && value !== null) {
@@ -185,49 +219,60 @@ export class HtmlDebugPanel {
           }
 
           entry.textContent = `${key}: ${displayValue}`;
-          section.appendChild(entry);
+          parentContainer.appendChild(entry); // Append to parentContainer
         });
       } else {
          // Handle cases where categoryData might not be an object (though unlikely for overview)
          const entry = document.createElement('div');
          entry.textContent = `${category}: ${categoryData ?? 'N/A'}`;
-         section.appendChild(entry);
+         parentContainer.appendChild(entry); // Append to parentContainer
       }
   }
 
   /**
-   * Renders the flat inspection data.
+   * Renders the flat inspection data using a textarea for guaranteed selection support.
    * @param data The flat inspection data object.
    */
   private renderInspectionData(data: Record<string, any>): void {
-    const inspectionContainer = document.createElement('div');
-    // Use <pre> for monospace font and preserving line breaks, similar to DebugDataFormatter
-    inspectionContainer.style.fontFamily = 'monospace';
-    inspectionContainer.style.whiteSpace = 'pre';
-    inspectionContainer.style.lineHeight = '1.4';
-    inspectionContainer.style.marginTop = '10px'; // Add some space below the title
+    // Create a header to indicate inspection mode
+    const inspectionHeader = document.createElement('div');
+    inspectionHeader.textContent = "INSPECTION DATA";
+    inspectionHeader.style.color = '#ffff00';
+    inspectionHeader.style.fontWeight = 'bold';
+    inspectionHeader.style.fontSize = '16px';
+    inspectionHeader.style.marginBottom = '10px';
+    inspectionHeader.style.marginTop = '10px';
+    this.container.appendChild(inspectionHeader);
 
+    // Iterate through the flat data and create individual div elements
     for (const key in data) {
       if (Object.prototype.hasOwnProperty.call(data, key)) {
         const value = data[key];
         const entry = document.createElement('div');
-        // Format as [key: value]
-        entry.textContent = `[${key}: ${value ?? 'N/A'}]`; 
-        inspectionContainer.appendChild(entry);
+        entry.style.marginLeft = '10px';
+        entry.style.marginBottom = '5px';
+        entry.style.fontSize = '14px';
+        entry.style.whiteSpace = 'pre-wrap'; // Allow wrapping
+        entry.style.setProperty('user-select', 'text', 'important');
+        entry.style.setProperty('-webkit-user-select', 'text', 'important');
+        entry.style.setProperty('pointer-events', 'auto', 'important');
+
+        entry.textContent = `[${key}: ${value ?? 'N/A'}]`;
+        this.container.appendChild(entry);
       }
     }
-    this.container.appendChild(inspectionContainer);
   }
 
 
   /**
-   * Create a section header for a category
+   * Create a category header element (no longer creates the wrapping section).
    * @param category Category name
-   * @returns HTML element for the category section header
+   * @returns HTML element for the category header.
    */
-  private createCategorySection(category: string): HTMLDivElement {
-    const section = document.createElement('div');
-    section.style.marginBottom = '15px';
+  private createCategoryHeader(category: string): HTMLDivElement {
+    // Removed the wrapping section div creation
+    // const section = document.createElement('div');
+    // section.style.marginBottom = '15px';
 
     const header = document.createElement('div');
     header.textContent = category;
@@ -235,9 +280,10 @@ export class HtmlDebugPanel {
     header.style.fontWeight = 'bold';
     header.style.fontSize = '16px';
     header.style.marginBottom = '5px';
+    header.style.marginTop = '10px'; // Add some top margin since it's directly in container
 
-    section.appendChild(header);
-    return section;
+    // section.appendChild(header); // No longer needed
+    return header; // Return only the header
   }
 
   /**

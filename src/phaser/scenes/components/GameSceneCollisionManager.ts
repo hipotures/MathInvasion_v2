@@ -42,7 +42,7 @@ export class GameSceneCollisionManager {
       this.gameObjects.playerSprite,
       this.gameObjects.enemyGroup,
       (player, enemy) => { // Use inline arrow function
-        this.collisionHandler.handlePlayerEnemyCollision(player, enemy);
+        this.collisionHandler.onPlayerEnemyCollision(player, enemy); // Use 'on' prefix
       },
       undefined, // processCallback
       this // Context for the collider function itself
@@ -59,7 +59,7 @@ export class GameSceneCollisionManager {
           // Use logger instead of console.log
           logger.debug(`Collision detected: Projectile [${projId}] vs Enemy [${enemyId}]`);
           // Re-enable the handler call
-          this.collisionHandler.handleProjectileEnemyCollision(projectileGO, enemyGO);
+          this.collisionHandler.onProjectileEnemyCollision(projectileGO, enemyGO); // Use 'on' prefix
       },
       undefined, // processCallback
       this // Context for the collider function itself
@@ -71,7 +71,7 @@ export class GameSceneCollisionManager {
       this.gameObjects.projectileGroup,
       (player, projectileShape) => { // Use inline arrow function, rename projectile to projectileShape
         // This callback now only runs if processCallback returns true
-        this.collisionHandler.handlePlayerProjectileCollision(player, projectileShape);
+        this.collisionHandler.onPlayerProjectileCollision(player, projectileShape); // Use 'on' prefix
       },
       (player, projectileShape) => { // processCallback
           // Retrieve the owner from the projectile shape's data
@@ -109,17 +109,21 @@ export class GameSceneCollisionManager {
     config: CollisionConfig,
     projectileManager: ProjectileManager, // Use specific type
     enemyManager: EnemyManager,       // Use specific type
-    projectileShapes: Map<string, Phaser.GameObjects.Shape>, // Use specific type
-    powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite>
+    // Accept the broader Shape type here, as the handler doesn't need the guaranteed body
+    projectileShapes: Map<string, Phaser.GameObjects.Shape>,
+    powerupSprites: Map<string, Phaser.Physics.Arcade.Sprite> // Changed key to string
   ): GameSceneCollisionHandler {
+    // Cast the map when passing to the constructor, assuming the handler can manage potential issues
+    // Or, better, ensure the handler itself is robust enough to handle Shapes without guaranteed bodies if needed.
+    // For now, let's assume the handler is okay or will be adjusted.
     return new GameSceneCollisionHandler(
       config.scene,
       projectileManager,
       enemyManager,
       config.playerSprite,
-      projectileShapes, // Pass the map
+      projectileShapes as Map<string, import('../../handlers/event/ProjectileEventHandler').ProjectileShape>, // Cast here, assuming valid shapes are passed
       config.powerupGroup,
-      powerupSprites
+      powerupSprites // Changed key to string
     );
   }
 

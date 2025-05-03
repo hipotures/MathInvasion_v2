@@ -109,9 +109,10 @@ export class HtmlDebugLabels {
       labelElement.dataset.objectId = projId;
     } else if (id.startsWith('debuglabel_powerup_')) {
       labelElement.dataset.objectType = 'powerup';
-      // Extract the powerup ID from the label ID
-      const powerupId = id.replace('debuglabel_powerup_', '');
-      labelElement.dataset.objectId = powerupId;
+      // Extract the numeric powerup ID from the label ID
+      const powerupNumericId = id.replace('debuglabel_powerup_', '');
+      // Store the desired string format 'powerup_X' in the dataset
+      labelElement.dataset.objectId = `powerup_${powerupNumericId}`;
     }
 
     labelElement.textContent = name;
@@ -127,12 +128,14 @@ export class HtmlDebugLabels {
    * Emits an event with screen coordinates for hit testing.
    */
   private handleLabelClick(event: MouseEvent): void {
+    // --- Restored event prevention ---
     event.stopPropagation(); // Prevent event bubbling further
     event.preventDefault(); // Prevent default behavior
+    // console.log('[HtmlDebugLabels] handleLabelClick triggered, propagation/default NOT prevented.');
+    // --- End Restoration ---
 
     const screenX = event.clientX;
     const screenY = event.clientY;
-
     // Get the label element that was clicked
     const label = event.currentTarget as HTMLDivElement;
 

@@ -38,7 +38,8 @@ export class DebugPanelUpdater {
   private isInspecting: boolean = false; // Flag to track inspection state
   // Removed: inspectionData - we will fetch fresh data instead
   // private inspectionData: { [key: string]: any } | null = null;
-  
+  private lastUpdateTime: number = Date.now(); // Track time only when not paused
+
   // --- Added references needed for re-fetching ---
   private inspectionHandler: DebugInspectionHandler;
   private debugObjectInspector: DebugObjectInspector;
@@ -68,7 +69,7 @@ export class DebugPanelUpdater {
     playerSprite: Phaser.Physics.Arcade.Sprite,
     enemySprites: Map<string, EnemyEntity>,
     projectileShapes: Map<string, ProjectileShape>,
-    powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite>
+    powerupSprites: Map<string, Phaser.Physics.Arcade.Sprite> // Changed key type to string
   ) {
     this.htmlDebugPanel = htmlDebugPanel;
     // --- Store added references ---
@@ -86,9 +87,9 @@ export class DebugPanelUpdater {
       economyManager,
       enemySprites.size,
       projectileShapes.size,
-      powerupSprites.size,
+      powerupSprites.size, // Size is independent of key type
       enemyManager.getCurrentWave()
-    ); 
+    );
     this.overviewFormatter = new DebugPanelFormatter();
     // Removed inspectionFormatter instantiation
 
@@ -130,15 +131,22 @@ export class DebugPanelUpdater {
   /**
    * Updates the HTML debug panel, passing either the overview or inspection data object.
    */
-  public update(): void {
-    if (!debugState.isDebugMode) return;
+   public update(): void {
+     if (!debugState.isDebugMode) return;
 
-    try {
-      if (this.isInspecting) {
+     // Update the time tracker only if the game is not paused
+     // This should happen *before* deciding which view to update
+     if (!debugState.isPaused) {
+        this.lastUpdateTime = Date.now();
+     }
+
+     try {
+       if (this.isInspecting) {
         // --- Re-fetch data if inspecting ---
         const inspectedGameObject = this.inspectionHandler.getInspectedGameObject();
         if (inspectedGameObject) {
-          const freshData = this.debugObjectInspector.getObjectDetails(inspectedGameObject);
+          // Pass the potentially frozen currentTime
+          const freshData = this.debugObjectInspector.getObjectDetails(inspectedGameObject, this.lastUpdateTime);
           if (freshData) {
             this.htmlDebugPanel.updateData(freshData);
           } else {
@@ -168,22 +176,25 @@ export class DebugPanelUpdater {
   /**
    * Collects the default overview data object and passes it to the HTML panel.
    */
-  private updateOverview(): void {
-    // Update entity counts in the game state collector
-    this.gameStateCollector.updateCounts(
-      this.enemyCollector.getEnemyCount(),
+   private updateOverview(): void {
+     // Time update moved to the main update() method
+     const currentTime = this.lastUpdateTime; // Use the tracked time
+
+     // Update entity counts in the game state collector
+     this.gameStateCollector.updateCounts(
+       this.enemyCollector.getEnemyCount(),
       this.projectileCollector.getProjectileCount(),
       this.powerupCollector.getPowerupCount(),
       this.enemyCollector.getCurrentWave()
     );
 
-    // Collect data from all collectors
-    const playerData = this.playerCollector.collectData();
-    const enemyData = this.enemyCollector.collectData();
-    const projectileData = this.projectileCollector.collectData();
-    const powerupData = this.powerupCollector.collectData();
-    const gameData = this.gameStateCollector.collectData();
-    const weaponData = this.gameStateCollector.collectWeaponData();
+    // Collect data from all collectors, passing the tracked time
+    const playerData = this.playerCollector.collectData(currentTime);
+    const enemyData = this.enemyCollector.collectData(currentTime);
+    const projectileData = this.projectileCollector.collectData(currentTime);
+    const powerupData = this.powerupCollector.collectData(currentTime);
+    const gameData = this.gameStateCollector.collectData(); // Game state doesn't need time
+    const weaponData = this.gameStateCollector.collectWeaponData(); // Weapon state doesn't need time
 
     // Combine all active objects
     const activeObjects = [];

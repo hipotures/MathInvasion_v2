@@ -16,18 +16,19 @@ export class PlayerDataCollector implements DataCollector<ActiveObjectData | nul
 
   /**
    * Collects debug data for the player
+   * @param currentTime The current timestamp (potentially frozen during pause) to use for age calculation.
    * @returns The player debug data, or null if the player is not active
    */
-  public collectData(): ActiveObjectData | null {
+  public collectData(currentTime: number): ActiveObjectData | null {
     if (!this.playerSprite || !this.playerSprite.active) {
       return null;
     }
 
     const playerState = this.playerManager.getPlayerState();
     
-    const now = Date.now();
-    const creationTime = this.playerManager.getCreationTime() ?? now;
-    const age = Math.floor((now - creationTime) / 1000);
+    // Use the provided currentTime for age calculation
+    const creationTime = this.playerManager.getCreationTime() ?? currentTime;
+    const age = Math.floor((currentTime - creationTime) / 1000);
 
     return {
       ID: 'player',

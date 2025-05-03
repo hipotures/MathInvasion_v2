@@ -1,6 +1,7 @@
 class DebugState {
   private static instance: DebugState;
   private _isDebugMode: boolean = false;
+  private _isPaused: boolean = false;
 
   private constructor() {
     // Private constructor to enforce singleton pattern
@@ -19,6 +20,14 @@ class DebugState {
 
   public toggleDebugMode(): void {
     this._isDebugMode = !this._isDebugMode;
+  }
+
+  public get isPaused(): boolean {
+    return this._isPaused;
+  }
+
+  public setPaused(paused: boolean): void {
+    this._isPaused = paused;
   }
 }
 

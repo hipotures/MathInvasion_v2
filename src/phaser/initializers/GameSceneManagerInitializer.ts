@@ -33,10 +33,17 @@ export interface GameManagers {
  * Initializes all core game managers required by GameScene.
  * @param eventBus The global event bus instance.
  * @param logger The global logger instance.
+ * @param sceneWidth The actual width of the game scene.
+ * @param sceneHeight The actual height of the game scene.
  * @returns An object containing instances of all initialized managers.
  */
-export function initializeGameManagers(eventBus: EventBus, logger: Logger): GameManagers {
-  logger.log('Initializing game managers...');
+export function initializeGameManagers(
+  eventBus: EventBus,
+  logger: Logger,
+  sceneWidth: number,
+  sceneHeight: number
+): GameManagers {
+  logger.log(`Initializing game managers with scene dimensions: ${sceneWidth}x${sceneHeight}...`);
 
   const playerConfig = configLoader.getPlayerConfig();
   const powerupsConfig = configLoader.getPowerupsConfig();
@@ -55,7 +62,8 @@ export function initializeGameManagers(eventBus: EventBus, logger: Logger): Game
     weaponUpgrader,
     weaponPowerupHandler
   );
-  const projectileManager = new ProjectileManager(eventBus);
+  // Pass the actual scene dimensions to ProjectileManager
+  const projectileManager = new ProjectileManager(eventBus, sceneWidth, sceneHeight);
   const enemyManager = new EnemyManager(eventBus, logger); // Inject logger
   const powerupManager = new PowerupManager(eventBus, logger, powerupsConfig); // Inject logger & config
   const debugManager = new DebugManager(eventBus); // Create DebugManager

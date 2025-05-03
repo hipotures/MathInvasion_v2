@@ -1,0 +1,2406 @@
+# TODO List - Comments from src/
+
+This file lists all comments found in the `src/` directory and its subdirectories.
+
+## src/main.ts
+- Line 20: We only support portrait mode (9:16)
+- Line 61: Initial game configuration - will be updated with display settings
+- Line 64: Default width, will be updated
+- Line 65: Default height, will be updated
+- Line 69: No gravity needed for this type of game
+- Line 70: Set to true for physics debugging visuals
+- Line 73: Load GameScene first, then UIScene in parallel
+- Line 74: ID of the DOM element to parent the canvas to
+- Line 76: Use FIT mode to maintain aspect ratio
+- Line 77: Center the game canvas
+- Line 78: Default width for portrait mode
+- Line 79: Default height for portrait mode
+- Line 82: Enable pixel art mode (prevents blurry sprites)
+- Line 83: Round pixel positions to avoid sub-pixel rendering
+- Line 86: Wrap game initialization in an async function to await config loading
+- Line 110: Load display configuration
+- Line 113: Always use portrait mode (9:16)
+- Line 114: Should be '9:16'
+- Line 117: Get max resolution
+- Line 123: Set the game size based on the max resolution from config
+- Line 127: Update the config
+- Line 132: Make sure scale is defined
+- Line 139: Create the Phaser game instance AFTER configs are loaded
+- Line 140: eslint-disable-next-line @typescript-eslint/no-unused-vars
+- Line 145: Handle window resize
+- Line 147: The Phaser.Scale.FIT mode will automatically handle resizing while maintaining aspect ratio
+- Line 151: Emit canvas resized event for UI components
+- Line 159: Add a border to make it visible for debugging
+- Line 181: immediate: true tries to register ASAP
+
+## src/style.css
+- Line 52: Don't force width/height to 100% to allow Phaser's scale manager to work
+
+## src/core/config/ConfigLoader.ts
+- Line 10: Use Vite's import.meta.glob to import YAML files as raw strings
+- Line 11: Note: The path is relative to the current file (ConfigLoader.ts)
+- Line 13: Use recommended query syntax
+- Line 14: Specify default import for raw content
+- Line 15: Load immediately
+- Line 68: Depending on the game's needs, you might want to throw the error,
+- Line 69: use default values, or prevent the game from starting.
+- Line 103: Re-throw validation errors or other unexpected errors
+- Line 108: --- Getters for validated configurations ---
+- Line 153: Resets the loaded state and configurations.
+- Line 154: FOR TESTING PURPOSES ONLY.
+- Line 155: @internal
+- Line 170: Export a singleton instance
+
+## src/core/config/schemas/difficultySchema.ts
+- Line 12: Must have at least one initial type
+- Line 13: Expect string keys from YAML/JSON, then validate they are positive integers
+- Line 15: Expect string keys, string values
+- Line 26: Could be an enum later
+
+## src/core/config/schemas/enemySchema.ts
+- Line 7: Optional if projectile defines damage
+- Line 8: Optional for non-DPS projectiles
+- Line 9: Optional if projectile defines speed
+- Line 10: Optional for non-ranged attacks
+- Line 11: New visual properties for dynamic generation
+- Line 57: Use discriminated union for enemy abilities
+- Line 62: Add other ability schemas here as needed
+- Line 67: Could be an enum later: z.enum(['triangle', 'square', ...])
+- Line 76: Added score value
+- Line 77: Added collision damage
+- Line 78: Added for Diamond Strafer
+- Line 90: Also export the shoot config type if needed elsewhere
+
+## src/core/config/schemas/playerSchema.ts
+- Line 5: Renamed from moveSpeed
+- Line 22: Add other player-specific configurations here later (e.g., starting position, sprite key)
+
+## src/core/config/schemas/powerupSchema.ts
+- Line 6: Could be an enum later
+- Line 8: Probability between 0 and 1
+- Line 10: Optional, e.g., for cash_boost or rapid_fire
+
+## src/core/config/schemas/weaponSchema.ts
+- Line 5: e.g., slow field has no damage
+- Line 6: e.g., laser has no cooldown
+- Line 11: Energy System Upgrades (Optional)
+- Line 14: TODO: Consider adding visual upgrade multipliers here later (e.g., size, color shift)
+- Line 22: Optional for non-damaging weapons like slow
+- Line 23: Optional for non-DPS weapons
+- Line 25: Could be 'none' for area effects
+- Line 30: Make optional
+- Line 31: New visual properties for dynamic generation
+- Line 53: End new visual properties
+- Line 54: Optional for non-slowing weapons
+- Line 55: Optional for non-slowing weapons
+- Line 56: Energy System (Optional)
+
+## src/core/constants/assets.ts
+- Line 2: Defines constants for asset keys used throughout the game.
+- Line 3: This helps avoid hardcoding strings and allows for easier asset management.
+- Line 6: Player Assets
+- Line 9: Projectile Assets
+- Line 10: Key for the hexagon bomber's death bomb
+- Line 12: Enemy Assets
+- Line 13: triangle_scout
+- Line 14: square_tank
+- Line 15: pentagon_healer (placeholder?)
+- Line 16: hexagon_bomber
+- Line 17: diamond_strafer
+- Line 18: Add keys for other enemy types as needed (e.g., boss)
+- Line 20: Placeholder/Debug Assets (Consider removing later)
+- Line 21: Assuming this was the previous placeholder
+- Line 23: Powerup Visual Assets
+- Line 26: Added key for cash boost visual
+- Line 28: Audio Assets
+- Line 33: Add other asset types (audio, UI elements, etc.) as needed
+
+## src/core/constants/events.ts
+- Line 3: Player hit by enemy projectile
+- Line 4: Player health reached zero
+- Line 5: Player becomes invulnerable
+- Line 6: Player invulnerability ends
+- Line 14: Request to switch active weapon
+- Line 15: Toggle debug mode
+- Line 16: Notify that debug mode has changed
+- Line 17: Request to inspect a specific object (payload: { gameObject, id, type }) - DEPRECATED?
+- Line 18: Request to stop inspecting and return to default view
+- Line 19: Provides formatted HTML details for the panel (payload: { html: string })
+- Line 21: Request from WeaponManager
+- Line 22: Emitted by ProjectileManager for Scene
+- Line 23: Emitted by ProjectileManager for Scene
+- Line 24: Emitted by Scene collision handler
+- Line 25: Emitted by ProjectileManager for area damage (e.g., bombs)
+- Line 27: Emitted by EnemyManager for Scene
+- Line 28: Emitted by EnemyManager for Scene/EconomyManager
+- Line 29: Emitted by EnemyManager for Scene
+- Line 30: Emitted by EnemyEntity for Scene to handle spawn
+- Line 31: Emitted by EnemyEntity for Scene to handle visuals
+- Line 33: Emitted by EnemyEntity when it goes off-screen
+- Line 34: Emitted by AreaEffectHandler to apply slow to enemies
+- Line 35: Emitted by EconomyManager for UI
+- Line 36: Emitted by EconomyManager for UI
+- Line 37: Emitted when the wave number changes
+- Line 38: export const INSUFFICIENT_FUNDS = 'INSUFFICIENT_FUNDS'; // Future event
+- Line 40: Emitted by WeaponManager for Scene to handle spawn location
+- Line 41: Emitted by WeaponManager for UI updates (current weapon, level, cost)
+- Line 42: Emitted by InputManager to request upgrading the current weapon
+- Line 43: export const WEAPON_UPGRADED = 'WEAPON_UPGRADED'; // Future event from WeaponManager after successful upgrade
+- Line 44: export const WEAPON_COOLDOWN_START = 'WEAPON_COOLDOWN_START'; // Future event
+- Line 45: export const WEAPON_COOLDOWN_FINISH = 'WEAPON_COOLDOWN_FINISH'; // Future event
+- Line 46: export const WEAPON_READY = 'WEAPON_READY'; // Future event
+- Line 48: Request to spawn powerup
+- Line 49: Emitted by PowerupManager for Scene to create sprite
+- Line 50: Emitted by Scene collision handler
+- Line 51: Emitted by PowerupManager when effect duration ends
+- Line 52: Added for cleanup
+- Line 53: Emitted by PowerupManager when effect starts
+- Line 54: Emitted by PowerupManager when effect ends
+- Line 56: Emitted by ProjectileEventHandler for AoE weapons
+- Line 57: Request to toggle pause state
+- Line 58: Emitted when the game is paused
+- Line 59: Emitted when the game is resumed
+- Line 61: Debugging Events
+- Line 62: { x: number, y: number }
+- Line 64: { gameObject: Phaser.GameObjects.GameObject }
+
+## src/core/events/EventBus.ts
+- Line 1: eslint-disable-next-line @typescript-eslint/no-explicit-any
+- Line 4: Add 'export' here
+- Line 5: Use a Map to store event listeners: eventName -> Set<callback>
+- Line 23: Optional: Remove the Set if it becomes empty
+- Line 30: eslint-disable-next-line @typescript-eslint/no-explicit-any
+- Line 34: Iterate over a copy of the Set in case a callback modifies the original Set (e.g., unsubscribes itself)
+- Line 39: eslint-disable-next-line no-console
+- Line 47: Export a singleton instance
+
+## src/core/managers/DebugManager.ts
+- Line 22: Single concise log message
+- Line 30: TODO: Subscribe to events that cost currency (e.g., 'PURCHASE_WEAPON')
+
+## src/core/managers/EconomyManager.ts
+- Line 6: TODO: Consider moving this interface to a shared types file
+- Line 33: TODO: Subscribe to events that cost currency (e.g., 'PURCHASE_WEAPON')
+- Line 73: Score is not affected by cash boost
+- Line 84: Use the multiplier from the powerup config, default to 2 if missing/invalid
+- Line 100: Allow adding 0 score, but log warning for negative
+
+## src/core/managers/EnemyManager.ts
+- Line 12: APPLY_SLOW_EFFECT, // Manager no longer needs to listen directly
+- Line 31: Basic info tracked by the manager
+- Line 99: Base speed multiplier from wave
+- Line 101: Only store basic info
+- Line 115: Pass the manager instance so the Entity can reference it if needed (though maybe not for slow anymore)
+- Line 116: Pass the base speed multiplier; the Entity will handle its own slow state.
+- Line 140: Fallback, though should have baseMaxHealth
+- Line 170: Assume config exists if enemy existed
+- Line 181: Removed redundant logging, handleDamage is sufficient
+- Line 185: Removed handleApplySlowEffect - EnemyEntity will handle it
+- Line 187: --- Getters needed by Inspector ---
+- Line 195: --- End Getters ---
+- Line 200: Removed listener for APPLY_SLOW_EFFECT
+- Line 203: --- Update Loop ---
+- Line 205: Manager update loop is now empty.
+- Line 206: EnemyEntity instances handle their own updates (movement, slow expiry).
+- Line 207: WaveHandler handles wave progression.
+- Line 210: --- Cleanup ---
+- Line 213: Removed unregister for APPLY_SLOW_EFFECT
+- Line 220: --- Getters ---
+- Line 225: Removed getEffectiveSpeedMultiplier - no longer needed here
+
+## src/core/managers/InputManager.ts
+- Line 5: TODO: Add SWITCH_WEAPON event later
+- Line 25: TODO: Add listeners for mouse/touch later
+- Line 29: TODO: Implement input polling/processing if needed
+- Line 33: Prevent multiple events firing if key is held down
+- Line 37: If paused, only allow the 'P' key to unpause
+- Line 58: Spacebar for firing
+- Line 117: Spacebar for firing
+- Line 129: TODO: Add cases for weapon switching keys
+- Line 149: Reset movement/fire states on resume to prevent sticky keys
+- Line 155: TODO: Add methods for mouse/touch input if required
+
+## src/core/managers/PlayerManager.ts
+- Line 6: Import types
+- Line 14: Import action functions
+- Line 23: --- Constants ---
+- Line 24: Keep constant here or move to types/config
+- Line 31: --- Player State ---
+- Line 32: Using individual properties for now, could be grouped into a state object
+- Line 33: Position - consider if this should be managed here or solely by Phaser sprite
+- Line 39: Post-hit invulnerability
+- Line 41: Movement properties from config
+- Line 55: Initialize state from config
+- Line 64: Bind methods that remain part of the class (update, getters, emit, destroy)
+- Line 70: Register event listeners - Call wrapper methods that use action functions
+- Line 78: Emit initial state
+- Line 81: --- Event Handler Wrappers (calling action functions) ---
+- Line 84: Create a state reference object for action functions
+- Line 95: Update local state from the reference object after action function modifies it
+- Line 109: No state update emission needed here, handled by update loop
+- Line 116: No state update emission needed here, handled by update loop
+- Line 123: No state update emission needed here, handled by update loop
+- Line 130: No state update emission needed here, handled by update loop
+- Line 137: Pass bound emit function
+- Line 142: Update state after action potentially modified it
+- Line 151: Pass bound emit function
+- Line 154: Update state after action potentially modified it
+- Line 157: --- Core Update Logic ---
+- Line 160: Convert ms to seconds
+- Line 161: Track if relevant state changed
+- Line 163: --- Invulnerability Timer ---
+- Line 174: Invulnerability state changed
+- Line 176: Timer changed, might affect visuals even if still invulnerable
+- Line 181: --- Movement Logic ---
+- Line 192: Changing direction, apply deceleration first then acceleration
+- Line 197: Accelerating or continuing in the same direction
+- Line 206: Decelerating
+- Line 213: Ensure velocity is zero if dead
+- Line 218: Velocity changed
+- Line 221: --- Emit State Update ---
+- Line 227: --- State Emission ---
+- Line 231: Position might not be managed here directly yet
+- Line 234: Assuming 0 for now, but keep for future
+- Line 237: Combined state for visuals
+- Line 242: --- Getters ---
+- Line 251: Post-hit invulnerability
+- Line 253: From powerup
+- Line 262: --- Cleanup ---
+- Line 265: Unregister event listeners using the bound methods
+
+## src/core/managers/PowerupManager.ts
+- Line 6: TODO: Consider moving this interface to a shared types file
+- Line 14: Changed to string
+- Line 22: Changed to string
+- Line 26: Interface for the new event payload
+- Line 27: Changed to string
+- Line 33: Optional multiplier
+- Line 41: Add other relevant state if needed
+- Line 44: Changed to string
+- Line 48: Renamed for clarity
+- Line 72: Add listener for ENEMY_DESTROYED if drop logic is handled here
+- Line 84: Use the multiplier from the powerup config, default to 0.5 if missing/invalid
+- Line 147: data.instanceId is now string 'powerup_X'
+- Line 149: Removed diagnostic log
+- Line 161: Use specific interface
+- Line 162: data.instanceId is now string 'powerup_X'
+- Line 167: This might happen if collected and went OOB in the same frame, less likely
+- Line 176: Removed diagnostic log
+- Line 214: Accept string ID 'powerup_X'
+- Line 219: Accept string ID 'powerup_X'
+- Line 234: Added unregister
+
+## src/core/managers/ProjectileManager.ts
+- Line 12: Re-export types for backward compatibility
+- Line 33: For stale projectile detection
+- Line 36: Number of updates before removing a stale projectile (e.g., ~1 second at 60fps)
+- Line 37: Minimum position change to be considered "moved"
+- Line 60: Add velocity validation
+- Line 62: Consider adding a default minimum velocity or destroying it immediately if this is invalid
+- Line 63: For now, just logging.
+- Line 92: Initialize tracking for stale detection
+- Line 99: Log all active projectiles for debugging
+- Line 153: Should not happen if initialized correctly, but good to handle
+- Line 159: Check for explosion *after* staleness check
+- Line 166: Note: Boundary check is handled above by physicsHandler returning false
+- Line 174: Clean up tracking maps
+- Line 181: Set world bounds for physics handler
+- Line 185: Get projectile damage
+- Line 189: Get projectile owner
+- Line 193: Get projectile creation time
+- Line 197: Get projectile state
+- Line 201: Get projectile count
+- Line 205: --- Cleanup ---
+- Line 209: Clear tracking maps on destroy
+- Line 215: /**
+- Line 216: * INTERNAL USE ONLY - FOR TESTING PURPOSES
+- Line 217: * Provides access to the active projectiles map for testing
+- Line 218: * @returns The active projectiles map
+- Line 219: * @internal
+- Line 220: */
+
+## src/core/managers/WeaponManager.ts
+- Line 10: Import types and functions from separated files
+- Line 29: --- WeaponManager Class ---
+- Line 38: State: Map storing runtime state for all weapons
+- Line 40: ID of the currently selected weapon
+- Line 43: Firing State (applies only to the active weapon)
+- Line 58: Initialize state for all weapons using the imported function
+- Line 61: Ensure the initial weapon exists
+- Line 64: Fallback logic if needed, e.g., use the first weapon found
+- Line 68: Add logging to show the initial weapon
+- Line 71: Bind methods that are still class methods (like update, emitStateUpdate, destroy)
+- Line 72: Event handlers will now call the imported action functions
+- Line 77: Register event listeners - they now call the action functions
+- Line 83: Emit initial state for all weapons
+- Line 86: Double check that a weapon state update is emitted with a small delay
+- Line 87: This ensures the UI has time to initialize before receiving the state
+- Line 94: --- Event Handlers (calling action functions) ---
+- Line 98: Pass by reference wrapper
+- Line 100: Pass bound attemptFire
+- Line 103: Update local state based on reference change
+- Line 108: Pass by reference wrapper
+- Line 112: Update local state based on reference change
+- Line 117: Add detailed logging
+- Line 121: Store current state before calling action
+- Line 122: Call the action function, which attempts the upgrade and returns success/failure
+- Line 132: Update local state based on reference changes
+- Line 135: Log the result
+- Line 138: Force an immediate state update to ensure UI is updated
+- Line 144: Store current state before calling action
+- Line 146: Get level before calling action
+- Line 149: Call the action function, which attempts the upgrade and returns success/failure
+- Line 151: Action reads from this
+- Line 152: Action spends currency
+- Line 154: Action emits update on success
+- Line 158: If the upgrade was successful, calculate the new state and update the map
+- Line 161: Apply post-upgrade state resets
+- Line 162: Refill energy
+- Line 163: Reset cooldown
+- Line 164: Update the map
+- Line 166: Note: emitStateUpdate is already called within handleWeaponUpgradeAction on success
+- Line 168: If upgradeSucceeded is false, the action function already logged the reason.
+- Line 171: --- Core Update Logic ---
+- Line 174: Track if any state change occurred
+- Line 177: Iterate through all weapon states
+- Line 179: is active weapon?
+- Line 184: --- Energy Weapon Logic ---
+- Line 187: Drain energy FIRST
+- Line 190: If still has energy after draining (or had energy before draining this frame), allow firing
+- Line 196: Refill if inactive OR if active but not firing
+- Line 197: Refill energy
+- Line 202: Standard Cooldown Weapon Logic ---
+- Line 207: Auto-fire for active cooldown weapon
+- Line 209: Attempt fire handles cooldown reset via action
+- Line 210: Cooldown state changed
+- Line 216: Emit state update only if something changed
+- Line 222: --- Helper Methods (calling action functions) ---
+- Line 224: /** Emits the global state update for all weapons */
+- Line 235: Progress for cooldown: 0 = ready, 1 = full cooldown
+- Line 238: Clamp progress
+- Line 239: Include costs for UI buttons
+- Line 240: Include levels for UI display
+- Line 250: Log the active weapon ID for debugging
+- Line 253: Add more detailed logging for debugging
+- Line 257: Emit the state update event
+- Line 260: /** Calls the attemptFire action function */
+- Line 266: Pass bound emitFireRequest
+- Line 270: /** Calls the emitFireRequest action function */
+- Line 279: --- Cleanup ---
+- Line 282: Unregister event listeners using the bound methods used in constructor
+
+## src/core/managers/actions/PlayerManager.actions.ts
+- Line 11: --- Constants ---
+- Line 12: 1 second invulnerability
+- Line 14: --- Type Definitions for Function Arguments ---
+- Line 17: Using refs for mutable state managed by the main class
+- Line 23: Needed for stopping on death
+- Line 28: No other args needed for simple flag setting
+- Line 35: Function to trigger state update emission
+- Line 38: --- Action Functions ---
+- Line 42: Velocity update happens in the main update loop
+- Line 47: Velocity update happens in the main update loop
+- Line 52: Velocity update happens in the main update loop
+- Line 57: Velocity update happens in the main update loop
+- Line 64: Check both post-hit invulnerability and shield powerup
+- Line 83: Stop movement immediately on death
+- Line 88: Apply post-hit invulnerability
+- Line 94: Trigger state update emission
+- Line 101: Check both post-hit invulnerability and shield powerup
+- Line 120: Stop movement immediately on death
+- Line 125: Apply post-hit invulnerability
+- Line 131: Trigger state update emission
+
+## src/core/managers/actions/WeaponManager.actions.ts
+- Line 14: Each function is already exported individually with the export keyword
+- Line 16: --- Type Definitions for Function Arguments ---
+- Line 28: eventBus: EventBusType; // Not strictly needed if just logging
+- Line 61: --- Action Functions ---
+- Line 66: Initial fire attempt for the *active* weapon
+- Line 73: Optional: Emit STOP_FIRE_WEAPON if needed for active energy weapon
+- Line 76: Requires eventBus arg
+- Line 83: If clicking the same weapon, do nothing
+- Line 89: Stop firing on switch
+- Line 91: Emit new state after switch
+- Line 97: /**
+- Line 98: * Handles the weapon upgrade request. Attempts to spend currency and logs the result.
+- Line 99: * Emits state update on success.
+- Line 100: * @returns {boolean} True if the upgrade was successful (currency spent), false otherwise.
+- Line 103: Always upgrade the active weapon
+- Line 114: Indicate failure (already maxed)
+- Line 120: --- Upgrade Successful ---
+- Line 125: Emit state update
+- Line 128: Return true to signal success to the caller
+- Line 131: /*
+- Line 132: // State calculation and map update are now handled by the caller (WeaponManager)
+- Line 133: // based on the boolean return value of this function.
+- Line 135: // Calculate new state for the next level (moved to caller)
+- Line 137: // Preserve current energy/cooldown timer if needed, or reset them? Resetting is simpler.
+- Line 138: // Refill energy on upgrade
+- Line 139: // Reset cooldown on upgrade
+- Line 141: // Update the state map (moved to caller)
+- Line 142: // Cannot modify map directly here
+- Line 145: // Instead, we might return the newState or rely on the main class to update
+- Line 146: // For now, let's assume the main class handles the map update after this function succeeds
+- Line 150: // We need a way to signal the main class to update the map
+- Line 151: // Option 1: Return the newState
+- Line 152: // Option 2: Pass a setter function: updateStateFn(weaponId, newState)
+- Line 153: // Let's modify the main class to handle the update based on success.
+- Line 155: // Action emits new state after upgrade
+- Line 157: // Return false to indicate failure
+- Line 177: /**
+- Line 178: * Handles the initial fire attempt, checking energy/cooldown.
+- Line 179: * For cooldown weapons, also resets the timer.
+- Line 180: * Continuous firing for energy weapons is handled in update().
+- Line 181: * Returns true if cooldown was reset (for cooldown weapons), false otherwise.
+- Line 183: logger.debug(`WeaponManager.actions: attemptFire called for weapon ${weaponId}`);
+- Line 189: return false;
+- Line 192: logger.debug(`WeaponManager.actions: AttemptFire - Weapon ${weaponId} details: isEnergyBased: ${state.isEnergyBased}, level: ${state.level}`);
+- Line 193: logger.debug(`WeaponManager.actions: AttemptFire - Weapon config: ${state.config.id}, projectileType: ${state.config.projectileType}`);
+- Line 196: if (state.currentEnergy <= 0) {
+- Line 197: logger.debug(`WeaponManager.actions: Weapon ${weaponId} has no energy to initiate fire.`);
+- Line 198: return false;
+- Line 200: Don't emit fire request here, update() handles it
+- Line 202: Cooldown not reset for energy weapons here
+- Line 205: Standard cooldown check
+- Line 207: logger.debug(`WeaponManager.actions: Weapon ${weaponId} on cooldown (${state.cooldownTimer.toFixed(0)}ms left)`);
+- Line 208: return false;
+- Line 211: --- Fire Cooldown Weapon ---
+- Line 213: Emit the actual fire request
+- Line 217: Set cooldown
+- Line 218: Use calculated cooldown
+- Line 222: Cooldown was reset
+- Line 226: /** Helper method to create and emit the fire request for a specific weapon */
+- Line 231: if (!state) {
+- Line 232: logger.error(`WeaponManager.actions: Cannot fire, state not found for ID: ${weaponId}`);
+- Line 233: return;
+- Line 236: logger.debug(`WeaponManager.actions: Preparing REQUEST_FIRE_WEAPON event for: ${weaponId}`);
+- Line 237: logger.debug(`WeaponManager.actions: Weapon config: ${state.config.id}, projectileType: ${state.config.projectileType}`);
+- Line 241: Use appropriate damage (per shot or per sec)
+- Line 242: TEMPORARY WORKAROUND: Use a default speed if undefined.
+- Line 246: logger.debug(`WeaponManager.actions: Emitting REQUEST_FIRE_WEAPON event with damage: ${fireData.damage}, speed: ${fireData.projectileSpeed}`);
+- Line 250: logger.debug(`WeaponManager.actions: REQUEST_FIRE_WEAPON event emitted successfully for weapon ${weaponId}`);
+- Line 252: logger.error(`WeaponManager.actions: Error emitting SPAWN_PROJECTILE event: ${error}`);
+
+## src/core/managers/helpers/EnemyWaveHandler.ts
+- Line 19: Reference to the main manager
+- Line 103: Note: Grid pattern currently ignores this
+- Line 145: Called by EnemyManager when an enemy is spawned during an active wave
+- Line 153: Called by EnemyManager when an enemy is destroyed
+- Line 163: Clear any existing timer just in case
+
+## src/core/managers/helpers/PlayerPowerupHandler.ts
+- Line 2: Import the shared debug state
+
+## src/core/managers/helpers/WeaponPowerupHandler.ts
+- Line 8: 1.0 means no effect
+- Line 34: Use the multiplier from the powerup config, default to 0.5 if missing/invalid
+- Line 43: Reset multiplier
+
+## src/core/managers/helpers/WeaponUpgrader.ts
+- Line 12: Optional message for logging or UI feedback
+- Line 20: The current level of the weapon *before* the upgrade attempt.
+- Line 31: Cost to upgrade *from* currentLevel *to* currentLevel + 1
+- Line 42: Should not happen if getCurrentCurrency check passed, but log just in case
+- Line 50: Apply multiplier starting from level 2
+- Line 61: Apply damage upgrade only if baseDamage exists and multiplier exists
+- Line 68: Apply speed upgrade only if multiplier exists
+- Line 69: Use the base speed from the config, or the default if base speed wasn't defined
+- Line 92: /**
+- Line 93: * Calculates the cost to upgrade to the next level.
+- Line 94: * @param currentWeaponConfig The configuration of the weapon.
+- Line 95: * @param currentLevel The current level of the weapon.
+- Line 96: * @returns The cost for the next upgrade, or null if not upgradeable.
+- Line 107: No upgrades defined or invalid base cost
+- Line 112: Cost to upgrade *from* currentLevel *to* currentLevel + 1
+
+## src/core/managers/projectiles/ProjectileExplosionHandler.ts
+- Line 7: Handles explosion logic for projectiles
+
+## src/core/managers/projectiles/ProjectileFactory.ts
+- Line 15: Factory class for creating projectiles
+- Line 24: Creates a new projectile
+- Line 25: @param data The data for spawning the projectile
+- Line 26: @returns The created projectile
+- Line 59: Pixels per second
+- Line 60: Minimum velocity threshold
+- Line 61: Consider adding a default minimum velocity or destroying it immediately if this is invalid
+- Line 62: For now, just logging.
+- Line 78: Determines the visual properties for a projectile
+- Line 79: @param data The spawn data
+- Line 80: @returns The visual properties
+- Line 112: Handle cases like death_bomb where owner is 'enemy' but there's no shootConfig
+- Line 116: Keep default values assigned at the start of the function
+- Line 122: This case should ideally not happen due to checks in ProjectileManager, but handle defensively
+- Line 125: Use default visuals.
+- Line 143: Emits the projectile created event
+- Line 144: @param projectile The created projectile
+- Line 145: @param visualProperties The visual properties
+- Line 177: Add a delay check to verify the event was processed
+- Line 187: /**
+- Line 188: * Resets the projectile ID counter
+- Line 189: */
+- Line 193: /**
+- Line 194: * Gets the next projectile ID without incrementing
+- Line 195: * @returns The next projectile ID
+- Line 196: */
+
+## src/core/managers/projectiles/ProjectilePhysicsHandler.ts
+- Line 5: Handles physics updates for projectiles
+- Line 10: Default dimensions
+
+## src/core/managers/projectiles/ProjectileStateManager.ts
+- Line 5: Map to store active projectiles
+
+## src/core/managers/projectiles/types/ProjectileTypes.ts
+- Line 2: TODO: Consider moving to a shared core/types location if used elsewhere
+
+## src/core/managers/state/WeaponManager.state.ts
+- Line 7: Calculates the complete runtime state for a given weapon config and level.
+- Line 12: Pass WeaponUpgrader instance
+- Line 28: Apply upgrades iteratively up to the target level (level 1 has no upgrades applied)
+- Line 29: Cost to reach level 2 initially
+- Line 31: Apply upgrades for reaching level i+1
+- Line 52: Use calculateNextUpgradeCost to determine the cost for the next level (or null if maxed)
+- Line 68: Start full
+- Line 72: Start ready
+- Line 77: /**
+- Line 78: * Initializes the runtime state for all weapons defined in the config.
+- Line 79: */
+- Line 82: Pass WeaponUpgrader instance
+- Line 86: Calculate initial stats for level 1
+
+## src/core/types/PlayerState.ts
+- Line 6: Current health
+- Line 7: Whether the player is currently invulnerable
+- Line 8: TODO: Add other relevant state properties later (e.g., currentWeaponId)
+
+## src/core/utils/DebugState.ts
+- Line 6: Private constructor to enforce singleton pattern
+- Line 24: Only log debug messages if a specific flag is set (e.g., during development)
+- Line 25: For now, let's always log them, but add a check later if needed.
+- Line 26: Example check using Vite env variable
+- Line 27: eslint-disable-next-line no-console
+- Line 34: Export a singleton instance
+- Line 37: Export the class type for annotations
+
+## src/core/utils/FontLoader.ts
+- Line 5: Utility class for loading web fonts
+- Line 12: Load web fonts
+- Line 13: @returns Promise that resolves when fonts are loaded
+- Line 44: Check if fonts are loaded
+- Line 45: @returns True if fonts are loaded
+- Line 52: Export as default
+
+## src/core/utils/HtmlDebugLabels.ts
+- Line 8: Utility class for creating and managing HTML labels for game objects in debug mode.
+- Line 9: Labels are appended directly to the body.
+- Line 12: Store only the element now
+- Line 23: Sets the scene reference to access camera information.
+- Line 35: Handle window resize to adjust label positions
+- Line 45: Set the visibility of all debug labels
+- Line 55: Clear all labels
+- Line 59: Remove listener
+- Line 68: Add or update a label for a game object
+- Line 76: Keep gameObject for potential future use
+- Line 84: Add click listener
+- Line 89: Store world coordinates on dataset for resize
+- Line 93: Store the label ID and object type in the dataset
+- Line 97: Try to determine object type and store specific ID
+- Line 103: Extract the enemy ID from the label ID
+- Line 108: Extract the projectile ID from the label ID
+- Line 113: Extract the numeric powerup ID from the label ID
+- Line 115: Store the desired string format 'powerup_X' in the dataset
+- Line 127: Handles clicks on the debug labels.
+- Line 128: Emits an event with screen coordinates for hit testing.
+- Line 131: --- Restored event prevention ---
+- Line 134: console.log('[HtmlDebugLabels] handleLabelClick triggered, propagation/default NOT prevented.');
+- Line 135: --- End Restoration ---
+- Line 147: Emit event for GameSceneDebugHandler to perform the hit test
+- Line 148: Include the object type and ID to precisely identify the object
+- Line 159: Calculates and sets the screen position of a label element relative to the canvas.
+- Line 182: Create a new label element
+- Line 186: Use setProperty to add !important
+- Line 201: Allow clicks
+- Line 202: Indicate interactivity
+- Line 205: Make the label more visible and clickable for debugging
+- Line 214: Remove a specific label
+- Line 219: Remove listener
+- Line 227: Returns an array of all currently existing label IDs
+- Line 235: Destroy all labels and the container
+- Line 242: sceneRef = null;
+- Line 243: gameCanvas = null;
+- Line 245: End of HtmlDebugLabels class
+- Line 247: Keep default export if used elsewhere
+
+## src/core/utils/HtmlDebugPanel.ts
+- Line 1: Removed EventBus imports as they are no longer needed here
+- Line 8: Removed isInspecting state - managed by DebugPanelUpdater
+- Line 10: Removed inspectionContentDiv - inspection uses the main container now
+- Line 27: Restore overflow
+- Line 33: REMOVED: this.container.style.setProperty('user-select', 'text', 'important'); // Keep on children only
+- Line 34: Add pointer-events
+- Line 36: Keep the title
+- Line 48: --- REMOVED Event Listeners from Container for Debugging ---
+- Line 49: --- End REMOVED Container Event Listeners ---
+- Line 51: --- REMOVED WINDOW Mousedown Listener for Debugging ---
+- Line 55: --- End REMOVED WINDOW Mousedown Listener ---
+- Line 57: --- Test Input and Button Removed ---
+- Line 61: Removed event listener setup
+- Line 64: Set the visibility of the debug panel
+- Line 77: Update the debug panel with new data (either overview or inspection)
+- Line 83: Optionally display an error message if data is explicitly null
+- Line 94: Clear previous content (excluding the main title)
+- Line 105: /**
+- Line 106: * Clears the dynamic content of the panel, keeping the title.
+- Line 107: */
+- Line 109: Remove all children except the main title
+- Line 110: Title
+- Line 114: Clear the section map as dynamic sections are removed
+- Line 118: /**
+- Line 119: * Renders the structured overview data.
+- Line 120: * @param data The structured overview data object.
+- Line 121: */
+- Line 125: Renamed function
+- Line 128: Render content directly into the container, passing the container itself
+- Line 131: No need for contentSections map anymore with this structure
+- Line 134: /**
+- Line 135: * Renders the content for a specific overview section directly into the parent container.
+- Line 136: * @param parentContainer The HTML element to append content to (main container).
+- Line 137: * @param category The category name.
+- Line 138: * @param categoryData The data for the category.
+- Line 139: */
+- Line 142: Special handling for ActiveObjects category
+- Line 144: as {
+- Line 145: legend: Record<string, string>;
+- Line 146: objects: Record<string, any>[];
+- Line 147: };
+- Line 158: Append to parentContainer
+- Line 165: Changed from 'nowrap'
+- Line 166: Apply here
+- Line 167: Add vendor prefix
+- Line 168: Add pointer-events
+- Line 170: --- REMOVED Event Listeners from entry for Debugging ---
+- Line 174: --- End REMOVED Event Listeners ---
+- Line 178: if (value === undefined || value === null) return null;
+- Line 180: Use T/F for booleans to save space
+- Line 187: Remove null entries
+- Line 188: Join with spaces for compact display
+- Line 191: Append to parentContainer
+- Line 193: Generic handling for other categories (Game, Weapon)
+- Line 200: Apply here
+- Line 201: Add vendor prefix
+- Line 202: Add pointer-events
+- Line 204: --- REMOVED Event Listeners from entry for Debugging ---
+- Line 208: --- End REMOVED Event Listeners ---
+- Line 212: try {
+- Line 215: Fallback for non-serializable objects
+- Line 217: Handle undefined/null values
+- Line 222: Append to parentContainer
+- Line 224: Handle cases where categoryData might not be an object (though unlikely for overview)
+- Line 228: Append to parentContainer
+- Line 232: /**
+- Line 233: * Renders the flat inspection data using a textarea for guaranteed selection support.
+- Line 234: * @param data The flat inspection data object.
+- Line 235: */
+- Line 237: Create a header to indicate inspection mode
+- Line 248: Iterate through the flat data and create individual div elements
+- Line 255: Allow wrapping
+- Line 267: /**
+- Line 268: * Create a category header element (no longer creates the wrapping section).
+- Line 269: * @param category Category name
+- Line 270: * @returns HTML element for the category header.
+- Line 271: */
+- Line 273: Removed the wrapping section div creation
+- Line 283: Add some top margin since it's directly in container
+- Line 285: No longer needed
+- Line 286: Return only the header
+- Line 290: Destroy the debug panel
+- Line 297: Removed event listener cleanup
+- Line 300: Removed inspection mode methods:
+- Line 301: - handleStopInspecting
+- Line 302: - handleShowInspectionDetails
+- Line 303: - showInspectionView
+- Line 304: - hideInspectionView
+- Line 305: - hideDefaultSections
+- Line 306: - showDefaultSections
+- Line 309: Export as default
+
+## src/core/utils/HtmlDebugUI.ts
+- Line 2: Import the factory
+- Line 3: Import types
+- Line 4: Import all component functions
+- Line 6: To store created elements
+- Line 8: Factory instance
+- Line 17: Game canvas element
+- Line 20: Create container for all UI elements
+- Line 27: Don't interfere with game input by default
+- Line 28: Below debug labels
+- Line 31: Add container to document
+- Line 34: Find canvas and initialize factory
+- Line 37: Cannot proceed without canvas
+- Line 41: Create initial UI elements using the factory
+- Line 44: Add window resize listener
+- Line 47: Listen for canvas resize events
+- Line 51: /**
+- Line 52: /**
+- Line 53: * Generic method to create a single UI element and add it to the container and map.
+- Line 54: * This method is passed to the HtmlDebugElementFactory.
+- Line 55: * @param id Element ID
+- Line 56: * @param text Initial text
+- Line 57: * @param x X position
+- Line 58: * @param y Y position
+- Line 59: * @param color Text color
+- Line 60: * @param align Text alignment
+- Line 61: * @param bgColor Background color
+- Line 62: */
+- Line 72: Create element
+- Line 78: Default: no interaction
+- Line 81: Add background color and padding if provided
+- Line 87: Handle horizontal alignment
+- Line 88: Get canvas right edge for right alignment
+- Line 90: Calculate right position
+- Line 91: Set text alignment
+- Line 92: Handle center alignment
+- Line 93: Set left position
+- Line 94: Center horizontally
+- Line 95: Set text alignment
+- Line 97: align === 'left'
+- Line 98: Set left position
+- Line 99: Unset right
+- Line 100: Set text alignment
+- Line 101: Unset transform
+- Line 103: Set text content
+- Line 105: Add element to container and map
+- Line 107: Set the visibility of all UI elements
+- Line 114: Update a UI element's text
+- Line 121: Update currency display
+- Line 128: Update health display
+- Line 139: Update score display
+- Line 150: Update wave display
+- Line 165: Update weapon status display
+- Line 176: Update weapon upgrade cost display
+- Line 188: Update weapon button appearance
+- Line 192: Define consistent weapon mapping
+- Line 197: Get button elements
+- Line 201: Update button 1 styles
+- Line 205: Update button 2 styles
+- Line 209: Update button 3 styles
+- Line 217: Update weapon cooldown bar progress
+- Line 221: Shows the pause indicator element.
+- Line 232: Destroy all UI elements and the container.
+- Line 235: Remove window resize listener
+- Line 236: Remove container from document
+- Line 239: Clear maps
+- Line 240: Set canvas and factory to null
+- Line 243: Keep default export if used elsewhere
+
+## src/core/utils/HtmlUI.ts
+- Line 8: Utility class for creating and managing HTML UI elements using the browser's DOM.
+- Line 9: Orchestrates the HtmlUIFactory and HtmlUIComponents.
+- Line 14: To store created elements
+- Line 15: Store cooldown bar data
+- Line 16: Factory instance
+- Line 17: Game canvas element
+- Line 20: Create container for all UI elements
+- Line 27: Don't interfere with game input by default
+- Line 28: Below debug labels
+- Line 31: Add container to document
+- Line 34: Find canvas and initialize factory
+- Line 37: Cannot proceed without canvas
+- Line 41: Create initial UI elements using the factory
+- Line 44: Add window resize listener
+- Line 47: Listen for canvas resize events
+- Line 51: /**
+- Line 52: * Handle window resize to reposition elements.
+- Line 53: */
+- Line 56: Use the factory's handleCanvasResize method to reposition elements
+- Line 61: Reposition weapon buttons
+- Line 64: /**
+- Line 65: * Handle canvas resize events from the game
+- Line 66: */
+- Line 69: Use the factory's handleCanvasResize method to reposition elements
+- Line 74: Reposition weapon buttons
+- Line 77: /**
+- Line 78: * Clears existing elements and recreates them using the factory.
+- Line 79: * Also re-appends them to the container.
+- Line 80: */
+- Line 84: Clear existing elements from DOM and maps
+- Line 89: Use factory to create all elements
+- Line 94: Create a separate container for weapon buttons
+- Line 97: Append other UI elements to the container
+- Line 100: Skip weapon buttons - they go in their own container
+- Line 108: Ensure pause indicator is hidden initially after creation/recreation
+- Line 111: /**
+- Line 112: * Creates a fixed container for weapon buttons at the bottom of the canvas
+- Line 113: */
+- Line 117: Remove existing container if any
+- Line 123: Create new container
+- Line 125: Set container styles
+- Line 134: Add weapon buttons to container
+- Line 146: Add to document and position
+- Line 151: /**
+- Line 152: * Position the weapon buttons at the bottom of the canvas
+- Line 153: */
+- Line 159: Position at the very bottom of the canvas with a small margin
+- Line 160: Fixed 20px from bottom
+- Line 162: Position relative to canvas
+- Line 167: Log position for debugging
+- Line 170: --- Public Update Methods (Delegating to UIComponents) ---
+- Line 172: Update currency display
+- Line 176: Update health display
+- Line 180: Update score display
+- Line 184: Update wave display
+- Line 188: This method is now redundant as level info is shown in the buttons
+- Line 189: Keeping it for backward compatibility but it won't be used
+- Line 191: No-op - we're not using the separate weapon status display anymore
+- Line 194: /**
+- Line 195: * Updates the level and upgrade cost display for all weapon buttons.
+- Line 196: */
+- Line 202: This method is kept for backward compatibility but is now a no-op.
+- Line 203: Upgrade costs are now displayed directly in the weapon buttons.
+- Line 206: No-op - costs are now displayed in the weapon buttons
+- Line 210: Update weapon button appearance
+- Line 213: Update weapon cooldown bar progress
+- Line 217: Shows the pause indicator element.
+- Line 228: Destroy all UI elements and the container.
+- Line 231: Remove window resize listener
+- Line 232: Remove the main container
+- Line 237: Remove weapon button container
+- Line 242: Clear maps
+- Line 244: Release factory reference
+- Line 250: Export as default for backward compatibility
+
+## src/core/utils/Logger.ts
+- Line 1: /**
+- Line 2: * Basic logger implementation.
+- Line 3: * Currently logs to the console.
+- Line 4: * Planned: Buffering and sending logs to an external API (M6).
+- Line 5: */
+- Line 7: Add export keyword here
+- Line 9: eslint-disable-next-line no-console
+- Line 14: eslint-disable-next-line no-console
+- Line 19: eslint-disable-next-line no-console
+- Line 24: Only log debug messages if a specific flag is set (e.g., during development)
+- Line 25: For now, let's always log them, but add a check later if needed.
+- Line 26: Example check using Vite env variable
+- Line 27: eslint-disable-next-line no-console
+- Line 32: /**
+- Line 33: * Logs a key game event.
+- Line 34: * Planned: This method will buffer events for sending to an API.
+- Line 35: * @param eventName Name of the event (e.g., 'ENEMY_KILLED', 'WEAPON_UPGRADED')
+- Line 36: * @param data Additional data associated with the event
+- Line 37: */
+- Line 41: TODO (M6): Implement buffering and sending logic
+- Line 45: Export a singleton instance
+
+## src/core/utils/components/HtmlUIComponents.ts
+- Line 4: /**
+- Line 5: * Updates a specific UI element's text content and optionally its color.
+- Line 6: */
+- Line 20: Log warning only once maybe? Or use debug level
+- Line 25: /**
+- Line 26: * Update currency display.
+- Line 27: */
+- Line 32: /**
+- Line 33: * Update health display, changing color based on value.
+- Line 34: */
+- Line 36: Green
+- Line 38: Red
+- Line 40: Yellow
+- Line 45: /**
+- Line 46: * Update score display.
+- Line 47: */
+- Line 52: /**
+- Line 53: * Update wave display.
+- Line 54: */
+- Line 59: /**
+- Line 60: * Update weapon status display.
+- Line 61: */
+- Line 63: Capitalize and replace underscore
+- Line 67: /**
+- Line 68: * Update weapon upgrade cost display.
+- Line 69: * This is now a no-op as the cost is displayed in the weapon buttons.
+- Line 70: */
+- Line 75: /**
+- Line 76: * Update weapon button appearance based on the active weapon.
+- Line 77: */
+- Line 80: Define consistent weapon mapping
+- Line 86: Standardize active weapon ID handling
+- Line 94: First, reset all buttons to inactive state
+- Line 104: Reset name display
+- Line 113: Then, set only the active button
+- Line 118: Set active styles
+- Line 123: Update name display with selection indicators
+- Line 132: Log active button for debugging
+- Line 141: /**
+- Line 142: * Updates the visual progress of a weapon's cooldown bar.
+- Line 143: */
+- Line 147: Cooldown progress from 0.0 (ready) to 1.0 (full cooldown)
+- Line 150: Map weapon IDs to button IDs
+- Line 170: Clamp progress between 0 and 1
+- Line 173: Update progress bar width
+- Line 176: Log updated progress for debugging
+- Line 180: /**
+- Line 181: * Updates the level and upgrade cost display for all weapon buttons.
+- Line 182: */
+- Line 188: Map weapon IDs to button IDs
+- Line 195: Update level display for each weapon
+- Line 204: Find level display element
+- Line 207: Check if cost is available and not null
+- Line 216: /**
+- Line 217: * Shows the pause indicator element.
+- Line 218: */
+- Line 223: Check if element exists before trying to show it
+- Line 224: Log error if element not found
+- Line 228: /**
+- Line 229: * Hides the pause indicator element.
+- Line 230: */
+- Line 235: Don't error if called before element exists (e.g., initial setup)
+- Line 237: logger.warn(`HtmlUIComponents: Element 'pauseIndicator' not found when calling hidePauseIndicator!`);
+- Line 239: Export all functions
+
+## src/core/utils/debug/DebugObjectInspector.ts
+- Line 26: Orchestrates the inspection of game objects for debugging
+- Line 27: Delegates to specialized inspectors for different entity types
+- Line 35: Changed key to string
+- Line 47: Store the reference
+- Line 58: Fetches the raw details for a specific game object.
+- Line 59: @param gameObject The Phaser GameObject to inspect.
+- Line 60: @param currentTime The current timestamp (potentially frozen during pause) to use for age calculation.
+- Line 61: @returns A flat object containing the details, or a minimal error object if identification fails.
+- Line 64: Use 'unknown' instead of 'any' for the return type's value, or define a more specific interface/union if possible
+- Line 68: Use the defined interface
+- Line 71: Assuming player sprite name is set to 'player'
+- Line 75: Cast first
+- Line 78: Use cast variable
+- Line 83: Example
+- Line 85: Check if it's a powerup sprite using the injected map or getData as fallback
+- Line 89: Changed type to string | undefined
+- Line 92: Primary check: Is it in the powerupSprites map?
+- Line 100: Fallback check: Use getData if not found in map (or if map isn't populated yet)
+- Line 102: Get the numeric ID from data
+- Line 105: Create the string ID
+- Line 109: powerupInstanceId is now string 'powerup_X'
+- Line 110: Already a string 'powerup_X'
+- Line 111: Check if the sprite is being destroyed (scene becomes undefined during destruction)
+- Line 122: Try to get configId from data, might be undefined initially
+- Line 130: Return minimal error object instead of null
+- Line 134: Could not identify object type/ID (Race condition?)
+- Line 140: Delegate to the appropriate specialized inspector
+- Line 146: Pass the player sprite and currentTime
+- Line 149: Pass the EnemyEntity instance and currentTime
+- Line 153: Pass the ProjectileShape instance and currentTime
+- Line 157: Provide fallback
+- Line 163: Pass the powerup sprite instance and currentTime
+- Line 166: Provide fallback
+- Line 173: Return null instead of HTML string
+- Line 176: Check for null data from the specific inspector
+- Line 179: Return a minimal object instead of null to prevent downstream errors
+- Line 181: This allows the UI to show *something* even if details are missing
+- Line 188: Return the raw data object, no formatting here
+- Line 191: /**
+- Line 192: * Calculates the age of an entity based on its creation time and the provided current time
+- Line 193: * @param creationTime The creation time of the entity
+- Line 194: * @param currentTime The current timestamp (potentially frozen during pause)
+- Line 195: * @returns The age as a string, or 'N/A' if creation time is undefined
+- Line 196: */
+- Line 197: Use currentTime instead of Date.now()
+
+## src/core/utils/debug/PowerupDebugMenu.ts
+- Line 17: Ensure powerupsConfig is an array, provide empty array if not
+- Line 21: Listen for debug mode changes
+- Line 23: Set initial visibility based on current debug state
+- Line 27: Create container
+- Line 38: Create dropdown button
+- Line 46: Prevent text selection
+- Line 49: Create dropdown content
+- Line 50: Initially hidden
+- Line 55: Ensure dropdown is above button
+- Line 56: Small gap
+- Line 58: Limit height and add scroll
+- Line 61: Add powerup options
+- Line 62: Check if powerups are configured
+- Line 69: Prevent container click from closing dropdown immediately
+- Line 71: Specify which powerup to spawn
+- Line 73: Add hover effect
+- Line 77: Use default background
+- Line 81: Handle case where no powerups are configured
+- Line 90: Add event listeners
+- Line 97: Close dropdown if clicked outside
+- Line 98: Check if the click was outside the container
+- Line 103: Assemble UI
+- Line 109: Toggle dropdown visibility
+- Line 115: Generate position at top of screen with random X
+- Line 118: Default fallback X, Y at top
+- Line 121: Use assumed game width (800) for random X calculation
+- Line 124: Y position slightly above the top edge to mimic falling in
+- Line 127: Note: We could try getting width from Phaser's scale manager if available,
+- Line 128: but using the assumed width is simpler for now.
+- Line 136: Emit event to request powerup spawn
+- Line 140: Mark as debug-spawned
+- Line 141: Specify which powerup to spawn
+- Line 144: Close dropdown after selection
+- Line 146: Reset button text
+- Line 149: Handle debug mode changes
+- Line 153: Set visibility of the container
+- Line 156: Ensure dropdown is closed when UI becomes visible/hidden
+- Line 163: Destroy the debug menu
+- Line 166: Remove event listeners from document? Might be tricky if multiple instances exist.
+- Line 167: For simplicity, assuming only one instance and not removing body listener.
+- Line 172: Log destruction
+
+## src/core/utils/debug/formatters/DebugDataFormatter.ts
+- Line 1: Removed InspectedObjectData import as it's no longer used for the input type
+- Line 5: Handles formatting of inspection data (now a flat object) to HTML
+- Line 6: Provides consistent styling and layout for debug data
+- Line 9: Note: These options are currently unused in the simplified formatter
+- Line 17: Merge provided options with defaults
+- Line 21: Formats inspection data (flat object) to HTML
+- Line 22: @param data The flat key-value object from the inspector
+- Line 23: @returns Formatted HTML string in [key: value] format
+- Line 26: Handle null input gracefully
+- Line 31: Use <pre> for monospace font and preserving line breaks
+- Line 34: Iterate through all properties in the flat data object
+- Line 38: Format as [key: value]
+- Line 39: Handle potential undefined/null values for display
+- Line 48: Removed unused private helper methods:
+- Line 49: - extractAndAddProperty
+- Line 50: - addSeparator
+- Line 51: - formatConfigSection
+- Line 52: - formatStandardProperties
+- Line 53: - formatOtherProperties
+
+## src/core/utils/debug/inspectors/EnemyInspector.ts
+- Line 7: Specialized inspector for enemy entities
+- Line 8: Extracts enemy-specific data for debugging
+- Line 14: Gets detailed inspection data for an enemy
+- Line 15: @param id The unique ID of the enemy instance
+- Line 16: @param enemyEntity The enemy entity to inspect
+- Line 17: @param currentTime The current timestamp (potentially frozen during pause) to use for age calculation.
+- Line 18: @returns Enemy inspection data or null if data cannot be retrieved
+- Line 21: Return a simple key-value object instead of the structured EnemyInspectionData
+- Line 23: Get from entity
+- Line 24: Get from manager
+- Line 25: Get from manager
+- Line 28: Use configId from entity, check health/time from manager, check body
+- Line 38: Return basic info even if config is missing
+- Line 41: --- Core Identification ---
+- Line 47: --- Entity/Sprite Properties ---
+- Line 58: --- Physics Body Properties ---
+- Line 75: --- Manager State Properties ---
+- Line 77: Pass currentTime
+- Line 79: --- Enemy Specific ---
+- Line 80: Access static property
+- Line 81: Add slow status from EnemyEntity getters
+- Line 82: Renamed from getCurrentSlowMultiplier for consistency
+- Line 84: Use scene time to calculate remaining duration
+- Line 88: --- Config Properties (Prefixed) ---
+- Line 93: Cast to allow dynamic key access
+- Line 97: Avoid adding complex objects/arrays directly, stringify or skip
+- Line 102: Skip nested objects
+- Line 105: Only show error if config is missing
+- Line 111: /**
+- Line 112: * Calculates the age of an entity based on its creation time and the provided current time
+- Line 113: * @param creationTime The creation time of the entity
+- Line 114: * @param currentTime The current timestamp (potentially frozen during pause)
+- Line 115: * @returns The age as a string, or 'N/A' if creation time is undefined
+- Line 116: */
+- Line 120: Use currentTime instead of Date.now()
+
+## src/core/utils/debug/inspectors/PlayerInspector.ts
+- Line 7: Specialized inspector for player entities
+- Line 8: Extracts player-specific data for debugging
+- Line 15: Gets detailed inspection data for the player
+- Line 16: @param playerSprite The player sprite to inspect
+- Line 17: @param currentTime The current timestamp (potentially frozen during pause) to use for age calculation.
+- Line 18: @returns Player inspection data or null if data cannot be retrieved
+- Line 21: Return a simple key-value object instead of the structured PlayerInspectionData
+- Line 22: Get manager state
+- Line 33: --- Core Identification ---
+- Line 37: --- Sprite Properties ---
+- Line 48: --- Physics Body Properties ---
+- Line 65: --- Manager State Properties ---
+- Line 71: Pass currentTime
+- Line 73: --- Config Properties (Prefixed) ---
+- Line 74: Flatten config or select key properties
+- Line 77: Add config properties with prefix
+- Line 79: Cast config to any to allow dynamic key access for debugging display
+- Line 84: Avoid adding complex objects/arrays directly, stringify or skip
+- Line 87: Or skip
+- Line 90: Skip nested objects for simplicity for now
+- Line 96: /**
+- Line 97: * Calculates the age of an entity based on its creation time and the provided current time
+- Line 98: * @param creationTime The creation time of the entity
+- Line 99: * @param currentTime The current timestamp (potentially frozen during pause)
+- Line 100: * @returns The age as a string, or 'N/A' if creation time is undefined
+- Line 101: */
+- Line 104: Use currentTime instead of Date.now()
+
+## src/core/utils/debug/inspectors/PowerupInspector.ts
+- Line 7: Specialized inspector for powerup entities
+- Line 8: Extracts powerup-specific data for debugging
+- Line 13: Gets detailed inspection data for a powerup
+- Line 14: @param id The unique ID of the powerup instance
+- Line 15: @param powerupSprite The powerup sprite to inspect
+- Line 16: @param configId The config ID of the powerup
+- Line 17: @param currentTime The current timestamp (potentially frozen during pause) to use for age calculation.
+- Line 18: @returns Powerup inspection data or null if data cannot be retrieved
+- Line 21: Return a simple key-value object instead of the structured PowerupInspectionData
+- Line 27: No longer need to extract numeric part, PowerupManager now uses string ID 'powerup_X'
+- Line 30: if (isNaN(numericId)) {
+- Line 31: Logger.warn(`Invalid powerup ID for inspection (could not parse number): ${id}`);
+- Line 32: return null;
+- Line 33: }
+- Line 35: Attempt to get state using the string ID 'powerup_X'
+- Line 40: Use config from manager state if available, otherwise use configId passed from sprite data
+- Line 43: Log if state is missing, but continue
+- Line 49: Continue without body info
+- Line 54: --- Core Identification ---
+- Line 55: Keep original string ID from sprite data
+- Line 59: --- Sprite Properties ---
+- Line 70: --- Physics Body Properties (Only if body exists) ---
+- Line 87: Continue without physics body details
+- Line 91: --- Manager State Properties (Only if state exists) ---
+- Line 93: Pass currentTime
+- Line 98: --- Config Properties (Prefixed, only if config exists) ---
+- Line 100: Cast to allow dynamic key access
+- Line 104: Avoid adding complex objects/arrays directly, stringify or skip
+- Line 107: Or skip
+- Line 110: Skip nested objects
+- Line 112: Only show error if configId wasn't passed either
+- Line 119: /**
+- Line 120: * Calculates the age of an entity based on its creation time and the provided current time
+- Line 121: * @param creationTime The creation time of the entity
+- Line 122: * @param currentTime The current timestamp (potentially frozen during pause)
+- Line 123: * @returns The age as a string, or 'N/A' if creation time is undefined
+- Line 124: */
+- Line 127: Use currentTime instead of Date.now()
+
+## src/core/utils/debug/inspectors/ProjectileInspector.ts
+- Line 7: Specialized inspector for projectile entities
+- Line 8: Extracts projectile-specific data for debugging
+- Line 13: Gets detailed inspection data for a projectile
+- Line 14: @param id The unique ID of the projectile
+- Line 15: @param projectileShape The projectile shape to inspect
+- Line 16: @param projectileType The type of the projectile
+- Line 17: @param currentTime The current timestamp (potentially frozen during pause) to use for age calculation.
+- Line 18: @returns Projectile inspection data or null if data cannot be retrieved
+- Line 21: Return a simple key-value object instead of the structured ProjectileInspectionData
+- Line 22: Get manager state
+- Line 37: --- Core Identification ---
+- Line 39: Type might be redundant if stored in state
+- Line 41: Use Parent for consistency
+- Line 42: --- Shape Properties ---
+- Line 45: Angle might not be relevant for simple shapes, but include if needed
+- Line 52: Texture might not apply to shapes, but check data if needed
+- Line 55: --- Physics Body Properties ---
+- Line 72: --- Manager State Properties ---
+- Line 76: Pass currentTime
+- Line 78: --- Config Properties (Placeholder) ---
+- Line 79: Config is tricky here as it depends on the weapon/enemy that fired it.
+- Line 80: We might need to enhance ProjectileState to store the source config ID.
+- Line 83: Rely on passed argument
+- Line 89: /**
+- Line 90: * Calculates the age of an entity based on its creation time and the provided current time
+- Line 91: * @param creationTime The creation time of the entity
+- Line 92: * @param currentTime The current timestamp (potentially frozen during pause)
+- Line 93: * @returns The age as a string, or 'N/A' if creation time is undefined
+- Line 94: */
+- Line 97: Use currentTime instead of Date.now()
+
+## src/core/utils/debug/types/InspectionTypes.ts
+- Line 6: /**
+- Line 7: * Represents an object that can be inspected in debug mode
+- Line 8: */
+- Line 9: Unique ID of the object
+- Line 10: Type of the object (e.g., 'player', 'enemy', 'projectile')
+- Line 13: /**
+- Line 14: * Represents the current inspection state
+- Line 15: */
+- Line 17: ID of the inspected object (null if none)
+- Line 18: Type of the inspected object (null if none)
+- Line 21: /**
+- Line 22: * Data for the DEBUG_SHOW_INSPECTION_DETAILS event
+- Line 23: */
+- Line 25: Changed from html: string to data: object
+- Line 26: Raw inspection data object (null if inspection stopped or failed)
+- Line 29: /**
+- Line 30: * Union type for all game objects that can be drawn with debug visuals
+- Line 31: */
+- Line 34: /**
+- Line 35: * Configuration for debug visualization
+- Line 36: */
+- Line 38: Stroke color for debug shapes
+- Line 39: Color for debug labels
+- Line 40: Line width for debug shapes (optional)
+- Line 43: /**
+- Line 44: * Configuration for object interactivity
+- Line 45: */
+- Line 47: Padding for hit area (optional)
+- Line 48: Whether to use hand cursor on hover (optional)
+- Line 49: Whether to use pixel perfect hit testing (optional)
+- Line 52: /**
+- Line 53: * Data for object destruction events
+- Line 54: */
+- Line 56: Instance ID of the destroyed object
+- Line 57: Type of the destroyed object (optional)
+
+## src/core/utils/factory/HtmlUIFactory.ts
+- Line 5: Factory class responsible for creating and styling HTML UI elements.
+- Line 9: To store created elements
+- Line 10: To store cooldown bar elements
+- Line 19: Creates all standard UI elements and registers them.
+- Line 20: @returns A map of the created elements.
+- Line 29: Define element configurations with relative positioning
+- Line 37: We'll show upgrade cost directly in the weapon buttons
+- Line 43: Create elements based on configs with calculated absolute positions
+- Line 45: Convert relative positions to absolute if they exist
+- Line 57: Create weapon button container
+- Line 64: /**
+- Line 65: * Creates the weapon button container and buttons
+- Line 66: */
+- Line 68: Create container for weapon buttons
+- Line 72: Set container styles
+- Line 80: Store in map
+- Line 83: Create weapon buttons
+- Line 92: Create button
+- Line 97: Set button styles
+- Line 106: Increased by 50% from 80px
+- Line 113: Add weapon name
+- Line 116: Capitalize and replace underscore
+- Line 121: Add level and upgrade cost indicator
+- Line 129: Add progress bar container
+- Line 137: Add progress bar
+- Line 149: Store button and progress bar
+- Line 152: Calculate cooldown bar ID
+- Line 162: Add to container
+- Line 163: Log creation for debugging
+- Line 166: /**
+- Line 167: * Creates a single UI element based on configuration.
+- Line 168: */
+- Line 177: Consider making this configurable
+- Line 179: Default: no interaction
+- Line 181: Preserve line breaks if any in text
+- Line 183: Add background color and padding if provided
+- Line 189: Store original config for repositioning
+- Line 197: Set alignment and position
+- Line 207: /**
+- Line 208: * Calculates and sets the screen position of an element relative to the canvas.
+- Line 209: */
+- Line 211: Skip positioning if coordinates are not provided
+- Line 217: Calculate base position relative to canvas top-left
+- Line 223: Handle horizontal alignment
+- Line 225: Position relative to the right edge of the canvas minus the provided x offset
+- Line 227: Unset left
+- Line 228: Set text alignment
+- Line 229: Unset transform
+- Line 230: Handle center alignment
+- Line 232: Unset right
+- Line 233: Set text alignment
+- Line 234: Center horizontally
+- Line 235: align === 'left'
+- Line 236: Set left position
+- Line 237: Unset right
+- Line 238: Set text alignment
+- Line 239: Unset transform
+- Line 244: /**
+- Line 245: * Handles canvas resize events by repositioning all UI elements
+- Line 246: */
+- Line 250: Reposition all elements based on their stored config
+- Line 252: Skip weapon button container - it's handled separately in HtmlUI
+- Line 264: Catch parsing errors
+- Line 265: Log warning
+- Line 269: End of class
+
+## src/core/utils/helpers/HtmlElementFactory.ts
+- Line 2: Factory class responsible for creating specific HTML elements for the main game UI.
+- Line 13: Expect return value
+- Line 25: Expect return value
+- Line 33: Creates all the standard UI elements.
+- Line 42: Create currency element
+- Line 43: Create health element
+- Line 44: Create score element
+- Line 45: Create wave element
+- Line 46: Create weapon status element
+- Line 47: Create weapon upgrade cost element
+- Line 48: Create weapon buttons
+- Line 49: Create cooldown bars after buttons
+- Line 51: Add pause indicator
+- Line 54: Create currency element
+- Line 58: Create health element
+- Line 62: Create score element
+- Line 63: Note: Positioning adjusted compared to DebugUI based on original HtmlUI code
+- Line 74: Create wave element
+- Line 75: Note: Positioning adjusted compared to DebugUI based on original HtmlUI code
+- Line 86: Create weapon status element
+- Line 102: Create weapon upgrade cost element
+- Line 118: Create weapon buttons
+- Line 155: New method to create cooldown bars
+- Line 162: Match the intended button width
+- Line 163: Height of the bar
+- Line 164: Position below buttons
+- Line 166: Cooldown Bar 1 (Bullet)
+- Line 167: Assign the result of createUIElement to bar1Container
+- Line 170: No text
+- Line 171: Center align with button 1
+- Line 173: Red (will be overridden by update)
+- Line 174: Use center alignment logic
+- Line 175: No background color needed initially, just the bar itself
+- Line 179: Use the returned reference
+- Line 180: Set total width container
+- Line 182: Dark background for the container
+- Line 183: Remove padding
+- Line 186: Create the inner filling bar
+- Line 188: Start empty
+- Line 190: Red fill
+- Line 191: Smooth transition for width changes
+- Line 192: Append to the returned container
+- Line 193: Adjust margin-left based on the actual barWidth
+- Line 198: Cooldown Bar 2 (Laser)
+- Line 199: Assign the result of createUIElement to bar2Container
+- Line 203: Center align with button 2
+- Line 205: Cyan
+- Line 208: Use the returned reference
+- Line 211: Dark background
+- Line 212: Remove padding
+- Line 215: Create inner bar
+- Line 216: Start empty
+- Line 218: Cyan fill
+- Line 219: Smooth transition
+- Line 220: Append to container
+- Line 221: Adjust margin
+- Line 224: Cooldown Bar 3 (Slow)
+- Line 225: Assign the result of createUIElement to bar3Container
+- Line 229: Center align with button 3
+- Line 231: Gold
+- Line 234: Use the returned reference
+- Line 237: Dark background
+- Line 238: Remove padding
+- Line 241: Create inner bar
+- Line 242: Start empty
+- Line 244: Gold fill
+- Line 245: Smooth transition
+- Line 246: Append to container
+- Line 247: Adjust margin
+- Line 252: Removed debug log
+- Line 259: Create pause indicator element
+- Line 264: Red color
+- Line 267: Removed debug log
+- Line 268: Initially hide it - this needs to be done in HtmlUI after creation
+- Line 270: End of class
+
+## src/core/utils/types/HtmlUI.types.ts
+- Line 2: Type for alignment options
+- Line 5: Interface for basic element configuration (can be expanded)
+- Line 8: Absolute X position (optional)
+- Line 9: Absolute Y position (optional)
+- Line 10: Position as percentage of canvas width (0.0 to 1.0)
+- Line 11: Position as percentage of canvas height (0.0 to 1.0)
+- Line 17: Interface for cooldown bar data
+- Line 19: ID of the bar element
+- Line 20: Reference to the inner filling div
+- Line 21: Color of the filling bar
+
+## src/phaser/entities/EnemyEntity.ts
+- Line 13: Static property to track game pause state
+- Line 16: Unique instance ID assigned by EnemyManager
+- Line 17: Config ID from YAML
+- Line 18: Reference to the full config
+- Line 19: Timer for shooting cooldown
+- Line 20: Store scaled max health
+- Line 21: Store the base speed multiplier from difficulty/wave scaling
+- Line 24: 1.0 means no slow
+- Line 25: Timestamp when the slow effect ends
+- Line 28: Store injected instances
+- Line 31: Static method to initialize event listeners for pause/resume
+- Line 44: Static method to clean up event listeners for pause/resume
+- Line 72: Initialize cooldown randomly to avoid all enemies firing at once
+- Line 78: Set scale
+- Line 80: Disable world bounds for bomber_dive pattern
+- Line 83: Enable world bounds for other patterns
+- Line 85: Set circular collision body
+- Line 90: Set initial velocity
+- Line 94: Store instance ID on the sprite for easy lookup
+- Line 95: Store object type for debug inspection
+- Line 96: Store config ID for debug inspection
+- Line 98: Bind event handler
+- Line 99: Listen for slow effect event
+- Line 104: Handle taking damage (visual only here, actual health managed by EnemyManager)
+- Line 109: Apply red tint on hit
+- Line 110: Clear tint after a short delay
+- Line 111: Check if tint is still red before clearing (prevents clearing slow tint)
+- Line 117: --- Getters for State ---
+- Line 122: Renamed from getCurrentSlowMultiplier for consistency
+- Line 127: Return 0 if not slowed
+- Line 130: --- Public Accessors for Behavior Functions ---
+- Line 135: Keep this specific getter for behavior
+- Line 140: Get shoot cooldown timer
+- Line 143: Set shoot cooldown timer
+- Line 147: --- End Accessors ---
+- Line 148: Destroy the enemy entity
+- Line 150: Remove event listener
+- Line 151: Disable physics body but keep visible for destruction effect
+- Line 152: Emit event to request destruction effect
+- Line 157: Destroy the sprite object
+- Line 160: Pre-update loop delegates to behavior functions
+- Line 164: Check if body exists and is active
+- Line 168: Check if game is paused
+- Line 176: Delegate to behavior functions
+- Line 179: Keep slow effect update internal
+- Line 183: --- Slow Effect Logic (Remains internal) ---
+- Line 184: Handle applying the slow effect
+- Line 185: Check if this enemy is in the list of affected enemies
+- Line 190: Apply slow effect
+- Line 191: Set the slow multiplier
+- Line 192: Calculate expiry time
+- Line 196: Update slow effect timer and remove if expired
+- Line 197: Check if slow effect has expired
+- Line 199: Reset multiplier
+- Line 200: Reset expiry time
+- Line 201: Check if tint is light blue before clearing
+- Line 207: Clean up event listeners
+
+## src/phaser/entities/behavior/EnemyEntity.behavior.ts
+- Line 8: --- Type Definitions for Function Arguments ---
+- Line 11: Reference to the main entity instance
+- Line 18: --- Behavior Functions ---
+- Line 20: Handles movement based on the entity's configuration.
+- Line 21: Check if body exists and is active
+- Line 24: Use getters for private properties
+- Line 29: Visual indicator for slow (optional) - This might be better handled by a visual component/handler
+- Line 33: Check tint before clearing
+- Line 39: Apply movement based on pattern
+- Line 43: Check if blocked on the right
+- Line 45: Check if blocked on the left
+- Line 48: Ensure velocity is maintained if blocked
+- Line 52: If somehow stopped mid-air, restart movement
+- Line 56: Gentle downward movement
+- Line 60: Weaving pattern logic
+- Line 68: Ensure no horizontal movement
+- Line 69: Faster downward movement
+- Line 72: Strafe horizontal pattern logic
+- Line 84: Very slow downward movement
+- Line 88: Default movement pattern
+- Line 89: Ensure no horizontal movement
+- Line 90: Default downward movement
+- Line 95: Handles enemy shooting behavior.
+- Line 96: Check if enemy can shoot and has shoot config
+- Line 100: Use getter and setter for cooldown timer
+- Line 105: Check if the entity is sufficiently on screen to shoot
+- Line 106: Threshold to start shooting
+- Line 109: Add detailed logging before emitting the event
+- Line 117: Ensure scene context exists
+- Line 119: Double-check shootConfig before emitting
+- Line 123: Fire from bottom center
+- Line 127: Reset cooldown using setter ONLY after successful fire attempt
+- Line 130: Aborted firing due to missing shootConfig.
+- Line 132: Default long cooldown on error
+- Line 135: Tried to fire but scene context is missing.
+- Line 137: Reset cooldown anyway
+- Line 140: Reset cooldown even if not firing, prevents instant firing when reaching threshold
+- Line 142: Check if shootConfig exists before accessing cooldownMs
+- Line 146: If shootConfig is missing but canShoot was true, use a default cooldown
+- Line 147: Default long cooldown
+- Line 152: Update the entity's timer via setter
+- Line 156: Checks if the enemy is off-screen and emits an event if it is.
+- Line 157: Check if active and scene exists
+- Line 160: Check if below the bottom edge of the camera viewport
+- Line 164: Deactivate and disable physics immediately
+- Line 167: Disable body and remove from physics world
+- Line 169: The actual destruction might be handled by EnemyManager listening to ENEMY_OFF_SCREEN
+
+## src/phaser/entities/types/EnemyEntity.types.ts
+- Line 2: TODO: Consider moving to a shared core/types location if used elsewhere
+- Line 5: Speed multiplier (e.g., 0.5 for 50% speed)
+- Line 6: Duration in milliseconds
+- Line 9: Could add other enemy-specific types here later if needed
+
+## src/phaser/handlers/GameSceneAreaEffectHandler.ts
+- Line 7: Define the structure for the PROJECTILE_EXPLODE event data
+- Line 8: TODO: Centralize this interface if used elsewhere
+- Line 18: Define payload for the new AoE event (ideally move to a shared types file)
+- Line 26: Add other potential AoE effects here (e.g., damageOverTime)
+- Line 29: Define payload for applying the slow effect (ideally move to a shared types file)
+- Line 38: Re-define necessary interfaces or import them if shared
+- Line 39: TODO: Centralize these interfaces
+- Line 51: Handles area effects within the game scene, specifically projectile explosions and slow fields.
+- Line 61: Bind new handler
+- Line 64: Listen for new event
+- Line 74: --- Explosion Visuals ---
+- Line 82: Quick fade-out
+- Line 89: Explosion ring tween
+- Line 93: Longer fade-out
+- Line 100: --- Explosion Damage Logic ---
+- Line 102: Check for overlapping bodies in a circle
+- Line 106: Check bodies
+- Line 107: Don't check static bodies
+- Line 111: Damage Enemies
+- Line 113: TODO: Add check for bomb owner if friendly fire needs prevention
+- Line 126: Damage Player (if enemy explosion)
+- Line 134: Check collision with player's body radius if available, otherwise just distance check
+- Line 147: --- Handler for the new Area Effect Request ---
+- Line 158: --- Specific Effect Implementation: Slow Field ---
+- Line 162: 1. Visual Representation (Optional, but helpful)
+- Line 163: Semi-transparent blue circle
+- Line 164: Render behind other entities
+- Line 169: Quick fade-in/expand effect
+- Line 172: Fade out the visual effect after a short delay.
+- Line 183: 2. Find Overlapping Enemies
+- Line 184: Track enemies hit to apply duration correctly
+- Line 185: Check for overlapping bodies in a circle
+- Line 186: Check bodies
+- Line 187: Don't check static bodies
+- Line 189: Check if it's an active EnemyEntity
+- Line 194: 3. Apply Slow Effect (Emit event for EnemyManager/EnemyEntity)
+- Line 197: Emit a single event with all affected IDs, duration, and factor
+- Line 200: Pass the factor itself
+- Line 207: Clean up event listeners
+- Line 210: Unregister new listener
+
+## src/phaser/handlers/GameSceneCollisionHandler.ts
+- Line 17: Orchestrates collision handling by delegating to specialized functions.
+- Line 18: Holds references to necessary game objects and managers required by the handlers.
+- Line 27: Changed key to string
+- Line 30: Define a proper type later if needed
+- Line 60: Bind the wrapper methods that will call the external handlers
+- Line 67: --- Collision Callback Wrappers ---
+- Line 68: These methods are registered with Phaser's collision system and call the external handlers
+- Line 70: Use inline arrow function
+- Line 71: Use 'on' prefix
+- Line 47: processCallback
+- Line 48: Context for the collider function itself
+- Line 51: Projectile vs Enemy collisions (collider) - Stops projectiles
+- Line 55: Use inline arrow function
+- Line 57: Attempt to cast and get IDs
+- Line 59: Use logger instead of console.log
+- Line 61: Re-enable the handler call
+- Line 62: Use 'on' prefix
+- Line 64: processCallback
+- Line 65: Context for the collider/process callbacks
+- Line 68: Player vs Projectile collisions (collider)
+- Line 72: Use inline arrow function, rename projectile to projectileShape
+- Line 73: This callback now only runs if processCallback returns true
+- Line 74: Use 'on' prefix
+- Line 76: processCallback
+- Line 78: Retrieve the owner from the projectile shape's data
+- Line 80: Only process the collision if the owner is 'enemy'
+- Line 82: If it's a player projectile, log for debugging (optional)
+- Line 83: Get projectile ID
+- Line 86: Return whether to process the collision
+- Line 88: Context for the collider/process callbacks
+- Line 91: --- Player vs Powerup overlap setup REMOVED ---
+- Line 92: The standard physics.add.overlap was not firing the callback.
+- Line 93: Overlap detection and handling will be done manually in GameScene.update
+- Line 94: using the debugLogPotentialOverlaps logic.
+- Line 95: logger.warn('[CollisionManager] Player vs Powerup overlap setup skipped. Using manual check in GameScene.update.'); // Warning removed
+- Line 96: --- End REMOVED ---
+- Line 98: Log setup complete
+- Line 99: Added missing closing brace for setupCollisions
+- Line 101: /**
+- Line 102: * Creates a collision handler for the game scene
+- Line 103: * @param config The collision configuration
+- Line 104: * @returns The created collision handler
+- Line 105: */
+- Line 106: This static method might be better placed elsewhere or refactored,
+- Line 107: but keeping it for now to minimize structural changes.
+- Line 110: Use specific type
+- Line 111: Use specific type
+- Line 112: Accept the broader Shape type here, as the handler doesn't need the guaranteed body
+- Line 114: Changed key to string
+- Line 116: Cast the map when passing to the constructor, assuming the handler can manage potential issues
+- Line 117: Or, better, ensure the handler itself is robust enough to handle Shapes without guaranteed bodies if needed.
+- Line 118: For now, let's assume the handler is okay or will be adjusted.
+- Line 124: Cast here, assuming valid shapes are passed
+- Line 126: Changed key to string
+- Line 130: /**
+- Line 131: * Cleans up resources used by this manager
+- Line 132: */
+- Line 134: No specific cleanup needed for collisions as they're handled by the scene
+
+## src/phaser/handlers/GameSceneDebugHandler.ts
+- Line 27: Handles debug visualization and functionality for the game scene.
+- Line 28: Orchestrates specialized debug handlers.
+- Line 32: HTML debug panel instance
+- Line 33: Instance for visualization handler
+- Line 34: Debug panel updater instance
+- Line 37: Specialized handlers
+- Line 41: References to game objects (needed for handlers)
+- Line 45: Changed key to string
+- Line 66: Changed key to string
+- Line 69: Create HTML UI elements first
+- Line 71: Set scene reference for labels
+- Line 73: --- Instantiate Handlers ---
+- Line 75: 1. Inspection Handler (manages selected object state)
+- Line 78: 2. Visualization Handler (draws shapes, labels, uses label instance)
+- Line 84: Changed key to string
+- Line 85: Pass the created labels instance
+- Line 88: 3. Interaction Handler (sets interactive flags, cursor, forwards clicks)
+- Line 94: Changed key to string
+- Line 95: Callback when an object is clicked
+- Line 98: 4. Debug Panel Updater (collects data, updates HTML panel)
+- Line 113: Changed key to string
+- Line 116: Bind methods
+- Line 120: Register event listeners
+- Line 124: Set initial visibility based on debug state
+- Line 130: /**
+- Line 131: * Handles changes to debug mode, toggling visibility and interactivity.
+- Line 132: */
+- Line 137: Toggle visibility for UI and visuals
+- Line 139: Handles labels and graphics
+- Line 142: Toggle game object visibility (hide in debug, show otherwise)
+- Line 145: Toggle interactivity (for cursor changes and potential future use)
+- Line 147: Disable pointer events on the game canvas when debug mode is active
+- Line 153: --- TEMP DEBUG: Disable scene input plugin ---
+- Line 156: logger.debug(`[Debug Text Select] Scene input plugin enabled: ${!isDebugMode}`);
+- Line 158: --- END TEMP DEBUG ---
+- Line 161: Additional cleanup when turning OFF
+- Line 164: Refresh visuals when turning ON
+- Line 169: /**
+- Line 170: * Main update loop for debug visuals. Called by GameScene.
+- Line 171: */
+- Line 175: Update visualization handler (draws labels, highlights)
+- Line 178: Update the HTML debug panel content
+- Line 182: /**
+- Line 183: * Callback passed to InteractionHandler. Forwards the clicked object
+- Line 184: * to the InspectionHandler to manage the inspection state.
+- Line 185: */
+- Line 187: Should not happen if interactivity is off, but safety check
+- Line 190: If inspection state changed, immediately update visuals to reflect it
+- Line 194: Make sure debug panel is updated with the newly selected object
+- Line 199: /**
+- Line 200: * Handles the DEBUG_PERFORM_HIT_TEST event (e.g., from clicking a label).
+- Line 201: * Finds the corresponding game object and triggers the inspection handler.
+- Line 202: */
+- Line 216: --- Find Object by Type and ID (More reliable than coordinates) ---
+- Line 229: objectId is now 'powerup_X', use it directly as the key
+- Line 238: --- Fallback: Coordinate-based Hit Test (Less reliable) ---
+- Line 244: Filter out inactive/null
+- Line 251: Iterate reverse for top-most object
+- Line 255: Need to cast to access body
+- Line 270: Ignore errors during hit testing
+- Line 274: --- Process Result ---
+- Line 276: Use the same logic as direct object click
+- Line 278: Clicked outside any known object or label target
+- Line 280: Update visuals to remove highlight
+- Line 284: /**
+- Line 285: * Cleans up resources used by this handler and its sub-handlers.
+- Line 286: */
+- Line 297: htmlDebugLabels is destroyed by visualizationHandler
+- Line 303: Log destruction
+
+## src/phaser/handlers/GameSceneDebugPanelHandler.ts
+- Line 12: Helper class to handle the debug panel
+- Line 18: References to game objects and managers
+- Line 20: Map of enemy sprites by instance ID
+- Line 21: Map of projectile sprites by instance ID
+- Line 22: Map of powerup sprites by instance ID
+- Line 52: Create debug panel
+- Line 56: Create a container for the debug panel (initially hidden)
+- Line 61: Add background for the debug panel
+- Line 64: Add green border
+- Line 67: Add title
+- Line 77: Set a high depth to render above other game elements
+- Line 81: Set visibility of the debug panel
+- Line 85: Update the debug panel content
+- Line 89: Collect data from all managers
+- Line 114: Update the debug manager with this data
+- Line 117: Clear existing debug texts in the panel
+- Line 119: Skip background and title
+- Line 124: Add new debug texts
+- Line 127: Add category header
+- Line 137: Add data entries
+- Line 140: Handle object values
+- Line 141: Try to stringify objects
+- Line 144: Fallback for non-serializable objects
+- Line 157: Add space between categories
+- Line 164: Helper methods for debug panel
+- Line 165: Get player health
+- Line 166: Access private property (consider adding a public getter)
+- Line 169: Get player invulnerable state
+- Line 170: Access private property (consider adding a public getter)
+- Line 173: Get current weapon ID
+- Line 174: Access private property (consider adding a public getter)
+- Line 177: Get current weapon level
+- Line 178: Access private property (consider adding a public getter)
+- Line 181: Get current cooldown
+- Line 182: Access private property (consider adding a public getter)
+- Line 185: Get current wave
+- Line 189: Get current score
+- Line 193: Get current currency
+- Line 197: /**
+- Line 198: * Cleans up resources used by this manager
+- Line 199: */
+- Line 200: Check if panel and scene exist before destroying
+
+## src/phaser/handlers/GameSceneEventHandler.ts
+- Line 1: Main Event Handler - Delegates to sub-handlers
+- Line 4: Import the shared debug state
+- Line 7: Import powerup types (Removed unused PowerupConfig)
+- Line 8: Import config loader
+- Line 9: Correct path
+- Line 11: Import event data type
+- Line 15: Define payload for applying the slow effect (ideally move to a shared types file)
+- Line 22: Define the structure for the ENEMY_SPAWNED event data (including new fields)
+- Line 26: Now represents scaled health
+- Line 27: Scaled max health
+- Line 28: Scaled speed multiplier
+- Line 30: Sub-handlers
+- Line 35: References needed by sub-handlers or this handler
+- Line 36: To potentially stop it on death
+- Line 37: Store scene reference
+- Line 38: Add powerup group param
+- Line 39: Changed key to string
+- Line 40: Add enemySprites map param
+- Line 41: Declare enemySprites as a private property
+- Line 54: Instantiate sub-handlers
+- Line 55: Store references needed by handlers
+- Line 58: Assign the passed map to the class property
+- Line 63: Add powerup group param
+- Line 64: Add enemySprites map param
+- Line 65: Add projectileShapes map param
+- Line 66: Changed key to string
+- Line 72: Bind handlers managed by this class
+- Line 75: Bind slow effect handler
+- Line 78: Register listeners managed by this class
+- Line 80: Listen for slow effect
+- Line 82: Log initialization
+- Line 87: Pass references to sub-handlers that need them
+- Line 90: Pass it down to the player handler which uses it on death
+- Line 94: --- Powerup Event Handler ---
+- Line 100: Determine the asset key based on the visual identifier
+- Line 104: Use the new asset key
+- Line 113: Unknown type, don't create a sprite
+- Line 118: Create the powerup sprite
+- Line 120: Revert to original small scale
+- Line 121: Increased scale for testing visibility
+- Line 122: Give it some downward movement
+- Line 125: Ensure physics body is enabled and configured for overlap
+- Line 126: Check if body exists
+- Line 127: Explicitly enable
+- Line 128: Powerups don't need to collide with bounds
+- Line 129: Ensure collision checks aren't globally disabled
+- Line 130: Overlap doesn't strictly need these, but let's be explicit
+- Line 136: Set data properties for debug inspection BEFORE setting circle maybe?
+- Line 137: Store instance ID on the sprite for easy lookup
+- Line 138: Store object type for debug inspection
+- Line 139: Store config ID for debug inspection
+- Line 141: Optional: Add slight rotation or tween effect
+- Line 150: Add to the group and map
+- Line 152: Set circle AFTER adding to group
+- Line 153: Align collision circle with the visual sprite
+- Line 154: Use the same radius
+- Line 157: X offset
+- Line 158: Y offset
+- Line 160: Changed key to string
+- Line 163: --- ADDED DETAILED LOG ---
+- Line 177: --- END ADDED DETAILED LOG ---
+- Line 180: Powerups should always be visible when spawned
+- Line 181: REMOVED: powerupSprite.setVisible(!debugState.isDebugMode);
+- Line 183: Play spawn sound
+- Line 187: --- Enemy Destruction Effect Handler ---
+- Line 193: Play sound based on enemy type (can be expanded)
+- Line 196: Create visual effect based on enemy type (can be expanded)
+- Line 200: TODO: Needs own asset?
+- Line 203: Example placeholder: small flash
+- Line 215: TODO: Needs own asset?
+- Line 216: Example placeholder: larger flash
+- Line 229: No specific destruction effect defined for enemy type
+- Line 230: Default fallback effect (e.g., the small flash)
+- Line 245: --- Slow Effect Handler ---
+- Line 250: Check if the entity exists and has the applySlow method (which we still need to add)
+- Line 251: Need to cast to access applySlow method
+- Line 254: Log warning if method is missing
+- Line 256: Log warning if entity not found
+- Line 261: Clean up event listeners by destroying sub-handlers and removing own listeners
+- Line 268: Unregister slow listener
+- Line 269: Log destruction
+
+## src/phaser/handlers/event/ProjectileEventHandler.ts
+- Line 4: Import the shared debug state
+- Line 6: Import EnemyShootConfig (Removed unused EnemyConfig)
+- Line 7: Correct path
+- Line 8: No longer needed for projectile textures
+- Line 9: Import the event data interfaces correctly
+- Line 13: Correct path
+- Line 15: Define payload for the new AoE event
+- Line 22: Specific effect properties
+- Line 26: Add other potential AoE effects here (e.g., damageOverTime)
+- Line 27: Keep this for handleEnemyRequestFire parameter type
+- Line 32: Use imported type
+- Line 36: Define the type for the map storing projectile shapes
+- Line 37: Added export
+- Line 39: Physics system reference
+- Line 40: Store scene reference
+- Line 43: Update map type to store Shapes with Arcade Bodies
+- Line 44: Map to store projectile shapes by ID
+- Line 51: Update parameter type for the map
+- Line 53: Store scene reference
+- Line 57: Assign the map
+- Line 59: Bind methods
+- Line 65: Register listeners
+- Line 73: --- Event Handlers ---
+- Line 75: Update parameter type to use the new interface
+- Line 82: Apply scaling factor to make projectiles visible at current resolution
+- Line 83: Reverted back to 1.0 as requested after fixing visibility issues
+- Line 84: Normal size
+- Line 86: Calculate scaled dimensions
+- Line 90: Log scaled dimensions for debugging
+- Line 92: Create shape based on config and projectile type
+- Line 93: Check if it's a laser/beam type
+- Line 94: Check if it's a bullet type
+- Line 97: If it's a laser/beam
+- Line 99: Create rectangle shape
+- Line 105: Cast to ProjectileShape
+- Line 107: Log laser creation
+- Line 108: If it's a bullet or explicitly ellipse shape
+- Line 110: Use half of the largest dimension as radius for the circle
+- Line 112: Create circle shape
+- Line 117: Cast to ProjectileShape
+- Line 119: Log bullet creation
+- Line 121: Default to rectangle for other shapes
+- Line 122: Create rectangle shape
+- Line 128: Cast to ProjectileShape
+- Line 130: Log default rectangle creation
+- Line 133: Verify the shape was created
+- Line 135: Log error if shape creation failed
+- Line 146: Enable physics
+- Line 147: Log physics setup
+- Line 150: Check if body was created
+- Line 152: Log error if body creation failed
+- Line 157: Set appropriate collision shape based on type
+- Line 158: Cast to Arcade Body
+- Line 159: If it's a bullet or explicitly ellipse shape
+- Line 161: Use half of the largest dimension as radius for the circle
+- Line 162: Align collision circle with the visual shape
+- Line 165: X offset
+- Line 166: Y offset
+- Line 168: Log circular body setup
+- Line 170: If it's a laser/rectangle
+- Line 171: Log default rectangular body setup
+- Line 174: Add to group and map
+- Line 175: Log group and map addition
+- Line 179: Store instanceId, type, and owner on the shape itself for easy retrieval
+- Line 180: Store instance ID
+- Line 181: Store object type
+- Line 182: Store owner for collision checks
+- Line 183: Also set name for potential map key check
+- Line 185: Always show projectiles, even in debug mode
+- Line 187: Log visibility
+- Line 189: Set depth to ensure projectiles render above other game elements
+- Line 191: Log depth
+- Line 193: Apply initial velocity - Ensure body exists before setting velocity
+- Line 195: No need to cast here as physics.add.existing guarantees an Arcade Body
+- Line 197: Log velocity
+- Line 199: Log error if body not found
+- Line 202: Log final state
+- Line 205: Check if projectile is in the group
+- Line 206: Log group size
+- Line 207: Log map size
+- Line 209: Catch errors during physics/group setup
+- Line 214: Handle projectile destroyed event
+- Line 215: Retrieve shape from the updated map
+- Line 217: If shape exists
+- Line 219: Remove from group, destroy the shape, and remove from map
+- Line 222: Warning might still be valid if destruction happens rapidly
+- Line 223: logger.warn(`Could not find projectile shape to destroy: ID ${data.id}`);
+- Line 227: Update the type hint to match the actual event data from WeaponManager
+- Line 233: Check if player sprite is active
+- Line 234: Log warning if player not active
+- Line 237: Destructure event data
+- Line 239: Add detailed logging for all weapon types
+- Line 245: Check if it's the slow_field weapon by ID
+- Line 247: It's the slow field - emit REQUEST_AREA_EFFECT
+- Line 250: TODO: This calculation ideally happens in WeaponManager or WeaponUpgrader and is passed in `data`.
+- Line 251: For now, we'll use base values from config as a placeholder.
+- Line 252: This needs refinement to use upgraded values.
+- Line 253: Add checks for undefined and provide defaults or log errors
+- Line 254: Use 0 if undefined
+- Line 255: Use 0 if undefined
+- Line 256: Keep as potentially undefined
+- Line 258: Check if config is valid
+- Line 260: Don't emit if config is invalid
+- Line 263: Create payload for area effect event
+- Line 265: Center on player
+- Line 266: Center on player
+- Line 269: Pass the factor itself
+- Line 271: Emit area effect event
+- Line 273: Handle all other weapons as standard projectiles
+- Line 275: It's a standard projectile weapon
+- Line 276: Get spawn point (top center of player sprite)
+- Line 277: projectileSpeed is now guaranteed non-zero (due to WeaponManager workaround)
+- Line 279: Log player sprite details for debugging spawn point
+- Line 283: Try using a fixed position above the player instead of getTopCenter()
+- Line 286: Log fixed spawn position
+- Line 288: Create the payload for SPAWN_PROJECTILE event
+- Line 290: Use fixed position instead of spawnPoint.x
+- Line 291: Use fixed position instead of spawnPoint.y
+- Line 292: Player projectiles always fire straight up for now
+- Line 295: Set owner to player
+- Line 296: Pass weapon config for visual properties
+- Line 299: Log SPAWN_PROJECTILE event emission
+- Line 301: Emit SPAWN_PROJECTILE event
+- Line 302: Log successful emission
+- Line 304: Catch errors during event emission
+- Line 309: Handle enemy request fire event
+- Line 310: Note: We don't need the enemy sprite itself here, just its position and config
+- Line 311: Destructure event data
+- Line 312: Use default speed if not provided
+- Line 316: Aiming logic requires player sprite position
+- Line 317: Check if player sprite is active
+- Line 318: Calculate angle between enemy and player
+- Line 324: Calculate velocity vector from angle and speed
+- Line 325: Get X velocity
+- Line 326: Get Y velocity
+- Line 329: Create the payload for SPAWN_PROJECTILE event
+- Line 332: Use imported type
+- Line 333: Keep original type
+- Line 337: Use 0 if damage is undefined
+- Line 338: Set owner to enemy
+- Line 339: Pass the enemy shoot config
+- Line 341: Emit SPAWN_PROJECTILE event
+- Line 344: Clean up event listeners
+- Line 346: Remove PROJECTILE_CREATED listener
+- Line 347: Remove PROJECTILE_DESTROYED listener
+- Line 348: Remove REQUEST_FIRE_WEAPON listener
+- Line 349: Remove ENEMY_REQUEST_FIRE listener
+- Line 350: Log destruction
+
+## src/phaser/handlers/types/Collision.types.ts
+- Line 2: Payload for PLAYER_HIT_ENEMY event
+- Line 8: Payload for PLAYER_HIT_PROJECTILE event
+- Line 14: Payload for PROJECTILE_HIT_ENEMY event
+- Line 20: Could add other collision-related types here if needed
+
+## src/phaser/initializers/GameSceneManagerInitializer.ts
+- Line 11: Import helper
+- Line 12: Import helper
+- Line 13: Import DebugManager
+- Line 14: Import PowerupDebugMenu
+- Line 15: Import debugState
+- Line 18: Structure to hold the initialized managers for GameScene.
+- Line 28: Add DebugManager to the interface
+- Line 29: Add PowerupDebugMenu to the interface
+- Line 33: Initializes all core game managers required by GameScene.
+- Line 34: @param eventBus The global event bus instance.
+- Line 35: @param logger The global logger instance.
+- Line 36: @param sceneWidth The actual width of the game scene.
+- Line 37: @param sceneHeight The actual height of the game scene.
+- Line 38: @returns An object containing instances of all initialized managers.
+- Line 46: Log scene dimensions
+- Line 48: Get player config
+- Line 49: Get powerups config
+- Line 50: Note: Weapon and Enemy configs are loaded internally by their respective managers
+- Line 52: Initial currency 0
+- Line 55: Create helper instances first
+- Line 56: Pass EconomyManager
+- Line 57: Pass EventBus and Logger
+- Line 58: Inject helpers into WeaponManager
+- Line 65: Pass the actual scene dimensions to ProjectileManager
+- Line 67: Inject logger
+- Line 68: Inject logger & config
+- Line 69: Create DebugManager
+- Line 71: Initialize PowerupDebugMenu after dependencies are created
+- Line 73: Initialize managers that require it
+- Line 75: EnemyManager initializes itself (loads config, starts wave) in constructor
+- Line 77: Log initialization success
+- Line 87: Add DebugManager to the returned object
+- Line 88: Add PowerupDebugMenu to the returned object
+
+## src/phaser/scenes/GameScene.ts
+- Line 5: Import the original initializer (for preload and initial object/manager creation)
+- Line 7: Import the new initialization class for handlers/components setup
+- Line 9: Import the new update class
+- Line 11: Import types
+- Line 15: Main game scene that orchestrates the game components.
+- Line 16: Delegates initialization and update logic to specialized classes.
+- Line 19: Core Initializer (handles assets, managers, game objects)
+- Line 22: New Initializer (handles handlers, components setup)
+- Line 24: New Update Handler
+- Line 26: Properties to hold created instances (still needed for passing around)
+- Line 33: Set scene key
+- Line 36: Preload assets
+- Line 38: Create the core initializer
+- Line 41: Preload assets using the core initializer
+- Line 44: Create scene
+- Line 47: 1. Use Core Initializer to create managers and game objects
+- Line 52: 2. Create the new Scene Initializer, passing necessary instances
+- Line 60: 3. Use Scene Initializer to create handlers and components
+- Line 64: 4. Use Scene Initializer to set up components (listeners, collisions, etc.)
+- Line 68: 5. Create the Scene Updater
+- Line 76: Initialize static event listeners for EnemyEntity (can remain here or move)
+- Line 79: Launch UI scene
+- Line 84: Update loop
+- Line 86: Delegate update logic to the scene updater
+- Line 91: Removed createHandlers, createComponents, setupComponents
+- Line 92: Removed triggerManualPowerupOverlap, checkPowerupsOutOfBounds
+- Line 93: These are now handled by GameSceneInitialization and GameSceneUpdate
+
+## src/phaser/scenes/UIScene.ts
+- Line 5: Import PlayerState type
+- Line 6: Import HtmlUI
+- Line 8: --- Interfaces for Event Payloads ---
+- Line 11: Defines the data expected for the WEAPON_STATE_UPDATED event
+- Line 13: Key: weaponId, Value: progress (0-1)
+- Line 14: Include costs for UI buttons
+- Line 15: Include levels for UI display
+- Line 18: Defines the data expected for the WAVE_UPDATED event
+- Line 23: Defines the data expected for CURRENCY_UPDATED
+- Line 28: Defines the data expected for SCORE_UPDATED
+- Line 34: --- UIScene Class ---
+- Line 36: HtmlUI instance
+- Line 42: Preload assets
+- Line 46: Create scene
+- Line 49: Create HTML UI
+- Line 52: Bind methods that aren't arrow functions
+- Line 59: --- Event Listeners ---
+- Line 65: Listen for pause
+- Line 66: Listen for resume
+- Line 69: Clean up listeners when the scene is shut down
+- Line 84: Handle currency update event
+- Line 89: Handle score update event
+- Line 94: Updated handler for the new comprehensive weapon state
+- Line 99: Update button styles based on active weapon
+- Line 103: --- Update All Cooldown/Energy Bars ---
+- Line 104: Iterate through the progress data received from WeaponManager
+- Line 106: Ensure it's a direct property, not from prototype chain
+- Line 108: Already calculated (0-1) by WeaponManager
+- Line 110: Update the corresponding bar in the UI
+- Line 113: --- End Update Bars ---
+- Line 115: Update all weapon level displays with costs
+- Line 119: Handle player state update event
+- Line 124: Handle wave update event
+- Line 129: Use arrow function to lexically bind 'this'
+- Line 131: Log pause event
+- Line 132: Check if htmlUI is available
+- Line 134: Log error if htmlUI is not available
+- Line 139: Use arrow function to lexically bind 'this'
+- Line 141: Log resume event
+- Line 142: Check if htmlUI is available
+- Line 144: Log error if htmlUI is not available
+
+## src/phaser/scenes/components/GameSceneCollisionManager.ts
+- Line 10: Handles collision setup and detection for the game scene
+- Line 11: Delegates to specialized functions.
+- Line 15: References to game objects
+- Line 16: Keep manager references if needed elsewhere, though not strictly for collision setup now
+- Line 34: /**
+- Line 35: * Sets up collision detection between game objects
+- Line 36: */
+- Line 38: Log setup start
+- Line 40: Player vs Enemy collisions (collider)
+- Line 44: Use inline arrow function
+- Line 45: Use 'on' prefix
+- Line 47: processCallback
+- Line 48: Context for the collider function itself
+- Line 51: Projectile vs Enemy collisions (collider) - Stops projectiles
+- Line 55: Use inline arrow function
+- Line 57: Attempt to cast and get IDs
+- Line 59: Use logger instead of console.log
+- Line 61: Re-enable the handler call
+- Line 62: Use 'on' prefix
+- Line 64: processCallback
+- Line 65: Context for the collider/process callbacks
+- Line 68: Player vs Projectile collisions (collider)
+- Line 72: Use inline arrow function, rename projectile to projectileShape
+- Line 73: This callback now only runs if processCallback returns true
+- Line 74: Use 'on' prefix
+- Line 76: processCallback
+- Line 78: Retrieve the owner from the projectile shape's data
+- Line 80: Only process the collision if the owner is 'enemy'
+- Line 82: If it's a player projectile, log for debugging (optional)
+- Line 83: Get projectile ID
+- Line 86: Return whether to process the collision
+- Line 88: Context for the collider/process callbacks
+- Line 91: --- Player vs Powerup overlap setup REMOVED ---
+- Line 92: The standard physics.add.overlap was not firing the callback.
+- Line 93: Overlap detection and handling will be done manually in GameScene.update
+- Line 94: using the debugLogPotentialOverlaps logic.
+- Line 95: logger.warn('[CollisionManager] Player vs Powerup overlap setup skipped. Using manual check in GameScene.update.'); // Warning removed
+- Line 96: --- End REMOVED ---
+- Line 98: Log setup complete
+- Line 99: Added missing closing brace for setupCollisions
+- Line 101: /**
+- Line 102: * Creates a collision handler for the game scene
+- Line 103: * @param config The collision configuration
+- Line 104: * @returns The created collision handler
+- Line 105: */
+- Line 106: This static method might be better placed elsewhere or refactored,
+- Line 107: but keeping it for now to minimize structural changes.
+- Line 110: Use specific type
+- Line 111: Use specific type
+- Line 112: Accept the broader Shape type here, as the handler doesn't need the guaranteed body
+- Line 114: Changed key to string
+- Line 116: Cast the map when passing to the constructor, assuming the handler can manage potential issues
+- Line 117: Or, better, ensure the handler itself is robust enough to handle Shapes without guaranteed bodies if needed.
+- Line 118: For now, let's assume the handler is okay or will be adjusted.
+- Line 124: Cast here, assuming valid shapes are passed
+- Line 126: Changed key to string
+- Line 130: /**
+- Line 131: * Cleans up resources used by this manager
+- Line 132: */
+- Line 134: No specific cleanup needed for collisions as they're handled by the scene
+
+## src/phaser/scenes/components/GameSceneEventManager.ts
+- Line 9: Handles event setup and management for the game scene
+- Line 10: Delegates to specialized classes.
+- Line 14: Timer for enemy spawner
+- Line 15: Pause state flag
+- Line 27: /**
+- Line 28: * Sets up event listeners
+- Line 29: */
+- Line 31: Log setup start
+- Line 33: Add listener for pause toggle
+- Line 35: Add listener for debug mode changes
+- Line 40: /**
+- Line 41: * Cleans up event listeners
+- Line 42: */
+- Line 44: Log cleanup start
+- Line 46: Remove pause toggle listener
+- Line 48: Remove debug mode listener
+- Line 53: /**
+- Line 54: * Sets the enemy spawner timer
+- Line 55: * @param timer The enemy spawner timer
+- Line 56: */
+- Line 61: /**
+- Line 62: * Handles toggling the game pause state
+- Line 63: */
+- Line 66: Get canvas reference
+- Line 67: Get debug mode state
+- Line 69: If game is paused
+- Line 70: Log pause
+- Line 71: Instead of using scene.pause(), we'll implement a custom pause
+- Line 72: that allows debug functionality to still work
+- Line 73: Don't use this as it stops all input events
+- Line 75: Pause physics
+- Line 78: Pause timers
+- Line 82: Pause tweens
+- Line 85: Disable canvas interaction to allow clicks on HTML elements above it
+- Line 88: Log canvas pointer events state
+- Line 91: Emit pause event
+- Line 92: Set debug state pause
+- Line 94: If game is resumed
+- Line 95: Clear debug state pause
+- Line 96: Resume physics
+- Line 99: Resume timers
+- Line 103: Resume tweens
+- Line 106: Re-enable canvas interaction ONLY if not in debug mode
+- Line 109: If in debug mode, keep pointer events disabled to allow clicking labels
+- Line 110: Otherwise, re-enable pointer events
+- Line 113: Emit resume event
+- Line 118: /**
+- Line 119: * Handles changes to debug mode
+- Line 120: * Updates canvas pointer events to allow clicking on HTML elements in debug mode
+- Line 121: */
+- Line 123: Get canvas reference
+- Line 124: Check if canvas exists
+- Line 126: If debug mode is activated
+- Line 127: In debug mode, disable canvas pointer events to allow clicking HTML elements
+- Line 129: Log canvas pointer events state
+- Line 130: If debug mode is deactivated and game is not paused
+- Line 131: Only re-enable if not paused
+- Line 133: Log canvas pointer events state
+- Line 137: /**
+- Line 138: * Gets the current pause state
+- Line 139: * @returns Whether the game is paused
+- Line 140: */
+- Line 145: /**
+- Line 146: * Cleans up resources used by this manager
+- Line 147: */
+- Line 149: Clean up event listeners
+- Line 151: Clean up timer if it exists
+- Line 157: Log destruction
+
+## src/phaser/scenes/components/GameSceneInitializer.ts
+- Line 11: Import the type alias
+- Line 12: Alias original initializer
+- Line 15: Handles initialization of game objects and managers
+- Line 16: This complements the CoreInitializer which handles asset loading and manager/object creation.
+- Line 19: Scene reference
+- Line 22: New Initializer (handles handlers, components setup)
+- Line 23: Keep reference to original initializer for cleanup setup
+- Line 27: /**
+- Line 28: * Initializes all game components
+- Line 29: * @returns The initialized game managers and objects
+- Line 30: */
+- Line 33: Return initialized managers and objects
+- Line 40: /**
+- Line 41: * Initializes all game managers
+- Line 42: */
+- Line 44: Get scene dimensions
+- Line 46: Log scene dimensions
+- Line 49: Use the initializer function, passing scene dimensions
+- Line 52: Initialize game objects container
+- Line 53: Will be set in createPlayer
+- Line 54: Will be set in createGroups
+- Line 55: Will be set in createGroups
+- Line 56: Will be set in createGroups
+- Line 57: Map of enemy sprites by instance ID
+- Line 58: Use the imported type alias
+- Line 59: Changed key to string
+- Line 65: /**
+- Line 66: * Creates the player sprite
+- Line 67: */
+- Line 68: Position player higher up in portrait mode to avoid overlapping with buttons
+- Line 71: Create player sprite
+- Line 77: Set scale
+- Line 78: Set collision with world bounds
+- Line 79: Set name for easier identification
+- Line 80: Set circular collision shape for the player (adjust radius as needed)
+- Line 81: Align collision circle with the visual sprite
+- Line 82: Example radius
+- Line 85: X offset
+- Line 86: Y offset
+- Line 89: Log player creation
+- Line 92: /**
+- Line 93: * Creates game object groups
+- Line 94: */
+- Line 96: Create projectile group
+- Line 98: Run update method on children
+- Line 101: Create enemy group with EnemyEntity as class type
+- Line 104: Run update method on children
+- Line 107: Create powerup group
+- Line 109: Run update method on children
+- Line 112: Log group creation
+- Line 115: /**
+- Line 116: * Preloads all required assets
+- Line 117: */
+- Line 119: Log preloading start
+- Line 121: Player assets
+- Line 124: Enemy assets
+- Line 131: Projectile assets
+- Line 134: Powerup assets
+- Line 137: Load cash powerup image
+- Line 139: Audio assets
+- Line 145: /**
+- Line 146: * Sets up shutdown cleanup
+- Line 147: * @param managers The game managers to clean up
+- Line 148: * @param handlers The game handlers to clean up
+- Line 150: */
+- Line 154: Listen for scene shutdown event
+- Line 155: Log cleanup start
+- Line 157: Destroy managers
+- Line 165: Destroy handlers
+- Line 168: Clear maps
+- Line 173: Clean up static event listeners
+- Line 176: Log cleanup complete
+
+## src/phaser/scenes/types/GameSceneTypes.ts
+- Line 14: /**
+- Line 15: * Interface for all game managers
+- Line 16: */
+- Line 24: DebugManager instance
+- Line 27: /**
+- Line 28: * Interface for game objects
+- Line 29: */
+- Line 31: Player sprite
+- Line 32: Group for enemy sprites
+- Line 33: Group for projectile shapes
+- Line 34: Group for powerup sprites
+- Line 35: Map of enemy sprites by instance ID
+- Line 36: Map of projectile shapes by ID
+- Line 37: Changed key to string
+- Line 40: /**
+- Line 41: * Interface for enemy spawn configuration
+- Line 42: */
+- Line 44: Type of enemy to spawn
+- Line 45: Position to spawn at
+- Line 49: /**
+- Line 50: * Interface for collision configuration
+- Line 51: */
+- Line 52: Scene reference
+- Line 53: Player sprite
+- Line 54: Enemy group
+- Line 55: Projectile group
+- Line 56: Powerup group
+- Line 60: /**
+- Line 61: * Interface for event handler configuration
+- Line 62: */
+- Line 63: Scene reference
+- Line 64: Player sprite
+- Line 65: Enemy group
+- Line 66: Projectile group
+- Line 67: Powerup group
+- Line 68: Map of enemy sprites
+- Line 69: Map of projectile shapes
+- Line 70: Map of powerup sprites
+- Line 74: /**
+- Line 75: * Interface for spawner configuration
+- Line 76: */
+- Line 77: Scene reference
+- Line 78: Enemy manager instance
+- Line 79: World bounds for spawning
+- Line 85: /**
+- Line 86: * Interface for all game-specific handlers
+- Line 87: */
+- Line 88: Collision handler instance
+- Line 89: Event handler instance
+- Line 90: Area effect handler instance
+- Line 91: Debug handler instance
+- Line 94: /**
+- Line 95: * Interface for core scene components (event manager, collision manager, spawner)
+- Line 96: */
+- Line 98: Event manager instance
+- Line 99: Collision manager instance
+- Line 100: Spawner instance
+
+## src/phaser/scenes/update/GameSceneUpdate.ts
+- Line 9: Handles the main update loop logic for the GameScene.
+- Line 11: Scene reference
+- Line 12: Game managers
+- Line 13: Game objects
+- Line 14: Game handlers
+- Line 15: Game components
+- Line 32: /**
+- Line 33: * The main update loop called by Phaser.
+- Line 34: * @param time The current time.
+- Line 35: * @param delta The delta time in ms since the last frame.
+- Line 36: */
+- Line 38: Only update game logic if not paused (check via event manager)
+- Line 40: Update core managers (pass delta in milliseconds)
+- Line 48: Removed: processEndOfFrame for collision manager
+- Line 51: Always update debug visuals, even when paused
+- Line 54: --- MANUAL OVERLAP CHECK & HANDLING ---
+- Line 56: --- END MANUAL OVERLAP CHECK ---
+- Line 59: --- Powerup Out-of-Bounds Check ---
+- Line 61: --- End Powerup Check ---
+- Line 64: --- Helper for Manual Powerup Overlap Check & Handling ---
+- Line 67: Only run if necessary components exist
+- Line 71: Get player body
+- Line 73: Ensure player body is valid for checks
+- Line 76: Get player radius
+- Line 77: Get player center
+- Line 79: Iterate through powerup group children
+- Line 81: Check if powerup sprite and its body are active and valid
+- Line 84: Check if powerup body is valid for checks
+- Line 85: Get powerup radius
+- Line 86: Get powerup center
+- Line 87: Calculate distance between player and powerup centers
+- Line 91: Calculate sum of radii
+- Line 93: Check for overlap using Phaser's geometry intersection
+- Line 94: Check if player body is enabled
+- Line 95: Check if powerup body is enabled
+- Line 96: Check if collision is not disabled for either body
+- Line 97: Check for circle-to-circle intersection
+- Line 102: Call the collision handler wrapper method directly
+- Line 103: Use 'on' prefix
+- Line 108: Continue iteration
+- Line 111: --- End Helper ---
+- Line 113: --- Helper for Powerup Out-of-Bounds Check ---
+- Line 115: Only run if powerup group exists
+- Line 117: Get game height
+- Line 118: How far below the screen before removing
+- Line 120: Array to store powerups to remove
+- Line 122: Iterate through powerup group children
+- Line 124: Check if powerup is below the screen
+- Line 127: Continue iteration
+- Line 130: Iterate through powerups to remove
+- Line 131: This is the number
+- Line 133: Create the string ID
+- Line 134: Log removal
+- Line 135: Emit event for PowerupManager cleanup BEFORE destroying sprite/removing from map
+- Line 136: Emit string ID
+- Line 138: Use string ID
+- Line 140: Log warning if instanceId is missing
+- Line 142: Destroy the sprite (implicitly removes from group)
+- Line 145: --- End Helper ---

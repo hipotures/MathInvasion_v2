@@ -6,11 +6,11 @@ import { ActiveObjectData, DataCollector } from '../types/DebugPanelTypes';
  */
 export class PowerupDataCollector implements DataCollector<ActiveObjectData[]> {
   private powerupManager: PowerupManager;
-  private powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite>;
+  private powerupSprites: Map<string, Phaser.Physics.Arcade.Sprite>; // Changed key type to string
 
   constructor(
     powerupManager: PowerupManager,
-    powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite>
+    powerupSprites: Map<string, Phaser.Physics.Arcade.Sprite> // Changed key type to string
   ) {
     this.powerupManager = powerupManager;
     this.powerupSprites = powerupSprites;
@@ -18,16 +18,18 @@ export class PowerupDataCollector implements DataCollector<ActiveObjectData[]> {
 
   /**
    * Collects debug data for all active powerups
+   * @param currentTime The current timestamp (potentially frozen during pause) to use for age calculation.
    * @returns Array of powerup debug data
    */
-  public collectData(): ActiveObjectData[] {
+  public collectData(currentTime: number): ActiveObjectData[] {
     const powerupData: ActiveObjectData[] = [];
-    const now = Date.now();
+    // Use the provided currentTime for age calculation
 
     this.powerupSprites.forEach((powerupSprite, id) => {
       if (powerupSprite.active) {
-        const creationTime = this.powerupManager.getPowerupCreationTime(id) ?? now;
-        const age = Math.floor((now - creationTime) / 1000);
+        // Ensure 'id' is treated as string when calling the manager
+        const creationTime = this.powerupManager.getPowerupCreationTime(id as string) ?? currentTime;
+        const age = Math.floor((currentTime - creationTime) / 1000);
 
         powerupData.push({
           ID: id,

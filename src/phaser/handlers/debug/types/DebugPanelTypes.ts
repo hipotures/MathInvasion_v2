@@ -79,5 +79,5 @@ export interface DataCollectorConfig {
  * Ensures consistent API across different entity collectors
  */
 export interface DataCollector<T> {
-  collectData(): T;
+  collectData(currentTime: number): T;
 }

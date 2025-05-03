@@ -54,20 +54,55 @@ export default class ProjectileManager {
   }
 
   private handleSpawnProjectile(data: SpawnProjectileData): void {
+    logger.debug(`ProjectileManager: Handling SPAWN_PROJECTILE event for type ${data.type} at position (${data.x}, ${data.y})`);
+    logger.debug(`ProjectileManager: Projectile owner: ${data.owner}, velocity: (${data.velocityX}, ${data.velocityY})`);
+    
+    // Add more detailed logging for player projectiles
+    if (data.owner === 'player') {
+      logger.debug(`ProjectileManager: Processing PLAYER projectile of type: ${data.type}`);
+      if (data.weaponConfig) {
+        logger.debug(`ProjectileManager: Player weapon config: ${data.weaponConfig.id}, projectileType: ${data.weaponConfig.projectileType}`);
+        logger.debug(`ProjectileManager: Visual properties - shape: ${data.weaponConfig.visualShape}, dimensions: ${data.weaponConfig.visualWidth}x${data.weaponConfig.visualHeight}, color: ${data.weaponConfig.visualColor}`);
+      }
+    }
+    
     if (data.owner === 'player' && !data.weaponConfig) {
-      logger.error('Player projectile spawned without weaponConfig!', data);
+      logger.error('ProjectileManager: Player projectile spawned without weaponConfig!', data);
       return;
     }
     if (data.owner === 'enemy' && !data.enemyShootConfig) {
-      logger.error('Enemy projectile spawned without enemyShootConfig!', data);
+      logger.error('ProjectileManager: Enemy projectile spawned without enemyShootConfig!', data);
       return;
     }
     
-    const projectile = this.factory.createProjectile(data);
-    this.stateManager.addProjectile(projectile);
-    // Initialize tracking for stale detection
-    this.lastPositions.set(projectile.id, { x: projectile.x, y: projectile.y });
-    this.staleCounters.set(projectile.id, 0);
+    try {
+      logger.debug(`ProjectileManager: Creating projectile via factory`);
+      const projectile = this.factory.createProjectile(data);
+      
+      if (!projectile) {
+        logger.error(`ProjectileManager: Factory failed to create projectile`);
+        return;
+      }
+      
+      logger.debug(`ProjectileManager: Projectile created with ID ${projectile.id}`);
+      logger.debug(`ProjectileManager: Adding projectile to state manager`);
+      
+      this.stateManager.addProjectile(projectile);
+      
+      // Initialize tracking for stale detection
+      this.lastPositions.set(projectile.id, { x: projectile.x, y: projectile.y });
+      this.staleCounters.set(projectile.id, 0);
+      
+      logger.debug(`ProjectileManager: Projectile ${projectile.id} successfully added to state manager`);
+      logger.debug(`ProjectileManager: Current projectile count: ${this.stateManager.getProjectileCount()}`);
+      
+      // Log all active projectiles for debugging
+      const activeIds = this.stateManager.getAllProjectileIds();
+      logger.debug(`ProjectileManager: Active projectile IDs: ${activeIds.join(', ')}`);
+      logger.debug(`ProjectileManager: Total active projectiles: ${activeIds.length}`);
+    } catch (error) {
+      logger.error(`ProjectileManager: Error creating projectile: ${error}`);
+    }
   }
 
   private handleProjectileHitEnemy(data: ProjectileHitEnemyData): void {

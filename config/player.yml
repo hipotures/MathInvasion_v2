@@ -1,7 +1,9 @@
 # Player Configuration for Math Invasion v2
 
 initialHealth: 100
-speed: 200
+speed: 200 # Maximum speed
+acceleration: 800 # Pixels per second squared
+deceleration: 1200 # Pixels per second squared (higher for quicker stops)
 invulnerabilityDurationMs: 1000 # Duration in milliseconds after taking damage
 # Add other player properties here as needed
 # e.g., startingX: 400, startingY: 500, spriteKey: 'player_ship'

@@ -6,6 +6,14 @@ export const playerSchema = z.object({
     .number()
     .positive()
     .describe('Horizontal movement speed of the player in pixels per second.'),
+  acceleration: z
+    .number()
+    .positive()
+    .describe('Rate at which the player reaches maximum speed in pixels per second squared.'),
+  deceleration: z
+    .number()
+    .positive()
+    .describe('Rate at which the player slows down to zero speed in pixels per second squared.'),
   invulnerabilityDurationMs: z
     .number()
     .int()

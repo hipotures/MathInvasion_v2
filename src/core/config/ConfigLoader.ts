@@ -5,6 +5,7 @@ import { enemiesConfigSchema, type EnemiesConfig } from './schemas/enemySchema';
 import { powerupsConfigSchema, type PowerupsConfig } from './schemas/powerupSchema';
 import { difficultyConfigSchema, type DifficultyConfig } from './schemas/difficultySchema';
 import { playerSchema, type PlayerConfig } from './schemas/playerSchema'; // Added player schema
+import { displaySchema, type DisplayConfig } from './schemas/displaySchema'; // Added display schema
 
 // Use Vite's import.meta.glob to import YAML files as raw strings
 // Note: The path is relative to the current file (ConfigLoader.ts)
@@ -23,6 +24,7 @@ class ConfigLoader {
   private powerups: PowerupsConfig | null = null;
   private difficulty: DifficultyConfig | null = null;
   private player: PlayerConfig | null = null;
+  private display: DisplayConfig | null = null;
 
   private loaded = false;
   private loadingPromise: Promise<void> | null = null;
@@ -58,6 +60,7 @@ class ConfigLoader {
           difficultyConfigSchema
         );
         this.player = await this.loadAndValidate('../../../config/player.yml', playerSchema);
+        this.display = await this.loadAndValidate('../../../config/display.yml', displaySchema);
         this.loaded = true;
         console.log('All configurations loaded and validated successfully.');
       } catch (error) {
@@ -139,6 +142,13 @@ class ConfigLoader {
     return this.player;
   }
 
+  public getDisplayConfig(): DisplayConfig {
+    if (!this.loaded || !this.display) {
+      throw new Error('Display configuration not loaded yet.');
+    }
+    return this.display;
+  }
+
   /**
    * Resets the loaded state and configurations.
    * FOR TESTING PURPOSES ONLY.
@@ -152,6 +162,7 @@ class ConfigLoader {
     this.powerups = null;
     this.difficulty = null;
     this.player = null;
+    this.display = null;
     console.log('[TESTING] ConfigLoader state reset.');
   }
 }

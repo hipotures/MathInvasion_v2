@@ -14,10 +14,11 @@ export class PlayerInspector {
   /**
    * Gets detailed inspection data for the player
    * @param playerSprite The player sprite to inspect
+   * @param currentTime The current timestamp (potentially frozen during pause) to use for age calculation.
    * @returns Player inspection data or null if data cannot be retrieved
    */
   // Return a simple key-value object instead of the structured PlayerInspectionData
-  public getPlayerDetails(playerSprite: Phaser.Physics.Arcade.Sprite): { [key: string]: any } | null {
+  public getPlayerDetails(playerSprite: Phaser.Physics.Arcade.Sprite, currentTime: number): { [key: string]: any } | null {
     const state = this.playerManager.getPlayerState(); // Get manager state
     const config = ConfigLoader.getPlayerConfig();
     const body = playerSprite.body as Phaser.Physics.Arcade.Body | null;
@@ -67,7 +68,7 @@ export class PlayerInspector {
       IsInvulnerable: state.isInvulnerable,
       InvulnerabilityTimerMs: state.invulnerabilityTimer,
       MovementDirection: state.movementDirection,
-      AgeSeconds: this.calculateAge(creationTime),
+      AgeSeconds: this.calculateAge(creationTime, currentTime), // Pass currentTime
 
       // --- Config Properties (Prefixed) ---
       // Flatten config or select key properties
@@ -93,12 +94,14 @@ export class PlayerInspector {
   }
 
   /**
-   * Calculates the age of an entity based on its creation time
+   * Calculates the age of an entity based on its creation time and the provided current time
    * @param creationTime The creation time of the entity
+   * @param currentTime The current timestamp (potentially frozen during pause)
    * @returns The age as a string, or 'N/A' if creation time is undefined
    */
-  private calculateAge(creationTime?: number): string {
+  private calculateAge(creationTime: number | undefined, currentTime: number): string {
     if (creationTime === undefined) return 'N/A';
-    return ((Date.now() - creationTime) / 1000).toFixed(1);
+    // Use currentTime instead of Date.now()
+    return ((currentTime - creationTime) / 1000).toFixed(1);
   }
 }

@@ -57,9 +57,14 @@ export default class InputManager {
         break;
       case ' ': // Spacebar for firing
         if (!this.fireActive) {
-          logger.debug('Fire Started');
+          logger.debug('InputManager: Fire Started - Emitting FIRE_START event');
           this.fireActive = true;
-          this.eventBus.emit(Events.FIRE_START);
+          try {
+            this.eventBus.emit(Events.FIRE_START);
+            logger.debug('InputManager: FIRE_START event emitted successfully');
+          } catch (error) {
+            logger.error(`InputManager: Error emitting FIRE_START event: ${error}`);
+          }
         }
         break;
       case '1':
@@ -111,9 +116,14 @@ export default class InputManager {
         break;
       case ' ': // Spacebar for firing
         if (this.fireActive) {
-          logger.debug('Fire Stopped');
+          logger.debug('InputManager: Fire Stopped - Emitting FIRE_STOP event');
           this.fireActive = false;
-          this.eventBus.emit(Events.FIRE_STOP); // Emit stop event if needed, though often only START matters for triggering shots
+          try {
+            this.eventBus.emit(Events.FIRE_STOP);
+            logger.debug('InputManager: FIRE_STOP event emitted successfully');
+          } catch (error) {
+            logger.error(`InputManager: Error emitting FIRE_STOP event: ${error}`);
+          }
         }
         break;
       // TODO: Add cases for weapon switching keys

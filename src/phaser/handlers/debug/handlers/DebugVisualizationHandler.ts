@@ -22,14 +22,14 @@ export class DebugVisualizationHandler {
   private playerSprite: Phaser.Physics.Arcade.Sprite;
   private enemySprites: Map<string, EnemyEntity>;
   private projectileShapes: Map<string, ProjectileShape>;
-  private powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite>;
+  private powerupSprites: Map<string, Phaser.Physics.Arcade.Sprite>; // Changed key type
 
   constructor(
     scene: Phaser.Scene,
     playerSprite: Phaser.Physics.Arcade.Sprite,
     enemySprites: Map<string, EnemyEntity>,
     projectileShapes: Map<string, ProjectileShape>,
-    powerupSprites: Map<number, Phaser.Physics.Arcade.Sprite>,
+    powerupSprites: Map<string, Phaser.Physics.Arcade.Sprite>, // Changed key to string
     htmlDebugLabels: HtmlDebugLabels
   ) {
     this.scene = scene;
@@ -80,10 +80,12 @@ export class DebugVisualizationHandler {
     });
 
     // Draw debug rectangles for powerups
-    this.powerupSprites.forEach((powerupSprite, id) => {
+    this.powerupSprites.forEach((powerupSprite, id) => { // 'id' is now string 'powerup_X'
       if (powerupSprite && powerupSprite.active) {
-        this.drawDebugRectangle(powerupSprite, `powerup_${id}`, inspectedObject);
-        activeLabels.add(`debuglabel_powerup_${id}`);
+        // Pass the string ID directly as baseLabelId
+        this.drawDebugRectangle(powerupSprite, id, inspectedObject);
+        // labelId should also use the string ID directly
+        activeLabels.add(`debuglabel_${id}`);
       }
     });
 
@@ -135,7 +137,7 @@ export class DebugVisualizationHandler {
     const config: DebugVisualizationConfig = {
       strokeColor: isInspected ? 0xffff00 : 0x00ff00, // Yellow if inspected, green otherwise
       labelColor: isInspected ? '#ffff00' : '#00ff00', // Yellow if inspected, green otherwise
-      lineWidth: 1,
+      lineWidth: isInspected ? 2 : 1, // Thicker line for inspected objects
     };
 
     // Generate a predictable label ID and store it on the object
@@ -143,31 +145,34 @@ export class DebugVisualizationHandler {
     obj.setData('debugLabelId', labelId); // Store the ID
 
     // Generate display name (shortened ID for label text)
-    let displayName = baseLabelId;
-    if (objectType === 'enemy' && objectId) {
-      const assetKey = (obj as EnemyEntity).texture.key;
-      const assetName = assetKey.split('_').pop() || assetKey;
-      displayName = `${assetName}_${objectId.substring(0, 4)}`;
-    } else if (objectType === 'projectile' && objectId) {
-      displayName = `proj_${objectId.substring(0, 4)}`;
-    } else if (objectType === 'powerup' && objectId) {
-      const assetKey = (obj as Phaser.Physics.Arcade.Sprite).texture.key;
-      const assetName = assetKey.split('_').pop() || assetKey;
-      displayName = `${assetName}_${objectId}`;
-    } else if (objectType === 'player') {
-      displayName = 'player';
-    }
+    // Use only the objectId for the display name
+    let displayName = objectId || baseLabelId; // Use objectId if available, otherwise fallback to baseLabelId
 
     try {
-      // Removed hit area visualization (red rectangles)
-
       // --- Draw Physics Body / Fallback Bounds (Green/Yellow Rectangle) & Label ---
       const body = obj.body as Phaser.Physics.Arcade.Body;
+      
       let labelPosX = 0,
         labelPosY = 0; // Variables to store label position
 
-      if (!body) {
-        // Fallback if no physics body
+      // Fallback drawing logic moved below the main body drawing logic
+
+      // Check if body exists, is enabled, and dimensions are valid before drawing
+      // Reverted the isPhysicsPaused check as it hid all bounds when paused
+      if (body && body.enable && body.width > 0 && body.height > 0) {
+          // Draw the actual collision shape (circle or rectangle) using configured color/width
+          this.debugGraphics.lineStyle(config.lineWidth ?? 1, config.strokeColor, 1);
+          if (body.isCircle) {
+              // Draw circle for circular bodies
+              this.debugGraphics.strokeCircle(body.center.x, body.center.y, body.radius);
+          } else {
+              // Draw rectangle for rectangular bodies
+              this.debugGraphics.strokeRect(body.x, body.y, body.width, body.height);
+          }
+          labelPosX = body.center.x;
+          labelPosY = body.y - 10; // Position label above the body
+      } else if (!body) { // Moved fallback logic here for when there's no physics body at all
+        // Fallback if no physics body - draw based on sprite bounds
         this.debugGraphics.lineStyle(config.lineWidth ?? 1, config.strokeColor, 1);
         let fallbackX, fallbackY, fallbackW, fallbackH;
         if (obj instanceof Phaser.GameObjects.Sprite || obj instanceof EnemyEntity) {
@@ -178,7 +183,7 @@ export class DebugVisualizationHandler {
           fallbackY = sprite.y - fallbackH / 2;
           labelPosX = sprite.x;
           labelPosY = fallbackY - 5;
-        } else {
+        } else { // Assuming Shape if not Sprite/EnemyEntity
           const shape = obj as Phaser.GameObjects.Shape;
           fallbackW = shape.width * shape.scaleX;
           fallbackH = shape.height * shape.scaleY;
@@ -189,30 +194,40 @@ export class DebugVisualizationHandler {
         }
         this.debugGraphics.strokeRect(fallbackX, fallbackY, fallbackW, fallbackH);
       } else {
-        // Check if body exists, is enabled, and dimensions are valid before drawing
-        // Reverted the isPhysicsPaused check as it hid all bounds when paused
-        if (body && body.enable && body.width > 0 && body.height > 0) {
-            // Draw the actual collision shape (circle or rectangle)
-            this.debugGraphics.lineStyle(config.lineWidth ?? 1, config.strokeColor, 1);
-            if (body.isCircle) {
-                // Draw circle for circular bodies
-                this.debugGraphics.strokeCircle(body.center.x, body.center.y, body.radius);
-            } else {
-                // Draw rectangle for rectangular bodies
-                this.debugGraphics.strokeRect(body.x, body.y, body.width, body.height);
-            }
-            labelPosX = body.center.x;
-            labelPosY = body.y - 10; // Position label above the body
-        } else {
-            // Body exists but dimensions might be invalid (e.g., when paused during spawn)
-            // Skip drawing the bounds, but still position the label based on sprite
-            // logger.warn(`Skipping debug bounds draw for ${baseLabelId} due to invalid body dimensions.`);
-            labelPosX = obj.x;
-            // Position label above the sprite using displayHeight
-            const spriteHeight = (obj as Phaser.GameObjects.Sprite).displayHeight || 10;
-            labelPosY = obj.y - (spriteHeight / 2) - 10;
-        }
-      }
+          // Body exists but dimensions might be invalid (e.g., 0x0 during spawn/pause)
+          // Draw fallback bounds based on sprite/shape instead of skipping
+          logger.warn(`Drawing fallback debug bounds for ${baseLabelId} due to invalid body dimensions.`);
+          this.debugGraphics.lineStyle(config.lineWidth ?? 1, config.strokeColor, 1);
+          let fallbackX, fallbackY, fallbackW, fallbackH;
+          if (obj instanceof Phaser.GameObjects.Sprite || obj instanceof EnemyEntity) {
+            const sprite = obj as Phaser.GameObjects.Sprite;
+            fallbackW = sprite.displayWidth;
+            fallbackH = sprite.displayHeight;
+            fallbackX = sprite.x - fallbackW / 2;
+            fallbackY = sprite.y - fallbackH / 2;
+            labelPosX = sprite.x;
+            labelPosY = fallbackY - 5;
+          } else { // Assuming Shape if not Sprite/EnemyEntity
+            const shape = obj as Phaser.GameObjects.Shape;
+            fallbackW = shape.width * shape.scaleX;
+            fallbackH = shape.height * shape.scaleY;
+            fallbackX = shape.x - fallbackW / 2;
+            fallbackY = shape.y - fallbackH / 2;
+            labelPosX = shape.x;
+            labelPosY = fallbackY - 5;
+          }
+          // Ensure dimensions are valid before drawing fallback
+          if (fallbackW > 0 && fallbackH > 0) {
+              this.debugGraphics.strokeRect(fallbackX, fallbackY, fallbackW, fallbackH);
+          } else {
+              // If even fallback dimensions are invalid, just set label position
+              labelPosX = obj.x;
+              labelPosY = obj.y - 10; // Default position above object center
+          }
+      } // <-- Closing brace for the else block
+
+      // The drawing logic is now handled above based on body presence and validity.
+      // This section is no longer needed as it's incorporated into the if/else if/else block above.
 
       // Add/Update HTML label for the object using the predictable labelId
       // Make the label text more descriptive for debugging
@@ -232,7 +247,22 @@ export class DebugVisualizationHandler {
   }
 
   /**
-   * Toggles the visibility of game objects
+   * Sets the visibility of the debug graphics and labels.
+   * @param visible True to show, false to hide.
+   */
+  public setVisible(visible: boolean): void {
+    this.debugGraphics.setVisible(visible);
+    this.htmlDebugLabels.setVisible(visible); // Use the existing setVisible method
+
+    if (!visible) {
+      this.debugGraphics.clear();
+      // Optionally clear labels immediately when hiding
+      // this.htmlDebugLabels.clearLabels();
+    }
+  }
+
+  /**
+   * Toggles the visibility of game objects (sprites/shapes themselves).
    */
   public toggleObjectVisibility(visible: boolean): void {
     if (this.playerSprite) {
@@ -244,7 +274,7 @@ export class DebugVisualizationHandler {
     this.projectileShapes.forEach((shape) => {
       if (shape) shape.setVisible(visible);
     });
-    this.powerupSprites.forEach((sprite) => {
+    this.powerupSprites.forEach((sprite) => { // Iterates correctly over Map<string, Sprite>
       if (sprite) sprite.setVisible(visible);
     });
   }

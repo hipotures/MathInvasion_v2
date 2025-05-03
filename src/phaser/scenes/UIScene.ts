@@ -93,9 +93,11 @@ export default class UIScene extends Phaser.Scene {
 
   // Updated handler for the new comprehensive weapon state
   private handleWeaponStateUpdate(data: AllWeaponStatesUpdateData): void {
-    logger.debug(`UIScene received WEAPON_STATE_UPDATED: ${JSON.stringify(data)}`);
+    logger.debug(`UIScene received WEAPON_STATE_UPDATED: activeWeapon=${data.activeWeaponId}`);
+    logger.debug(`UIScene weapon data: weapons=${Object.keys(data.levels).join(', ')}`);
 
     // Update button styles based on active weapon
+    logger.debug(`UIScene updating weapon buttons with activeWeaponId=${data.activeWeaponId}`);
     this.htmlUI.updateWeaponButtons(data.activeWeaponId);
 
     // --- Update All Cooldown/Energy Bars ---
@@ -110,22 +112,8 @@ export default class UIScene extends Phaser.Scene {
     }
     // --- End Update Bars ---
 
-    // Update upgrade button text/state based on the *active* weapon's cost
-    const activeWeaponCost = data.nextUpgradeCosts[data.activeWeaponId];
-    this.htmlUI.updateWeaponUpgradeCost(activeWeaponCost); // Use correct method name
-
-    // Update weapon status (level) display for the active weapon
-    const activeWeaponLevel = data.levels[data.activeWeaponId];
-    this.htmlUI.updateWeaponStatus(data.activeWeaponId, activeWeaponLevel);
-
-    // TODO: Optionally update level display for *all* weapons if UI supports it
-    // for (const weaponId in data.levels) {
-    //     if (Object.prototype.hasOwnProperty.call(data.levels, weaponId)) {
-    //         const level = data.levels[weaponId];
-    //         // Assuming a method like this exists or can be added to HtmlUI
-    //         // this.htmlUI.updateWeaponLevelDisplay(weaponId, level);
-    //     }
-    // }
+    // Update all weapon level displays with costs
+    this.htmlUI.updateWeaponLevels(data.levels, data.nextUpgradeCosts);
   }
 
   private handlePlayerStateUpdate(data: PlayerState): void {

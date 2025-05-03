@@ -79,7 +79,9 @@ export class GameSceneEventManager {
       if (this.enemySpawnerTimer) {
         this.enemySpawnerTimer.paused = true;
       }
-      
+      // Pause tweens
+      this.scene.tweens.pauseAll();
+
       // Disable canvas interaction to allow clicks on HTML elements above it
       if (canvas) {
         canvas.style.pointerEvents = 'none';
@@ -87,8 +89,10 @@ export class GameSceneEventManager {
       }
       
       eventBus.emit(Events.GAME_PAUSED);
+      debugState.setPaused(true); // Set debug state pause
     } else {
       logger.log('Game Resumed');
+      debugState.setPaused(false); // Clear debug state pause
       // Resume physics
       this.scene.physics.resume();
       
@@ -96,7 +100,9 @@ export class GameSceneEventManager {
       if (this.enemySpawnerTimer) {
         this.enemySpawnerTimer.paused = false;
       }
-      
+      // Resume tweens
+      this.scene.tweens.resumeAll();
+
       // Re-enable canvas interaction ONLY if not in debug mode
       if (canvas) {
         // If in debug mode, keep pointer events disabled to allow clicking labels
