@@ -13,6 +13,10 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
     // Static property to track game pause state
     public static isPaused: boolean = false;
 
+    // Static properties to store bound listener functions
+    private static boundOnGamePaused: () => void;
+    private static boundOnGameResumed: () => void;
+
     public instanceId: string;
     public configId: string;
     public enemyConfig: EnemyConfig;
@@ -28,23 +32,38 @@ export class EnemyEntity extends Phaser.Physics.Arcade.Sprite {
     private eventBus: EventBusType;
     private logger: LoggerType;
 
+    // Static methods to be used as listeners
+    private static onGamePaused(): void {
+        EnemyEntity.isPaused = true;
+        LoggerInstance.debug('EnemyEntity: Game paused state set to true');
+    }
+
+    private static onGameResumed(): void {
+        EnemyEntity.isPaused = false;
+        LoggerInstance.debug('EnemyEntity: Game paused state set to false');
+    }
+
     // Static method to initialize event listeners for pause/resume
     public static initializeEventListeners(): void {
-        EventBusInstance.on(Events.GAME_PAUSED, () => {
-            EnemyEntity.isPaused = true;
-            LoggerInstance.debug('EnemyEntity: Game paused state set to true');
-        });
+        // Assuming LoggerInstance is globally available as used in the original code.
+        this.boundOnGamePaused = this.onGamePaused.bind(this); // 'this' refers to EnemyEntity class itself
+        this.boundOnGameResumed = this.onGameResumed.bind(this);
 
-        EventBusInstance.on(Events.GAME_RESUMED, () => {
-            EnemyEntity.isPaused = false;
-            LoggerInstance.debug('EnemyEntity: Game paused state set to false');
-        });
+        EventBusInstance.on(Events.GAME_PAUSED, this.boundOnGamePaused);
+        EventBusInstance.on(Events.GAME_RESUMED, this.boundOnGameResumed);
     }
 
     // Static method to clean up event listeners for pause/resume
     public static cleanupEventListeners(): void {
-        EventBusInstance.off(Events.GAME_PAUSED, () => {});
-        EventBusInstance.off(Events.GAME_RESUMED, () => {});
+        if (this.boundOnGamePaused) {
+            EventBusInstance.off(Events.GAME_PAUSED, this.boundOnGamePaused);
+        }
+        if (this.boundOnGameResumed) {
+            EventBusInstance.off(Events.GAME_RESUMED, this.boundOnGameResumed);
+        }
+        // Optionally nullify them after removing:
+        // this.boundOnGamePaused = null;
+        // this.boundOnGameResumed = null;
     }
 
     constructor(

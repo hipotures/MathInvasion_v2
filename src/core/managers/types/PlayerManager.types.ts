@@ -12,8 +12,6 @@ export interface PlayerHitProjectileData {
 
 // State structure emitted by PLAYER_STATE_UPDATED event
 export interface PlayerStateUpdateData {
-  x: number;
-  y: number;
   velocityX: number;
   velocityY: number; // Assuming 0 for now, but keep for future
   health: number;
@@ -22,8 +20,6 @@ export interface PlayerStateUpdateData {
 
 // Internal state representation (can be expanded)
 export interface PlayerState {
-    x: number;
-    y: number;
     velocityX: number;
     health: number;
     maxHealth: number;

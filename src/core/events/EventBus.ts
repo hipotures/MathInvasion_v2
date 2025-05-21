@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type EventCallback = (...args: any[]) => void;
 
-export class EventBus { // Add 'export' here
+export class EventBus {
   // Use a Map to store event listeners: eventName -> Set<callback>
   private listeners: Map<string, Set<EventCallback>>;
 

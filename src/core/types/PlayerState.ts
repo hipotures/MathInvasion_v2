@@ -1,6 +1,4 @@
 export interface PlayerState {
-  x: number;
-  y: number;
   velocityX: number;
   velocityY: number;
   health: number; // Current health

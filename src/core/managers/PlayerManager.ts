@@ -1,27 +1,20 @@
-import logger from '../utils/Logger';
-import { EventBus as EventBusType } from '../events/EventBus';
-import * as Events from '../constants/events';
 import { type PlayerConfig } from '../config/schemas/playerSchema';
-import { PlayerPowerupHandler } from './helpers/PlayerPowerupHandler';
-// Import types
+import * as Events from '../constants/events';
+import { INVULNERABILITY_DURATION_MS } from '../constants/gameplay';
+import { EventBus as EventBusType } from '../events/EventBus';
+import logger from '../utils/Logger';
+
 import {
-    type PlayerHitEnemyData,
-    type PlayerHitProjectileData,
-    type PlayerStateUpdateData,
-    type PlayerState,
-} from './types/PlayerManager.types';
-// Import action functions
-import {
-    handleMoveLeftStart,
-    handleMoveLeftStop,
-    handleMoveRightStart,
-    handleMoveRightStop,
     handlePlayerHitEnemy,
     handlePlayerHitProjectile,
 } from './actions/PlayerManager.actions';
-
-// --- Constants ---
-const INVULNERABILITY_DURATION_MS = 1000; // Keep constant here or move to types/config
+import { PlayerPowerupHandler } from './helpers/PlayerPowerupHandler';
+import {
+    type PlayerHitEnemyData,
+    type PlayerHitProjectileData,
+    type PlayerState,
+    type PlayerStateUpdateData,
+} from './types/PlayerManager.types';
 
 export default class PlayerManager {
     private eventBus: EventBusType;
@@ -30,8 +23,6 @@ export default class PlayerManager {
 
     // --- Player State ---
     // Using individual properties for now, could be grouped into a state object
-    private x: number = 0; // Position - consider if this should be managed here or solely by Phaser sprite
-    private y: number = 0;
     private velocityX: number = 0;
     private isMovingLeft: boolean = false;
     private isMovingRight: boolean = false;
@@ -43,13 +34,18 @@ export default class PlayerManager {
     private acceleration: number;
     private deceleration: number;
 
-    private creationTime: number;
+    // --- Bound Event Handlers ---
+    private boundOnMoveLeftStart: () => void;
+    private boundOnMoveLeftStop: () => void;
+    private boundOnMoveRightStart: () => void;
+    private boundOnMoveRightStop: () => void;
+    private boundOnPlayerHitEnemy: (data: PlayerHitEnemyData) => void;
+    private boundOnPlayerHitProjectile: (data: PlayerHitProjectileData) => void;
 
     constructor(eventBusInstance: EventBusType, playerConfig: PlayerConfig) {
         this.eventBus = eventBusInstance;
         this.playerConfig = playerConfig;
         this.playerPowerupHandler = new PlayerPowerupHandler(this.eventBus, logger);
-        this.creationTime = Date.now();
         logger.log('PlayerManager initialized');
 
         // Initialize state from config
@@ -67,13 +63,21 @@ export default class PlayerManager {
         this.getPlayerState = this.getPlayerState.bind(this);
         this.destroy = this.destroy.bind(this);
 
-        // Register event listeners - Call wrapper methods that use action functions
-        this.eventBus.on(Events.MOVE_LEFT_START, this.onMoveLeftStart.bind(this));
-        this.eventBus.on(Events.MOVE_LEFT_STOP, this.onMoveLeftStop.bind(this));
-        this.eventBus.on(Events.MOVE_RIGHT_START, this.onMoveRightStart.bind(this));
-        this.eventBus.on(Events.MOVE_RIGHT_STOP, this.onMoveRightStop.bind(this));
-        this.eventBus.on(Events.PLAYER_HIT_ENEMY, this.onPlayerHitEnemy.bind(this));
-        this.eventBus.on(Events.PLAYER_HIT_PROJECTILE, this.onPlayerHitProjectile.bind(this));
+        // Bind event handlers and store them
+        this.boundOnMoveLeftStart = this.onMoveLeftStart.bind(this);
+        this.boundOnMoveLeftStop = this.onMoveLeftStop.bind(this);
+        this.boundOnMoveRightStart = this.onMoveRightStart.bind(this);
+        this.boundOnMoveRightStop = this.onMoveRightStop.bind(this);
+        this.boundOnPlayerHitEnemy = this.onPlayerHitEnemy.bind(this);
+        this.boundOnPlayerHitProjectile = this.onPlayerHitProjectile.bind(this);
+
+        // Register event listeners using bound handlers
+        this.eventBus.on(Events.MOVE_LEFT_START, this.boundOnMoveLeftStart);
+        this.eventBus.on(Events.MOVE_LEFT_STOP, this.boundOnMoveLeftStop);
+        this.eventBus.on(Events.MOVE_RIGHT_START, this.boundOnMoveRightStart);
+        this.eventBus.on(Events.MOVE_RIGHT_STOP, this.boundOnMoveRightStop);
+        this.eventBus.on(Events.PLAYER_HIT_ENEMY, this.boundOnPlayerHitEnemy);
+        this.eventBus.on(Events.PLAYER_HIT_PROJECTILE, this.boundOnPlayerHitProjectile);
 
         this.emitStateUpdate(); // Emit initial state
     }
@@ -103,30 +107,22 @@ export default class PlayerManager {
     }
 
     private onMoveLeftStart(): void {
-        const stateRef = this.getStateRef();
-        handleMoveLeftStart({ stateRef });
-        this.updateStateFromRef(stateRef);
+        this.isMovingLeft = true;
         // No state update emission needed here, handled by update loop
     }
 
     private onMoveLeftStop(): void {
-        const stateRef = this.getStateRef();
-        handleMoveLeftStop({ stateRef });
-        this.updateStateFromRef(stateRef);
+        this.isMovingLeft = false;
         // No state update emission needed here, handled by update loop
     }
 
     private onMoveRightStart(): void {
-        const stateRef = this.getStateRef();
-        handleMoveRightStart({ stateRef });
-        this.updateStateFromRef(stateRef);
+        this.isMovingRight = true;
         // No state update emission needed here, handled by update loop
     }
 
     private onMoveRightStop(): void {
-        const stateRef = this.getStateRef();
-        handleMoveRightStop({ stateRef });
-        this.updateStateFromRef(stateRef);
+        this.isMovingRight = false;
         // No state update emission needed here, handled by update loop
     }
 
@@ -228,8 +224,6 @@ export default class PlayerManager {
 
     private emitStateUpdate(): void {
         const stateData: PlayerStateUpdateData = {
-            x: this.x, // Position might not be managed here directly yet
-            y: this.y,
             velocityX: this.velocityX,
             velocityY: 0, // Assuming no vertical movement for now
             health: this.health,
@@ -243,8 +237,6 @@ export default class PlayerManager {
 
     public getPlayerState(): PlayerState {
         return {
-            x: this.x,
-            y: this.y,
             velocityX: this.velocityX,
             health: this.health,
             maxHealth: this.playerConfig.initialHealth,
@@ -255,20 +247,16 @@ export default class PlayerManager {
         };
     }
 
-    public getCreationTime(): number {
-        return this.creationTime;
-    }
-
     // --- Cleanup ---
 
     public destroy(): void {
         // Unregister event listeners using the bound methods
-        this.eventBus.off(Events.MOVE_LEFT_START, this.onMoveLeftStart.bind(this));
-        this.eventBus.off(Events.MOVE_LEFT_STOP, this.onMoveLeftStop.bind(this));
-        this.eventBus.off(Events.MOVE_RIGHT_START, this.onMoveRightStart.bind(this));
-        this.eventBus.off(Events.MOVE_RIGHT_STOP, this.onMoveRightStop.bind(this));
-        this.eventBus.off(Events.PLAYER_HIT_ENEMY, this.onPlayerHitEnemy.bind(this));
-        this.eventBus.off(Events.PLAYER_HIT_PROJECTILE, this.onPlayerHitProjectile.bind(this));
+        this.eventBus.off(Events.MOVE_LEFT_START, this.boundOnMoveLeftStart);
+        this.eventBus.off(Events.MOVE_LEFT_STOP, this.boundOnMoveLeftStop);
+        this.eventBus.off(Events.MOVE_RIGHT_START, this.boundOnMoveRightStart);
+        this.eventBus.off(Events.MOVE_RIGHT_STOP, this.boundOnMoveRightStop);
+        this.eventBus.off(Events.PLAYER_HIT_ENEMY, this.boundOnPlayerHitEnemy);
+        this.eventBus.off(Events.PLAYER_HIT_PROJECTILE, this.boundOnPlayerHitProjectile);
 
         this.playerPowerupHandler.destroy();
         logger.log('PlayerManager destroyed and listeners removed');
