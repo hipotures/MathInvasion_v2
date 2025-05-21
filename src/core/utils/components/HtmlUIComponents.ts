@@ -76,66 +76,46 @@ export function updateWeaponUpgradeCost(uiElements: Map<string, HTMLDivElement>,
  * Update weapon button appearance based on the active weapon.
  */
 export function updateWeaponButtons(uiElements: Map<string, HTMLDivElement>, activeWeaponId: string): void {
-    // Define consistent weapon mapping
-    const weaponToButtonMap: {[key: string]: string} = {
-        'bullet': 'weaponButton1',
-        'laser': 'weaponButton2',
-        'slow_field': 'weaponButton3'
-    };
-    
-    // Standardize active weapon ID handling
-    if (!activeWeaponId) {
-        logger.warn("No active weapon ID provided, defaulting to 'bullet'");
-        activeWeaponId = 'bullet';
+    const weaponButtonSetup = [
+        { id: 'weaponButton1', name: 'Bullet', weaponKey: 'bullet' },
+        { id: 'weaponButton2', name: 'Laser', weaponKey: 'laser' },
+        { id: 'weaponButton3', name: 'Slow', weaponKey: 'slow_field' } // Assuming 'slow_field' is the weapon key for "Slow"
+    ];
+
+    // Ensure activeWeaponId is valid, default to the first weapon's key if not.
+    // This check uses .some() to see if any weaponConfig has a weaponKey matching activeWeaponId.
+    if (!weaponButtonSetup.some(config => config.weaponKey === activeWeaponId)) {
+        logger.warn(`Invalid or missing activeWeaponId "${activeWeaponId}", defaulting to "${weaponButtonSetup[0].weaponKey}"`);
+        activeWeaponId = weaponButtonSetup[0].weaponKey;
     }
-    
-    logger.debug(`Updating weapon buttons, active weapon: "${activeWeaponId}"`);
-    
-    // First, reset all buttons to inactive state
-    for (let i = 1; i <= 3; i++) {
-        const buttonId = `weaponButton${i}`;
-        const button = uiElements.get(buttonId);
-        if (button) {
-            button.style.backgroundColor = '#555555';
-            button.style.color = '#dddddd';
-            button.style.borderColor = 'transparent';
-            
-            // Reset name display
-            const nameElement = button.querySelector('.weapon-name');
-            if (nameElement) {
-                const weaponName = buttonId === 'weaponButton1' ? 'Bullet' :
-                                  buttonId === 'weaponButton2' ? 'Laser' : 'Slow';
-                nameElement.textContent = `${i}: ${weaponName}`;
-            }
+
+    weaponButtonSetup.forEach((weaponConfig, index) => {
+        const button = uiElements.get(weaponConfig.id);
+        if (!button) {
+            logger.warn(`Button element not found in uiElements map: ${weaponConfig.id}`);
+            return; // Skip if button element doesn't exist
         }
-    }
-    
-    // Then, set only the active button
-    const activeButtonId = weaponToButtonMap[activeWeaponId];
-    if (activeButtonId) {
-        const activeButton = uiElements.get(activeButtonId);
-        if (activeButton) {
-            // Set active styles
-            activeButton.style.backgroundColor = '#888800';
-            activeButton.style.color = '#ffff00';
-            activeButton.style.borderColor = '#ffff00';
-            
-            // Update name display with selection indicators
-            const nameElement = activeButton.querySelector('.weapon-name');
-            if (nameElement) {
-                const index = activeButtonId.replace('weaponButton', '');
-                const weaponName = activeButtonId === 'weaponButton1' ? 'Bullet' :
-                                  activeButtonId === 'weaponButton2' ? 'Laser' : 'Slow';
-                nameElement.textContent = `▶ ${index}: ${weaponName}`;
-            }
-            
-            logger.debug(`Set button ${activeButtonId} as ACTIVE for weapon ${activeWeaponId}`);
+
+        const isActive = weaponConfig.weaponKey === activeWeaponId;
+
+        // Set styles based on active state
+        button.style.backgroundColor = isActive ? '#888800' : '#555555'; // Active yellow-ish, Inactive dark gray
+        button.style.color = isActive ? '#ffff00' : '#dddddd'; // Active yellow text, Inactive light gray text
+        button.style.borderColor = isActive ? '#ffff00' : 'transparent'; // Active yellow border, Inactive transparent
+
+        // Update name display
+        const nameElement = button.querySelector('.weapon-name');
+        if (nameElement) {
+            nameElement.textContent = `${isActive ? '▶ ' : ''}${index + 1}: ${weaponConfig.name}`;
         } else {
-            logger.warn(`Active button element not found: ${activeButtonId}`);
+            // This warning was added in a previous step, ensure it remains or is similar
+            logger.warn(`'.weapon-name' child not found in button ${weaponConfig.id}`);
         }
-    } else {
-        logger.warn(`No button mapping found for active weapon: ${activeWeaponId}`);
-    }
+    });
+    
+    // Removed the weaponToButtonMap and the separate logic for setting active button as it's handled in the loop.
+    // The initial loop for resetting all buttons is also subsumed by the single loop.
+    logger.debug(`Updated weapon buttons display, active weapon key: "${activeWeaponId}"`);
 }
 
 /**
@@ -209,6 +189,8 @@ export function updateWeaponLevels(
             } else {
                 levelElement.textContent = `Lvl ${level} | Max`;
             }
+        } else {
+            logger.warn(`'.weapon-level' child not found in button for weapon ${weaponId}`);
         }
     });
 }

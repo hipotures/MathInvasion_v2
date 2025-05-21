@@ -1,62 +1,17 @@
 import Phaser from 'phaser';
 import { registerSW } from 'virtual:pwa-register';
 
+import configLoader from './core/config/ConfigLoader';
+import eventBus from './core/events/EventBus';
+import FontLoader from './core/utils/FontLoader';
+import logger from './core/utils/Logger';
+import { parseAspectRatio } from './core/utils/stringUtils';
 import GameScene from './phaser/scenes/GameScene';
 import UIScene from './phaser/scenes/UIScene';
-import configLoader from './core/config/ConfigLoader';
-import logger from './core/utils/Logger';
-import FontLoader from './core/utils/FontLoader';
-import eventBus from './core/events/EventBus';
+
 import './style.css';
 
-/**
- * Parse aspect ratio string (e.g., "16:9") to a number
- */
-function parseAspectRatio(ratioStr: string): number {
-  const [width, height] = ratioStr.split(':').map(Number);
-  return width / height;
-}
-
 // We only support portrait mode (9:16)
-
-/**
- * Calculate the optimal game size based on window dimensions and aspect ratio
- */
-function calculateGameSize(aspectRatio: number, maxWidth: number, maxHeight: number): { width: number, height: number } {
-  const windowWidth = window.innerWidth;
-  const windowHeight = window.innerHeight;
-  
-  // Calculate dimensions while maintaining aspect ratio
-  let width, height;
-  
-  // First, calculate based on window dimensions
-  if (windowWidth / windowHeight > aspectRatio) {
-    // Window is wider than needed - height is the limiting factor
-    height = windowHeight;
-    width = height * aspectRatio;
-  } else {
-    // Window is taller than needed - width is the limiting factor
-    width = windowWidth;
-    height = width / aspectRatio;
-  }
-  
-  // Then, apply maximum constraints if needed
-  if (height > maxHeight) {
-    height = maxHeight;
-    width = height * aspectRatio;
-  }
-  
-  if (width > maxWidth) {
-    width = maxWidth;
-    height = width / aspectRatio;
-  }
-  
-  // Round to nearest integer to avoid sub-pixel rendering issues
-  return {
-    width: Math.round(width),
-    height: Math.round(height)
-  };
-}
 
 // Initial game configuration - will be updated with display settings
 const config: Phaser.Types.Core.GameConfig = {
@@ -137,7 +92,6 @@ async function initGame() {
     logger.log(`Setting game size to ${gameWidth}x${gameHeight} (${displayConfig.aspect_ratio.default} aspect ratio, max: ${maxWidth}x${maxHeight})`);
     
     // Create the Phaser game instance AFTER configs are loaded
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const game = new Phaser.Game(config);
     
     logger.log('Phaser game instance created');

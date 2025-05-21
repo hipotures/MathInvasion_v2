@@ -7,9 +7,7 @@ import {
     type PlayerHitProjectileData,
     type PlayerStateUpdateData,
 } from '../types/PlayerManager.types';
-
-// --- Constants ---
-const INVULNERABILITY_DURATION_MS = 1000; // 1 second invulnerability
+import { INVULNERABILITY_DURATION_MS } from '../../constants/gameplay';
 
 // --- Type Definitions for Function Arguments ---
 
@@ -23,11 +21,6 @@ interface PlayerStateRef {
     velocityX: number; // Needed for stopping on death
 }
 
-interface MovementArgs {
-    stateRef: PlayerStateRef;
-    // No other args needed for simple flag setting
-}
-
 interface DamageArgs {
     stateRef: PlayerStateRef;
     playerPowerupHandler: PlayerPowerupHandler;
@@ -36,26 +29,6 @@ interface DamageArgs {
 }
 
 // --- Action Functions ---
-
-export function handleMoveLeftStart({ stateRef }: MovementArgs): void {
-    stateRef.isMovingLeft = true;
-    // Velocity update happens in the main update loop
-}
-
-export function handleMoveLeftStop({ stateRef }: MovementArgs): void {
-    stateRef.isMovingLeft = false;
-    // Velocity update happens in the main update loop
-}
-
-export function handleMoveRightStart({ stateRef }: MovementArgs): void {
-    stateRef.isMovingRight = true;
-    // Velocity update happens in the main update loop
-}
-
-export function handleMoveRightStop({ stateRef }: MovementArgs): void {
-    stateRef.isMovingRight = false;
-    // Velocity update happens in the main update loop
-}
 
 export function handlePlayerHitEnemy(
     data: PlayerHitEnemyData,

@@ -1,42 +1,42 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
-// import importPlugin from 'eslint-plugin-import'; // Temporarily disable import plugin
+import importPlugin from 'eslint-plugin-import';
 
 export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
-  // { // Temporarily disable eslint-plugin-import configuration
-  //   plugins: {
-  //     import: importPlugin,
-  //   },
-  //   rules: {
-  //     ...importPlugin.configs.recommended.rules,
-  //     ...importPlugin.configs.typescript.rules,
-  //     'import/order': [
-  //       'error',
-  //       {
-  //         groups: ['builtin', 'external', 'internal', ['parent', 'sibling', 'index']],
-  //         pathGroups: [
-  //           { pattern: 'react', group: 'external', position: 'before' },
-  //           { pattern: 'phaser', group: 'external', position: 'before' },
-  //         ],
-  //         pathGroupsExcludedImportTypes: ['react', 'phaser'],
-  //         'newlines-between': 'always',
-  //         alphabetize: { order: 'asc', caseInsensitive: true },
-  //       },
-  //     ],
-  //   },
-  //   settings: {
-  //     'import/resolver': {
-  //       typescript: {
-  //         alwaysTryTypes: true,
-  //         project: './tsconfig.json',
-  //       },
-  //       node: true,
-  //     },
-  //   },
-  // },
+  {
+    plugins: {
+      import: importPlugin,
+    },
+    rules: {
+      ...importPlugin.configs.recommended.rules,
+      ...importPlugin.configs.typescript.rules,
+      'import/order': [
+        'error',
+        {
+          groups: ['builtin', 'external', 'internal', ['parent', 'sibling', 'index']],
+          pathGroups: [
+            { pattern: 'react', group: 'external', position: 'before' },
+            { pattern: 'phaser', group: 'external', position: 'before' },
+          ],
+          pathGroupsExcludedImportTypes: ['react', 'phaser'],
+          'newlines-between': 'always',
+          alphabetize: { order: 'asc', caseInsensitive: true },
+        },
+      ],
+    },
+    settings: {
+      'import/resolver': {
+        typescript: {
+          alwaysTryTypes: true,
+          project: './tsconfig.json',
+        },
+        node: true,
+      },
+    },
+  },
   eslintPluginPrettierRecommended, // Make sure this is last
   { // Custom rules and global ignores
     rules: {

@@ -1,15 +1,12 @@
 import Phaser from 'phaser';
-import logger from '../../core/utils/Logger';
-import { EnemyEntity } from '../entities/EnemyEntity';
 
-// Import the original initializer (for preload and initial object/manager creation)
+import logger from '../../core/utils/Logger';
+
 import { GameSceneInitializer as CoreInitializer } from './components/GameSceneInitializer';
-// Import the new initialization class for handlers/components setup
+import { EnemyEntity } from '../entities/EnemyEntity';
 import { GameSceneInitialization } from './initialization/GameSceneInitialization';
-// Import the new update class
+import { GameComponents, GameHandlers, GameManagers, GameObjects } from './types/GameSceneTypes';
 import { GameSceneUpdate } from './update/GameSceneUpdate';
-// Import types
-import { GameManagers, GameObjects, GameHandlers, GameComponents } from './types/GameSceneTypes';
 
 /**
  * Main game scene that orchestrates the game components.
